@@ -417,7 +417,7 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                 </select>
               </div>
 
-              <div>
+    <div>
                 <label className="block text-sm font-medium text-gray-700">
                   ZIP Code
                 </label>
@@ -478,7 +478,7 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                   className="text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   ✕
-                </button>
+      </button>
               </div>
               <EquipmentList
                 projectDetails={projectDetails}

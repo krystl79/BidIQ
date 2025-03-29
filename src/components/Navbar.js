@@ -30,8 +30,17 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/dashboard" className="text-xl font-bold text-gray-900">
-                BuildIQ
+              <Link to="/dashboard" className="flex items-center space-x-2">
+                <img 
+                  src={process.env.PUBLIC_URL + '/logo.png'} 
+                  alt="BuildIQ Logo" 
+                  className="h-8 w-auto"
+                  onError={(e) => {
+                    console.error('Logo failed to load');
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <span className="text-xl font-bold text-gray-900">BuildIQ</span>
               </Link>
             </div>
             {/* Desktop Navigation */}

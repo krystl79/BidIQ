@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getProject, saveBid, getBid } from '../services/db';
 import EquipmentList from './EquipmentList';
@@ -133,12 +133,12 @@ const CreateBid = () => {
     }
   };
 
-  const handleEquipmentSelect = (selectedEquipment) => {
+  const handleEquipmentChange = useCallback((newEquipment) => {
     setFormData(prev => ({
       ...prev,
-      selectedEquipment
+      selectedEquipment: newEquipment
     }));
-  };
+  }, []);
 
   const validatePhoneNumber = (phone) => {
     // Remove all non-numeric characters
@@ -264,202 +264,188 @@ const CreateBid = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8 space-y-6 border border-gray-100">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-          {isEditing ? 'Edit Bid' : 'Create New Bid'}
-        </h2>
-
-        {/* Project Details Section */}
-        <div className="bg-gray-50 rounded-lg p-6 space-y-6">
-          <h3 className="text-lg font-semibold text-gray-800">Project Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Project Name</p>
-              <p className="font-medium">{projectData.projectName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Project Type</p>
-              <p className="font-medium">{projectData.projectType}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-medium">
-                {projectData.location.city}, {projectData.location.state} {projectData.location.zipCode}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Timeline</p>
-              <p className="font-medium">
-                {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Client Information Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-800">Client Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                Company Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="companyName"
-                name="companyName"
-                type="text"
-                value={formData.companyName}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
-                Contact Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="contactName"
-                name="contactName"
-                type="text"
-                value={formData.contactName}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                placeholder="(XXX) XXX-XXXX"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                Address
-              </label>
-              <input
-                id="address"
-                name="address"
-                type="text"
-                value={formData.address}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                City
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                value={formData.city}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                State
-              </label>
-              <select
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="">Select state</option>
-                {states.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                ZIP Code
-              </label>
-              <input
-                id="zipCode"
-                name="zipCode"
-                type="text"
-                value={formData.zipCode}
-                onChange={handleInputChange}
-                pattern="[0-9]{5}"
-                maxLength="5"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-xl p-8 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Create New Bid</h2>
+          
+          {/* Project Information */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Project Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Project Name</p>
+                <p className="mt-1 text-sm text-gray-900">{projectData.projectName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Project Type</p>
+                <p className="mt-1 text-sm text-gray-900">{projectData.projectType}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Location</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {projectData.location.address}<br />
+                  {projectData.location.city}, {projectData.location.state}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Timeline</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Equipment Selection Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-800">Equipment Selection</h3>
-          <EquipmentList
-            projectDetails={projectData}
-            onEquipmentSelect={handleEquipmentSelect}
-            initialSelectedEquipment={formData.selectedEquipment}
-          />
-        </div>
+          {/* Client Information */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Company Name *</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Contact Name *</label>
+                <input
+                  type="text"
+                  name="contactName"
+                  value={formData.contactName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">State</label>
+                  <select
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select State</option>
+                    {states.map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={formData.zipCode}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-        {/* Additional Notes Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-800">Additional Notes</h3>
-          <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleInputChange}
-            placeholder="Enter any additional notes or terms"
-            rows="4"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
+          {/* Equipment Selection */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Equipment</h3>
+            <EquipmentList
+              projectDetails={{
+                projectType: projectData?.projectType || '',
+                startDate: projectData?.timeline?.startDate,
+                endDate: projectData?.timeline?.endDate
+              }}
+              initialSelectedEquipment={formData.selectedEquipment}
+              onEquipmentChange={handleEquipmentChange}
+            />
+          </div>
 
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate('/bids')}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            {isEditing ? 'Update Bid' : 'Create Bid'}
-          </button>
+          {/* Notes */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              rows={4}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Add any additional notes or special instructions..."
+            />
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Create Bid
+            </button>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
