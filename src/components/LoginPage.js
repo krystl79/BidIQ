@@ -112,7 +112,7 @@ const LoginPage = ({ onLogin }) => {
           <div className="flex justify-center mb-4">
             <img
               src={process.env.PUBLIC_URL + '/logo.png'}
-              alt="BuildIQ Logo"
+              alt="BidIQ Logo"
               className="h-16 w-auto"
               onError={(e) => {
                 console.error('Logo failed to load');
@@ -121,7 +121,7 @@ const LoginPage = ({ onLogin }) => {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to BuildIQ
+            Welcome to BidIQ
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {isSignup ? 'Create your account' : 'Sign in to manage your projects'}

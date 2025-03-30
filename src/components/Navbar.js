@@ -33,14 +33,14 @@ const Navbar = () => {
               <Link to="/dashboard" className="flex items-center space-x-2">
                 <img 
                   src={process.env.PUBLIC_URL + '/logo.png'} 
-                  alt="BuildIQ Logo" 
+                  alt="BidIQ Logo" 
                   className="h-8 w-auto"
                   onError={(e) => {
                     console.error('Logo failed to load');
                     e.target.style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold text-gray-900">BuildIQ</span>
+                <span className="text-xl font-bold text-gray-900">BidIQ</span>
               </Link>
             </div>
             {/* Desktop Navigation */}
