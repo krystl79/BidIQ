@@ -19,6 +19,7 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
   });
 
   const [showEquipmentSelector, setShowEquipmentSelector] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (initialBid) {
@@ -79,15 +80,13 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
         createdAt: new Date().toISOString()
       };
 
-      // Save bid to session storage
-      const existingBids = JSON.parse(sessionStorage.getItem('bids') || '[]');
-      sessionStorage.setItem('bids', JSON.stringify([...existingBids, bidData]));
+      // Save bid
+      if (onSave) {
+        await onSave(bidData);
+      }
 
       // Close the modal
       onClose();
-
-      // Redirect to projects list
-      window.location.href = '/';
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred. Please try again.');
@@ -244,8 +243,6 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
       </div>
     </div>
   );
-
-  const [showPreview, setShowPreview] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -417,7 +414,7 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                 </select>
               </div>
 
-    <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700">
                   ZIP Code
                 </label>
@@ -478,7 +475,7 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                   className="text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   ✕
-      </button>
+                </button>
               </div>
               <EquipmentList
                 projectDetails={projectDetails}

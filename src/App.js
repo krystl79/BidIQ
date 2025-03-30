@@ -6,7 +6,6 @@ import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import CreateBid from './components/CreateBid';
 import BidsList from './components/BidsList';
-import BidTemplate from './components/BidTemplate';
 import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 import ViewBid from './components/ViewBid';
@@ -15,9 +14,6 @@ import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
 import { getUserProfile, saveUserProfile } from './services/db';
 import './styles/print.css';
-
-// Initialize with empty projects array
-const initialProjects = [];
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
@@ -90,7 +86,7 @@ function AppContent() {
     };
 
     loadData();
-  }, []);
+  }, [profileData]); // Added profileData as dependency
 
   const handleLogin = async (userData) => {
     try {
@@ -116,17 +112,6 @@ function AppContent() {
     setUser(null);
     localStorage.removeItem('user');
     navigate('/login');
-  };
-
-  const handleProfileUpdate = async (updatedProfile) => {
-    if (updatedProfile) {
-      try {
-        await saveUserProfile(updatedProfile);
-        setProfileData(updatedProfile);
-      } catch (error) {
-        console.error('Error updating profile:', error);
-      }
-    }
   };
 
   if (isLoading) {

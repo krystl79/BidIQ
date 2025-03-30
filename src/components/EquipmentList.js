@@ -198,211 +198,131 @@ const EquipmentList = ({ projectDetails, initialSelectedEquipment = [], onEquipm
       const matches = equipment.projectTypes.some(type => 
         type.trim().toLowerCase() === projectType.toLowerCase()
       );
-      console.log(`Equipment ${equipment.name}: ${matches ? 'matches' : 'does not match'} project type ${projectType}`);
       return matches;
     });
-    
+
     console.log('Filtered equipment:', filtered);
     return filtered;
   }, [projectDetails?.projectType]);
 
-  // Memoize handlers
-  const handleEquipmentSelect = useCallback((equipment) => {
-    const duration = calculateProjectDuration(projectDetails?.startDate, projectDetails?.endDate);
+  // Handle equipment selection
+  const handleEquipmentSelect = (equipment) => {
+    const duration = calculateProjectDuration(
+      projectDetails?.timeline?.startDate,
+      projectDetails?.timeline?.endDate
+    );
+    
     const bestRate = getBestRate(equipment, duration);
     
-    setSelectedEquipment(prev => {
-      const newEquipment = [...prev, {
-        ...equipment,
-        quantity: 1,
-        rate: bestRate,
-        rateType: duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily'
-      }];
-      onEquipmentChange(newEquipment);
-      return newEquipment;
-    });
-  }, [projectDetails?.startDate, projectDetails?.endDate, calculateProjectDuration, getBestRate, onEquipmentChange]);
+    const updatedEquipment = {
+      ...equipment,
+      selectedRate: {
+        type: duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily',
+        rate: bestRate
+      }
+    };
 
-  const handleRateChange = useCallback((equipmentId, rateType) => {
-    setSelectedEquipment(prev => {
-      const newEquipment = prev.map(item => {
-        if (item.id === equipmentId) {
-          return {
-            ...item,
-            rate: item.rates[rateType],
-            rateType
-          };
-        }
-        return item;
-      });
-      onEquipmentChange(newEquipment);
-      return newEquipment;
-    });
-  }, [onEquipmentChange]);
-
-  const handleRemoveEquipment = useCallback((equipmentId) => {
-    setSelectedEquipment(prev => {
-      const newEquipment = prev.filter(item => item.id !== equipmentId);
-      onEquipmentChange(newEquipment);
-      return newEquipment;
-    });
-  }, [onEquipmentChange]);
-
-  const handleQuantityChange = useCallback((equipmentId, newQuantity) => {
-    if (newQuantity < 1) return;
-    setSelectedEquipment(prev => {
-      const newEquipment = prev.map(item => {
-        if (item.id === equipmentId) {
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-      onEquipmentChange(newEquipment);
-      return newEquipment;
-    });
-  }, [onEquipmentChange]);
-
-  const getSelectedEquipment = useCallback(() => {
-    return selectedEquipment;
-  }, [selectedEquipment]);
-
-  // Calculate project duration in days
-  const calculateProjectDurationDays = () => {
-    if (!projectDetails?.timeline?.startDate || !projectDetails?.timeline?.endDate) return 0;
-    const start = new Date(projectDetails.timeline.startDate);
-    const end = new Date(projectDetails.timeline.endDate);
-    return Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const newSelectedEquipment = [...selectedEquipment, updatedEquipment];
+    setSelectedEquipment(newSelectedEquipment);
+    
+    if (onEquipmentChange) {
+      onEquipmentChange(newSelectedEquipment);
+    }
   };
 
-  // Determine the best rate based on project duration
-  const getBestRateDays = (equipment) => {
-    const duration = calculateProjectDurationDays();
-    if (duration <= 7) return { type: 'daily', rate: equipment.rates.daily };
-    if (duration <= 30) return { type: 'weekly', rate: equipment.rates.weekly };
-    return { type: 'monthly', rate: equipment.rates.monthly };
+  // Handle equipment removal
+  const handleRemoveEquipment = (equipmentId) => {
+    const newSelectedEquipment = selectedEquipment.filter(
+      (item) => item.id !== equipmentId
+    );
+    setSelectedEquipment(newSelectedEquipment);
+    
+    if (onEquipmentChange) {
+      onEquipmentChange(newSelectedEquipment);
+    }
   };
-
-  const projectDuration = calculateProjectDurationDays();
-  const durationText = projectDuration <= 7 ? 'Daily' : projectDuration <= 30 ? 'Weekly' : 'Monthly';
 
   return (
     <div className="space-y-6">
-      {/* Available Equipment Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Recommended Equipment</h3>
-        {filteredEquipment.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            {projectDetails?.projectType 
-              ? 'No equipment available for this project type'
-              : 'Please select a project type to view recommended equipment'}
-          </p>
+      {/* Selected Equipment Section */}
+      <div className="bg-white rounded-lg shadow p-6 min-h-[200px]">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Equipment</h3>
+        {selectedEquipment.length === 0 ? (
+          <p className="text-gray-500">No equipment selected</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredEquipment.map((equipment) => (
-              <div key={equipment.id} className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="aspect-w-16 aspect-h-9">
-                  <img
-                    src={equipment.image}
-                    alt={equipment.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null; // Prevent infinite loop
-                      e.target.src = 'https://images.pexels.com/photos/159358/construction-site-build-construction-work-159358.jpeg';
-                    }}
-                  />
+          <div className="space-y-4">
+            {selectedEquipment.map((equipment) => (
+              <div
+                key={equipment.id}
+                className="flex items-center justify-between bg-gray-50 p-4 rounded-lg transition-all duration-200 ease-in-out"
+              >
+                <div>
+                  <h4 className="font-medium text-gray-900">{equipment.name}</h4>
+                  <p className="text-sm text-gray-600">{equipment.description}</p>
+                  <p className="text-sm font-medium text-blue-600 mt-1">
+                    Rate: ${equipment.selectedRate.rate} ({equipment.selectedRate.type})
+                  </p>
                 </div>
-                <div className="p-4">
-                  <h4 className="text-lg font-semibold text-gray-900">{equipment.name}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{equipment.description}</p>
-                  
-                  {/* Rates Section */}
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Daily Rate:</span>
-                      <span className="font-medium text-gray-900">${equipment.rates.daily.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Weekly Rate:</span>
-                      <span className="font-medium text-gray-900">${equipment.rates.weekly.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Monthly Rate:</span>
-                      <span className="font-medium text-gray-900">${equipment.rates.monthly.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <button
-                      onClick={() => handleEquipmentSelect(equipment)}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      Add Equipment
-                    </button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => handleRemoveEquipment(equipment.id)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Selected Equipment Section */}
+      {/* Available Equipment Section */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Equipment</h3>
-        <div className="min-h-[200px] space-y-4">
-          {selectedEquipment.map(equipment => (
-            <div
-              key={equipment.id}
-              className="border rounded-lg p-4 transition-all duration-200 ease-in-out"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium text-gray-900">{equipment.name}</h4>
-                  <p className="text-sm text-gray-500 mt-1">{equipment.description}</p>
-                </div>
-                <button
-                  onClick={() => handleRemoveEquipment(equipment.id)}
-                  className="text-red-600 hover:text-red-800 transition-colors duration-200"
-                >
-                  Remove
-                </button>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended Equipment</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredEquipment.map((equipment) => (
+            <div key={equipment.id} className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="aspect-w-16 aspect-h-9">
+                <img
+                  src={equipment.image}
+                  alt={equipment.name}
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = 'https://images.pexels.com/photos/159358/construction-site-build-construction-work-159358.jpeg';
+                  }}
+                />
               </div>
-              
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={equipment.quantity}
-                    onChange={(e) => handleQuantityChange(equipment.id, parseInt(e.target.value) || 1)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
+              <div className="p-4">
+                <h4 className="text-lg font-semibold text-gray-900">{equipment.name}</h4>
+                <p className="text-sm text-gray-600 mt-1">{equipment.description}</p>
+                
+                {/* Rates Section */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Daily Rate:</span>
+                    <span className="font-medium text-gray-900">${equipment.rates.daily.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Weekly Rate:</span>
+                    <span className="font-medium text-gray-900">${equipment.rates.weekly.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Monthly Rate:</span>
+                    <span className="font-medium text-gray-900">${equipment.rates.monthly.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Rate Type</label>
-                  <select
-                    value={equipment.rateType}
-                    onChange={(e) => handleRateChange(equipment.id, e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+
+                <div className="mt-4">
+                  <button
+                    onClick={() => handleEquipmentSelect(equipment)}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
+                    Add Equipment
+                  </button>
                 </div>
-              </div>
-              
-              <div className="mt-4 text-sm text-gray-600">
-                Rate: ${equipment.rate.toLocaleString()} per {equipment.rateType}
               </div>
             </div>
           ))}
-          {selectedEquipment.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
-              No equipment selected. Please add equipment from the list above.
-            </div>
-          )}
         </div>
       </div>
     </div>

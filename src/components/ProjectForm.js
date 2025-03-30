@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveProject } from '../services/db';
 
-const ProjectForm = ({ onSubmit, onCancel, initialData, profileData }) => {
+const ProjectForm = ({ initialData }) => {
   const [projectName, setProjectName] = useState('');
   const [projectType, setProjectType] = useState('');
   const [otherProjectType, setOtherProjectType] = useState('');
@@ -158,6 +158,12 @@ const ProjectForm = ({ onSubmit, onCancel, initialData, profileData }) => {
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           {initialData ? 'Edit Project' : 'Create New Project'}
         </h2>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
         
         <div className="space-y-6">
           <div className="space-y-1">
