@@ -49,10 +49,6 @@ const BidsList = () => {
     navigate(`/view-bid/${bid.id}`);
   };
 
-  const handleEditBid = (bid) => {
-    navigate(`/edit-bid/${bid.id}`);
-  };
-
   const handleDeleteBid = async (bidId) => {
     if (window.confirm('Are you sure you want to delete this bid?')) {
       try {

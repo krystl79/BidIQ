@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getProject, saveBid, getBid } from '../services/db';
+import { useNavigate } from 'react-router-dom';
+import { saveBid } from '../services/db';
 import EquipmentList from './EquipmentList';
 
 const CreateBid = () => {
   const navigate = useNavigate();
-  const { bidId } = useParams();
   const [projectData, setProjectData] = useState(null);
   const [formData, setFormData] = useState({
     companyName: '',
@@ -19,8 +18,6 @@ const CreateBid = () => {
     selectedEquipment: [],
     notes: ''
   });
-  const [editingBidId, setEditingBidId] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -139,12 +136,6 @@ const CreateBid = () => {
       selectedEquipment: newEquipment
     }));
   }, []);
-
-  const validatePhoneNumber = (phone) => {
-    // Remove all non-numeric characters
-    const cleanedPhone = phone.replace(/\D/g, '');
-    return cleanedPhone.length === 10;
-  };
 
   const calculateTotalCost = (equipment) => {
     return equipment.reduce((total, item) => {
