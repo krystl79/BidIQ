@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import { getAnalytics } from 'firebase/analytics';
+import { getAuth } from 'firebase/auth';
 
 // Default configuration for development
 const defaultConfig = {
@@ -54,10 +55,12 @@ let app;
 let storage;
 let functions;
 let analytics = null;
+let auth = null;
 
 try {
   if (process.env.NODE_ENV !== 'test') {
     app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
     storage = getStorage(app);
     functions = getFunctions(app);
     
@@ -72,6 +75,7 @@ try {
       auth: () => ({}),
       firestore: () => ({})
     };
+    auth = {};
     storage = {};
     functions = {};
     console.log('Using mock Firebase services for testing');
@@ -81,4 +85,4 @@ try {
   throw error;
 }
 
-export { app, storage, functions, analytics }; 
+export { app, auth, storage, functions, analytics }; 
