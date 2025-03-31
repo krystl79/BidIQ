@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { app } from '../firebase/config';
 
 const AuthContext = createContext();
 
@@ -10,49 +18,73 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const auth = getAuth(app);
 
-  const login = useCallback(async (email, password) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, [auth]);
+
+  const signup = async (email, password) => {
     try {
       setError('');
       setLoading(true);
-      // Mock login for testing
-      if (email === 'test@example.com' && password === 'password') {
-        const user = { email, id: '1' };
-        setCurrentUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        return user;
-      } else {
-        throw new Error('Invalid email or password');
-      }
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      setCurrentUser(userCredential.user);
+      return userCredential.user;
     } catch (err) {
       setError(err.message);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const logout = useCallback(async () => {
+  const login = async (email, password) => {
     try {
-      setCurrentUser(null);
-      localStorage.removeItem('user');
+      setError('');
+      setLoading(true);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setCurrentUser(userCredential.user);
+      return userCredential.user;
     } catch (err) {
       setError(err.message);
       throw err;
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
+
+  const logout = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await signOut(auth);
+      setCurrentUser(null);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const value = {
     currentUser,
-    login,
-    logout,
     loading,
-    error
+    error,
+    login,
+    signup,
+    logout
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 } 

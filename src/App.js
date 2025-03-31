@@ -14,28 +14,36 @@ import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
 import { getUserProfile, saveUserProfile } from './services/db';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import './styles/print.css';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { currentUser, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem('user');
+    if (!loading && !currentUser) {
       // Don't redirect if we're on a public route
       const publicRoutes = ['/', '/login'];
-      if (!user && !publicRoutes.includes(location.pathname)) {
-        navigate('/login');
-      } else if (user) {
-        setIsAuthenticated(true);
+      if (!publicRoutes.includes(location.pathname)) {
+        navigate('/login', { state: { from: location.pathname } });
       }
-    };
+    }
+  }, [currentUser, loading, navigate, location]);
 
-    checkAuth();
-  }, [navigate, location]);
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Always allow rendering for public routes
   if (['/', '/login'].includes(location.pathname)) {
@@ -43,7 +51,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // For protected routes, check authentication
-  if (!isAuthenticated) {
+  if (!currentUser) {
     return null;
   }
 
@@ -54,7 +62,7 @@ const ProtectedRoute = ({ children }) => {
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState(null);
+  const { currentUser, logout } = useAuth();
   const [profileData, setProfileData] = useState({
     companyName: '',
     contactName: '',
@@ -67,24 +75,20 @@ function AppContent() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user and profile data on mount
+  // Load profile data on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser);
-          
+        if (currentUser) {
           // Load profile from database
           const profile = await getUserProfile();
           if (profile) {
             setProfileData(profile);
-          } else if (parsedUser.email) {
+          } else if (currentUser.email) {
             // If no profile exists but we have user email, create initial profile
             const initialProfile = {
               ...profileData,
-              email: parsedUser.email
+              email: currentUser.email
             };
             await saveUserProfile(initialProfile);
             setProfileData(initialProfile);
@@ -98,32 +102,15 @@ function AppContent() {
     };
 
     loadData();
-  }, [profileData]);
+  }, [currentUser]);
 
-  const handleLogin = async (userData) => {
+  const handleLogout = async () => {
     try {
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      // Update profile with user email if it exists
-      const currentProfile = await getUserProfile();
-      const updatedProfile = {
-        ...(currentProfile || profileData),
-        email: userData.email
-      };
-      await saveUserProfile(updatedProfile);
-      setProfileData(updatedProfile);
-      
-      navigate('/dashboard');
+      await logout();
+      navigate('/');
     } catch (error) {
-      console.error('Error in handleLogin:', error);
+      console.error('Error logging out:', error);
     }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    navigate('/');
   };
 
   if (isLoading) {
@@ -138,14 +125,14 @@ function AppContent() {
   }
 
   // Only show navbar for authenticated routes
-  const showNavbar = user && !['/', '/login'].includes(location.pathname);
+  const showNavbar = currentUser && !['/', '/login'].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showNavbar && <Navbar user={user} onLogout={handleLogout} />}
+      {showNavbar && <Navbar user={currentUser} onLogout={handleLogout} />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route
           path="/dashboard"
           element={
@@ -211,15 +198,7 @@ function AppContent() {
           }
         />
         <Route
-          path="/view-bid/:bidId"
-          element={
-            <ProtectedRoute>
-              <ViewBid />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/project/:projectId"
+          path="/view-project/:projectId"
           element={
             <ProtectedRoute>
               <ViewProject />
@@ -227,10 +206,18 @@ function AppContent() {
           }
         />
         <Route
-          path="/projects/:projectId/edit"
+          path="/edit-project/:projectId"
           element={
             <ProtectedRoute>
               <EditProject />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/view-bid/:bidId"
+          element={
+            <ProtectedRoute>
+              <ViewBid />
             </ProtectedRoute>
           }
         />
@@ -241,7 +228,11 @@ function AppContent() {
 
 // Main App component
 function App() {
-  return <AppContent />;
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 export default App;

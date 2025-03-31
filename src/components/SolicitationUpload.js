@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadSolicitation, processSolicitationLink } from '../services/solicitationService';
+import { useAuth } from '../contexts/AuthContext';
 
 const SolicitationUpload = ({ onClose }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [uploadType, setUploadType] = useState('file'); // 'file' or 'link'
   const [file, setFile] = useState(null);
   const [link, setLink] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(0);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -27,36 +31,35 @@ const SolicitationUpload = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      setError('Please log in to upload a solicitation');
+      return;
+    }
+    
     setIsUploading(true);
     setError('');
+    setProgress(0);
 
     try {
+      let result;
       if (uploadType === 'file' && file) {
-        // TODO: Implement file upload logic
-        // This would typically involve:
-        // 1. Uploading the file to a storage service
-        // 2. Processing the file content
-        // 3. Creating a new project based on the content
-        console.log('Uploading file:', file);
+        result = await uploadSolicitation(file, currentUser.uid);
       } else if (uploadType === 'link' && link) {
-        // TODO: Implement link processing logic
-        // This would typically involve:
-        // 1. Fetching the content from the link
-        // 2. Processing the content
-        // 3. Creating a new project based on the content
-        console.log('Processing link:', link);
+        result = await processSolicitationLink(link, currentUser.uid);
       }
 
-      // For now, just navigate to create-project with a success message
+      // Navigate to create-project with the processed data
       navigate('/create-project', { 
         state: { 
-          message: 'Solicitation processed successfully. Please review and complete the project details.' 
+          message: 'Solicitation processed successfully. Please review and complete the project details.',
+          projectData: result.projectData
         }
       });
     } catch (err) {
-      setError('Failed to process solicitation. Please try again.');
+      setError(err.message || 'Failed to process solicitation. Please try again.');
     } finally {
       setIsUploading(false);
+      setProgress(0);
     }
   };
 
@@ -118,6 +121,18 @@ const SolicitationUpload = ({ onClose }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
                 {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">Processing your solicitation...</p>
               </div>
             )}
 

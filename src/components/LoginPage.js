@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { saveUserProfile } from '../services/db';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const LoginPage = ({ onLogin }) => {
+const LoginPage = () => {
+  const { login, signup, loading: authLoading, error: authError } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isSignup, setIsSignup] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -15,6 +20,7 @@ const LoginPage = ({ onLogin }) => {
     zipCode: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const states = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -59,252 +65,261 @@ const LoginPage = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    // Simple validation
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    if (!formData.email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    if (isSignup) {
-      // Additional validation for signup
-      const requiredFields = [
-        { name: 'companyName', label: 'Company Name' },
-        { name: 'contactName', label: 'Contact Name' },
-        { name: 'phone', label: 'Phone' },
-        { name: 'address', label: 'Address' },
-        { name: 'city', label: 'City' },
-        { name: 'state', label: 'State' },
-        { name: 'zipCode', label: 'ZIP Code' }
-      ];
-
-      const missingFields = requiredFields.filter(field => !formData[field.name]);
-      if (missingFields.length > 0) {
-        setError(`Please fill in all required fields:\n${missingFields.map(field => field.label).join('\n')}`);
+    try {
+      // Simple validation
+      if (!formData.email || !formData.password) {
+        setError('Please fill in all required fields');
         return;
       }
 
-      try {
+      if (!formData.email.includes('@')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (isSignup) {
+        // Additional validation for signup
+        const requiredFields = [
+          { name: 'companyName', label: 'Company Name' },
+          { name: 'contactName', label: 'Contact Name' },
+          { name: 'phone', label: 'Phone' },
+          { name: 'address', label: 'Address' },
+          { name: 'city', label: 'City' },
+          { name: 'state', label: 'State' },
+          { name: 'zipCode', label: 'ZIP Code' }
+        ];
+
+        const missingFields = requiredFields.filter(field => !formData[field.name]);
+        if (missingFields.length > 0) {
+          setError(`Please fill in all required fields:\n${missingFields.map(field => field.label).join('\n')}`);
+          return;
+        }
+
+        // Create the user account
+        await signup(formData.email, formData.password);
+        
         // Save profile data
         await saveUserProfile(formData);
-        // Log the user in
-        onLogin({ email: formData.email });
-      } catch (error) {
-        console.error('Error creating account:', error);
-        setError('Failed to create account. Please try again.');
-        return;
+      } else {
+        // Attempt to log in
+        await login(formData.email, formData.password);
       }
-    } else {
-      // For demo purposes, just pass the email to identify the user
-      onLogin({ email: formData.email });
+
+      // Navigate to the intended destination or dashboard
+      const from = location.state?.from || '/dashboard';
+      navigate(from);
+    } catch (error) {
+      console.error('Auth error:', error);
+      setError(error.message || 'Failed to authenticate. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center mb-4">
-            <img
-              src={process.env.PUBLIC_URL + '/logo.png'}
-              alt="BidIQ Logo"
-              className="h-16 w-auto"
-              onError={(e) => {
-                console.error('Logo failed to load');
-                e.target.style.display = 'none';
-              }}
-            />
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to BidIQ
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {isSignup ? 'Create your account' : 'Sign in to manage your projects'}
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm space-y-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          {isSignup ? 'Create your account' : 'Sign in to your account'}
+        </h2>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {(error || authError) && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error || authError}</p>
+            </div>
+          )}
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-              />
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
             </div>
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isSignup ? 'new-password' : 'current-password'}
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-              />
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
             </div>
 
             {isSignup && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                      Company Name
-                    </label>
+              <>
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                    Company Name
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="companyName"
                       name="companyName"
                       type="text"
+                      required
                       value={formData.companyName}
                       onChange={handleInputChange}
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
-                      Contact Name
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
+                    Contact Name
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="contactName"
                       name="contactName"
                       type="text"
+                      required
                       value={formData.contactName}
                       onChange={handleInputChange}
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                      Phone
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    Phone
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="phone"
                       name="phone"
                       type="tel"
+                      required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="(555) 555-5555"
-                      maxLength="14"
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                      Address
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                    Address
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="address"
                       name="address"
                       type="text"
+                      required
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                      City
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                    City
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="city"
                       name="city"
                       type="text"
+                      required
                       value={formData.city}
                       onChange={handleInputChange}
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                      State
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                    State
+                  </label>
+                  <div className="mt-1">
                     <select
                       id="state"
                       name="state"
+                      required
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
-                      <option value="">Select state</option>
+                      <option value="">Select a state</option>
                       {states.map(state => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
+                        <option key={state} value={state}>{state}</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                      ZIP Code
-                    </label>
+                </div>
+
+                <div>
+                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
+                    ZIP Code
+                  </label>
+                  <div className="mt-1">
                     <input
                       id="zipCode"
                       name="zipCode"
                       type="text"
+                      required
                       value={formData.zipCode}
                       onChange={handleInputChange}
-                      pattern="[0-9]{5}"
-                      maxLength="5"
-                      className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
                 </div>
-              </div>
+              </>
             )}
-          </div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center whitespace-pre-line">{error}</div>
-          )}
+            <div>
+              <button
+                type="submit"
+                disabled={loading || authLoading}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  (loading || authLoading) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {loading || authLoading ? 'Processing...' : (isSignup ? 'Sign up' : 'Sign in')}
+              </button>
+            </div>
 
-          <div className="flex flex-col space-y-4">
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              {isSignup ? 'Create Account' : 'Sign in'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignup(!isSignup);
-                setError('');
-                setFormData({
-                  email: '',
-                  password: '',
-                  companyName: '',
-                  contactName: '',
-                  phone: '',
-                  address: '',
-                  city: '',
-                  state: '',
-                  zipCode: ''
-                });
-              }}
-              className="text-sm text-blue-600 hover:text-blue-500"
-            >
-              {isSignup ? 'Already have an account? Sign in' : 'Need an account? Create one'}
-            </button>
-          </div>
-        </form>
+            <div className="text-sm text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignup(!isSignup)}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
