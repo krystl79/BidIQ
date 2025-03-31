@@ -44,7 +44,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
               <h1 className="text-4xl md:text-5xl font-light mb-4">
-                Equipment Rental Bids in Minutes with AI
+                Bids in Minutes
               </h1>
               <p className="text-xl mb-8">
                 Save time, win more bids, and get competitive pricing for every project.
