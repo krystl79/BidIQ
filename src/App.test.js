@@ -12,13 +12,15 @@ const renderWithRouter = (component) => {
 };
 
 describe('App Component', () => {
-  test('renders login page when not authenticated', () => {
+  test('renders landing page at root path', () => {
     renderWithRouter(<App />);
-    expect(screen.getByText(/Welcome to BidIQ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Equipment Rental Bids in Minutes with AI/i)).toBeInTheDocument();
   });
 
-  test('renders login form elements', () => {
+  test('renders login page when navigating to /login', () => {
+    window.history.pushState({}, '', '/login');
     renderWithRouter(<App />);
+    expect(screen.getByText(/Welcome to BidIQ/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
   });
