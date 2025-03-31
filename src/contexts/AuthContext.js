@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setCurrentUser(user);
       setLoading(false);
     });
@@ -31,11 +32,14 @@ export function AuthProvider({ children }) {
     try {
       setError('');
       setLoading(true);
+      console.log('Attempting signup with email:', email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Signup successful:', userCredential.user.email);
       setCurrentUser(userCredential.user);
       return userCredential.user;
     } catch (err) {
-      setError(err.message);
+      console.error('Signup error:', err.code, err.message);
+      setError(`Signup failed: ${err.message}`);
       throw err;
     } finally {
       setLoading(false);
@@ -46,11 +50,31 @@ export function AuthProvider({ children }) {
     try {
       setError('');
       setLoading(true);
+      console.log('Attempting login with email:', email);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Login successful:', userCredential.user.email);
       setCurrentUser(userCredential.user);
       return userCredential.user;
     } catch (err) {
-      setError(err.message);
+      console.error('Login error:', err.code, err.message);
+      let errorMessage = 'Login failed. ';
+      switch (err.code) {
+        case 'auth/invalid-credential':
+          errorMessage += 'Invalid email or password.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage += 'No account found with this email.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage += 'Incorrect password.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage += 'Invalid email format.';
+          break;
+        default:
+          errorMessage += err.message;
+      }
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -64,7 +88,8 @@ export function AuthProvider({ children }) {
       await signOut(auth);
       setCurrentUser(null);
     } catch (err) {
-      setError(err.message);
+      console.error('Logout error:', err.code, err.message);
+      setError(`Logout failed: ${err.message}`);
       throw err;
     } finally {
       setLoading(false);

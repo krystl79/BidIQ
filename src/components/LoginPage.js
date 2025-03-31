@@ -104,6 +104,7 @@ const LoginPage = () => {
         await saveUserProfile(formData);
       } else {
         // Attempt to log in
+        console.log('Attempting login with:', { email: formData.email });
         await login(formData.email, formData.password);
       }
 
@@ -112,7 +113,8 @@ const LoginPage = () => {
       navigate(from);
     } catch (error) {
       console.error('Auth error:', error);
-      setError(error.message || 'Failed to authenticate. Please try again.');
+      // The error message is now handled in AuthContext
+      setError(error.message);
     } finally {
       setLoading(false);
     }
