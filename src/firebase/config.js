@@ -3,15 +3,26 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import { getAnalytics } from 'firebase/analytics';
 
+// Default configuration for development
+const defaultConfig = {
+  apiKey: "AIzaSyDzPythGxO-KWPahujX65KxUQOqj8Rux6M",
+  authDomain: "bidiq-8a697.firebaseapp.com",
+  projectId: "bidiq-8a697",
+  storageBucket: "bidiq-8a697.firebasestorage.app",
+  messagingSenderId: "985256787837",
+  appId: "1:985256787837:web:84c74b2c606c8845025614",
+  measurementId: "G-HGFG3V7RTL"
+};
+
+// Use environment variables if available, otherwise use default config
 const firebaseConfig = {
-  // TODO: Replace with your Firebase config
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || defaultConfig.apiKey,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || defaultConfig.authDomain,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || defaultConfig.projectId,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || defaultConfig.storageBucket,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || defaultConfig.messagingSenderId,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || defaultConfig.appId,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || defaultConfig.measurementId
 };
 
 // Log configuration status (without sensitive values)
@@ -23,7 +34,8 @@ console.log('Firebase Config Status:', {
   hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
   hasAppId: !!firebaseConfig.appId,
   hasMeasurementId: !!firebaseConfig.measurementId,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+  usingDefaultConfig: !process.env.REACT_APP_FIREBASE_API_KEY
 });
 
 // Only check for missing config in non-test environment
