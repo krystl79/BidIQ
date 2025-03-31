@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ProjectForm from './components/ProjectForm';
 import ProjectList from './components/ProjectList';
 import LoginPage from './components/LoginPage';
@@ -12,6 +12,7 @@ import ViewBid from './components/ViewBid';
 import SelectProject from './components/SelectProject';
 import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
+import LandingPage from './components/LandingPage';
 import { getUserProfile, saveUserProfile } from './services/db';
 import './styles/print.css';
 
@@ -127,15 +128,10 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar user={user} onLogout={handleLogout} />
+      {user && <Navbar user={user} onLogout={handleLogout} />}
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-        <Route
-          path="/"
-          element={
-            user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
-          }
-        />
         <Route
           path="/dashboard"
           element={
@@ -231,11 +227,7 @@ function AppContent() {
 
 // Main App component
 function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
-  );
+  return <AppContent />;
 }
 
 export default App;

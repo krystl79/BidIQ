@@ -1,8 +1,9 @@
 import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import AppWithRouter from './AppWithRouter';
 import reportWebVitals from './reportWebVitals';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Clear localStorage to ensure we start fresh
 localStorage.clear();
@@ -10,7 +11,9 @@ localStorage.clear();
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <AppWithRouter />
+    </AuthProvider>
   </React.StrictMode>
 );
 

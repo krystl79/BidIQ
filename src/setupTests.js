@@ -6,25 +6,29 @@ import '@testing-library/jest-dom';
 
 // Mock IndexedDB
 const indexedDB = {
-  open: jest.fn().mockReturnValue({
+  open: () => ({
     onupgradeneeded: null,
     onsuccess: null,
     onerror: null,
-    result: {
-      createObjectStore: jest.fn(),
-      objectStoreNames: {
-        contains: jest.fn().mockReturnValue(true)
-      },
-      transaction: jest.fn().mockReturnValue({
-        objectStore: jest.fn().mockReturnValue({
-          put: jest.fn(),
-          get: jest.fn(),
-          getAll: jest.fn(),
-          delete: jest.fn()
-        })
-      })
-    }
-  })
+  }),
 };
 
 global.indexedDB = indexedDB;
+
+// Mock window.URL.createObjectURL
+global.URL.createObjectURL = jest.fn();
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
