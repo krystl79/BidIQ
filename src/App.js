@@ -18,15 +18,16 @@ import './styles/print.css';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
       const user = localStorage.getItem('user');
       if (!user) {
-        setIsAuthenticated(false);
         navigate('/login');
+      } else {
+        setIsAuthenticated(true);
       }
     };
 
@@ -87,7 +88,7 @@ function AppContent() {
     };
 
     loadData();
-  }, [profileData]); // Added profileData as dependency
+  }, [profileData]);
 
   const handleLogin = async (userData) => {
     try {
@@ -112,7 +113,7 @@ function AppContent() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/');
   };
 
   if (isLoading) {
