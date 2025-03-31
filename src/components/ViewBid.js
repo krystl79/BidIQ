@@ -246,7 +246,7 @@ const ViewBid = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {bidData.selectedEquipment?.map((item, index) => {
-                const rate = item.rates?.[item.selectedRate] || 0;
+                const rate = item.selectedRate?.rate || 0;
                 const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
                 const rateWithMarkup = rate + markup;
                 const displayRate = showMarkup ? rateWithMarkup : rate;
@@ -256,7 +256,7 @@ const ViewBid = () => {
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity || 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{item.selectedRate}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{item.selectedRate?.type}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       ${displayRate.toFixed(2)}
                     </td>
@@ -272,7 +272,7 @@ const ViewBid = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                   ${(bidData.selectedEquipment?.reduce((total, item) => {
-                    const rate = item.rates?.[item.selectedRate] || 0;
+                    const rate = item.selectedRate?.rate || 0;
                     const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
                     const rateWithMarkup = rate + markup;
                     return total + (rateWithMarkup * (item.quantity || 1));
@@ -327,7 +327,7 @@ const ViewBid = () => {
               <span className="text-lg font-semibold text-gray-900">Total Estimated Cost:</span>
               <span className="text-lg font-semibold text-gray-900">
                 ${((bidData.selectedEquipment?.reduce((total, item) => {
-                  const rate = item.rates?.[item.selectedRate] || 0;
+                  const rate = item.selectedRate?.rate || 0;
                   const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
                   const rateWithMarkup = rate + markup;
                   return total + (rateWithMarkup * (item.quantity || 1));
