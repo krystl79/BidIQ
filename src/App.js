@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import ProjectForm from './components/ProjectForm';
 import ProjectList from './components/ProjectList';
 import LoginPage from './components/LoginPage';
@@ -20,21 +20,25 @@ import './styles/print.css';
 const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = () => {
       const user = localStorage.getItem('user');
-      if (!user) {
+      // Don't redirect if we're on a public route
+      const publicRoutes = ['/', '/login'];
+      if (!user && !publicRoutes.includes(location.pathname)) {
         navigate('/login');
-      } else {
+      } else if (user) {
         setIsAuthenticated(true);
       }
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location]);
 
-  if (!isAuthenticated) {
+  // Allow rendering if we're on a public route or if authenticated
+  if (!isAuthenticated && !['/', '/login'].includes(location.pathname)) {
     return null;
   }
 
@@ -44,6 +48,7 @@ const ProtectedRoute = ({ children }) => {
 // Create a wrapper component to use hooks
 function AppContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [profileData, setProfileData] = useState({
     companyName: '',
@@ -127,9 +132,12 @@ function AppContent() {
     );
   }
 
+  // Only show navbar for authenticated routes
+  const showNavbar = user && !['/', '/login'].includes(location.pathname);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {user && <Navbar user={user} onLogout={handleLogout} />}
+      {showNavbar && <Navbar user={user} onLogout={handleLogout} />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
