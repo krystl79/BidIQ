@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const LoginPage = () => {
-  const { login, signup, loading: authLoading, error: authError } = useAuth();
+  const { login, signup, resetPassword, loading: authLoading, error: authError, message: authMessage } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSignup, setIsSignup] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,6 +30,12 @@ const LoginPage = () => {
     'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
     'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
   ];
+
+  // ZIP code validation function
+  const isValidZipCode = (zipCode) => {
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    return zipRegex.test(zipCode);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,6 +66,32 @@ const LoginPage = () => {
         ...prev,
         [name]: value
       }));
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (!formData.email) {
+        setError('Please enter your email address');
+        return;
+      }
+
+      if (!formData.email.includes('@')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      await resetPassword(formData.email);
+      setIsForgotPassword(false);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +127,12 @@ const LoginPage = () => {
         const missingFields = requiredFields.filter(field => !formData[field.name]);
         if (missingFields.length > 0) {
           setError(`Please fill in all required fields:\n${missingFields.map(field => field.label).join('\n')}`);
+          return;
+        }
+
+        // Validate ZIP code
+        if (!isValidZipCode(formData.zipCode)) {
+          setError('Please enter a valid ZIP code (e.g., 12345 or 12345-6789)');
           return;
         }
 
@@ -134,7 +173,7 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isSignup ? 'Create your account' : 'Sign in to your account'}
+          {isForgotPassword ? 'Reset your password' : (isSignup ? 'Create your account' : 'Sign in to your account')}
         </h2>
       </div>
 
@@ -145,7 +184,12 @@ const LoginPage = () => {
               <p className="text-sm text-red-600">{error || authError}</p>
             </div>
           )}
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          {authMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-600">{authMessage}</p>
+            </div>
+          )}
+          <form className="space-y-6" onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -164,25 +208,27 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+            {!isForgotPassword && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            {isSignup && (
+            {isSignup && !isForgotPassword && (
               <>
                 <div>
                   <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
@@ -300,6 +346,7 @@ const LoginPage = () => {
                       name="zipCode"
                       type="text"
                       required
+                      placeholder="12345 or 12345-6789"
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -317,18 +364,38 @@ const LoginPage = () => {
                   (loading || authLoading) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {loading || authLoading ? 'Processing...' : (isSignup ? 'Sign up' : 'Sign in')}
+                {loading || authLoading ? 'Processing...' : (isForgotPassword ? 'Send Reset Link' : (isSignup ? 'Sign up' : 'Sign in'))}
               </button>
             </div>
 
-            <div className="text-sm text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignup(!isSignup)}
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-              </button>
+            <div className="text-sm text-center space-y-2">
+              {!isForgotPassword && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignup(!isSignup)}
+                    className="font-medium text-blue-600 hover:text-blue-500 block w-full"
+                  >
+                    {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPassword(true)}
+                    className="font-medium text-blue-600 hover:text-blue-500 block w-full"
+                  >
+                    Forgot your password?
+                  </button>
+                </>
+              )}
+              {isForgotPassword && (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="font-medium text-blue-600 hover:text-blue-500 block w-full"
+                >
+                  Back to sign in
+                </button>
+              )}
             </div>
           </form>
         </div>

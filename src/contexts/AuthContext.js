@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -38,7 +40,8 @@ export function AuthProvider({ children }) {
       // Check if user already exists
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
       if (signInMethods.length > 0) {
-        throw new Error('An account with this email already exists');
+        console.log('User already exists with methods:', signInMethods);
+        throw new Error('An account with this email already exists. Please log in instead.');
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -50,19 +53,19 @@ export function AuthProvider({ children }) {
       let errorMessage = 'Signup failed. ';
       switch (err.code) {
         case 'auth/email-already-in-use':
-          errorMessage += 'An account with this email already exists.';
+          errorMessage = 'An account with this email already exists. Please log in instead.';
           break;
         case 'auth/invalid-email':
-          errorMessage += 'Invalid email format.';
+          errorMessage = 'Invalid email format. Please enter a valid email address.';
           break;
         case 'auth/operation-not-allowed':
-          errorMessage += 'Email/password accounts are not enabled. Please contact support.';
+          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
           break;
         case 'auth/weak-password':
-          errorMessage += 'Password should be at least 6 characters.';
+          errorMessage = 'Password should be at least 6 characters long.';
           break;
         default:
-          errorMessage += err.message;
+          errorMessage = err.message;
       }
       setError(errorMessage);
       throw err;
@@ -80,6 +83,7 @@ export function AuthProvider({ children }) {
       // Check if user exists
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
       if (signInMethods.length === 0) {
+        console.log('No account found for email:', email);
         throw new Error('No account found with this email. Please sign up first.');
       }
 
@@ -92,22 +96,22 @@ export function AuthProvider({ children }) {
       let errorMessage = 'Login failed. ';
       switch (err.code) {
         case 'auth/invalid-credential':
-          errorMessage += 'Invalid email or password.';
+          errorMessage = 'Invalid email or password. Please check your credentials.';
           break;
         case 'auth/user-not-found':
-          errorMessage += 'No account found with this email. Please sign up first.';
+          errorMessage = 'No account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
-          errorMessage += 'Incorrect password.';
+          errorMessage = 'Incorrect password. Please try again.';
           break;
         case 'auth/invalid-email':
-          errorMessage += 'Invalid email format.';
+          errorMessage = 'Invalid email format. Please enter a valid email address.';
           break;
         case 'auth/too-many-requests':
-          errorMessage += 'Too many failed attempts. Please try again later.';
+          errorMessage = 'Too many failed attempts. Please try again later.';
           break;
         default:
-          errorMessage += err.message;
+          errorMessage = err.message;
       }
       setError(errorMessage);
       throw err;
@@ -131,13 +135,50 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const resetPassword = async (email) => {
+    try {
+      setError('');
+      setMessage('');
+      setLoading(true);
+      console.log('Attempting password reset for email:', email);
+
+      // Check if user exists
+      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+      if (signInMethods.length === 0) {
+        throw new Error('No account found with this email. Please sign up first.');
+      }
+
+      await sendPasswordResetEmail(auth, email);
+      setMessage('Password reset email sent. Please check your inbox.');
+    } catch (err) {
+      console.error('Password reset error:', err.code, err.message);
+      let errorMessage = 'Password reset failed. ';
+      switch (err.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email. Please sign up first.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email format. Please enter a valid email address.';
+          break;
+        default:
+          errorMessage = err.message;
+      }
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     loading,
     error,
+    message,
     login,
     signup,
-    logout
+    logout,
+    resetPassword
   };
 
   return (
