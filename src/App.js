@@ -13,6 +13,7 @@ import SelectProject from './components/SelectProject';
 import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import './styles/print.css';
@@ -219,12 +220,14 @@ function AppContent() {
   );
 }
 
-// Main App component
+// Wrap the AppContent with ErrorBoundary
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

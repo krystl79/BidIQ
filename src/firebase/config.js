@@ -14,6 +14,15 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
+// Check if all required Firebase config values are present
+const requiredConfig = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingConfig = requiredConfig.filter(key => !firebaseConfig[key]);
+
+if (missingConfig.length > 0) {
+  console.error('Missing Firebase configuration:', missingConfig);
+  throw new Error('Missing required Firebase configuration values');
+}
+
 export const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
