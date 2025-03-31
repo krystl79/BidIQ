@@ -69,7 +69,7 @@ function AppContent() {
 
   useEffect(() => {
     console.log('AppContent - Initial Mount:', { currentUser, location });
-  }, []);
+  }, [currentUser, location]);
 
   // Load profile data on mount
   useEffect(() => {
