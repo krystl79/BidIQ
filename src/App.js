@@ -63,16 +63,6 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
-  const [profileData, setProfileData] = useState({
-    companyName: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: ''
-  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Load profile data on mount
@@ -82,16 +72,19 @@ function AppContent() {
         if (currentUser) {
           // Load profile from database
           const profile = await getUserProfile();
-          if (profile) {
-            setProfileData(profile);
-          } else if (currentUser.email) {
+          if (!profile && currentUser.email) {
             // If no profile exists but we have user email, create initial profile
             const initialProfile = {
-              ...profileData,
-              email: currentUser.email
+              companyName: '',
+              contactName: '',
+              email: currentUser.email,
+              phone: '',
+              address: '',
+              city: '',
+              state: '',
+              zipCode: ''
             };
             await saveUserProfile(initialProfile);
-            setProfileData(initialProfile);
           }
         }
       } catch (error) {
