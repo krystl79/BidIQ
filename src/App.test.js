@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import LandingPage from './components/LandingPage';
 
 // Wrap the component with necessary providers
 const renderWithRouter = (component) => {
@@ -13,8 +14,10 @@ const renderWithRouter = (component) => {
 
 describe('App Component', () => {
   test('renders landing page at root path', () => {
-    renderWithRouter(<App />);
-    expect(screen.getByText(/Equipment Rental Bids in Minutes with AI/i)).toBeInTheDocument();
+    renderWithRouter(<LandingPage />);
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toBeInTheDocument();
+    expect(heading.textContent).toBe('Bids in Minutes');
   });
 
   test('renders login page when navigating to /login', () => {

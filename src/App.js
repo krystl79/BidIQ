@@ -37,8 +37,13 @@ const ProtectedRoute = ({ children }) => {
     checkAuth();
   }, [navigate, location]);
 
-  // Allow rendering if we're on a public route or if authenticated
-  if (!isAuthenticated && !['/', '/login'].includes(location.pathname)) {
+  // Always allow rendering for public routes
+  if (['/', '/login'].includes(location.pathname)) {
+    return children;
+  }
+
+  // For protected routes, check authentication
+  if (!isAuthenticated) {
     return null;
   }
 
