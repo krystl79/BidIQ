@@ -57,6 +57,17 @@ jest.mock('./contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => <>{children}</>,
 }));
 
+// Mock Firebase services
+jest.mock('./firebase/config', () => ({
+  app: {
+    auth: () => ({}),
+    firestore: () => ({})
+  },
+  storage: {},
+  functions: {},
+  analytics: null
+}));
+
 // Wrap the component with necessary providers
 const renderWithProviders = (component) => {
   return render(

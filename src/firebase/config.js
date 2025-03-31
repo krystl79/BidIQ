@@ -14,22 +14,40 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Check if all required Firebase config values are present
-const requiredConfig = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
-const missingConfig = requiredConfig.filter(key => !firebaseConfig[key]);
+// Only check for missing config in non-test environment
+if (process.env.NODE_ENV !== 'test') {
+  const requiredConfig = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+  const missingConfig = requiredConfig.filter(key => !firebaseConfig[key]);
 
-if (missingConfig.length > 0) {
-  console.error('Missing Firebase configuration:', missingConfig);
-  throw new Error('Missing required Firebase configuration values');
+  if (missingConfig.length > 0) {
+    console.error('Missing Firebase configuration:', missingConfig);
+    throw new Error('Missing required Firebase configuration values');
+  }
 }
 
-export const app = initializeApp(firebaseConfig);
-export const storage = getStorage(app);
-export const functions = getFunctions(app);
-
-// Only initialize analytics in browser environment
+// Initialize Firebase only if we're not in a test environment
+let app;
+let storage;
+let functions;
 let analytics = null;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+
+if (process.env.NODE_ENV !== 'test') {
+  app = initializeApp(firebaseConfig);
+  storage = getStorage(app);
+  functions = getFunctions(app);
+  
+  // Only initialize analytics in browser environment
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+} else {
+  // Mock Firebase services for testing
+  app = {
+    auth: () => ({}),
+    firestore: () => ({})
+  };
+  storage = {};
+  functions = {};
 }
-export { analytics }; 
+
+export { app, storage, functions, analytics }; 
