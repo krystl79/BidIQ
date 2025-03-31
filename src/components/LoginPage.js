@@ -113,8 +113,18 @@ const LoginPage = () => {
       navigate(from);
     } catch (error) {
       console.error('Auth error:', error);
-      // The error message is now handled in AuthContext
-      setError(error.message);
+      // Handle specific error cases
+      if (error.message.includes('already exists')) {
+        // If account exists, switch to login mode
+        setIsSignup(false);
+        setError('An account with this email already exists. Please log in instead.');
+      } else if (error.message.includes('No account found')) {
+        // If no account exists, switch to signup mode
+        setIsSignup(true);
+        setError('No account found with this email. Please sign up first.');
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
