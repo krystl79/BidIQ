@@ -25,6 +25,7 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   useEffect(() => {
+    console.log('ProtectedRoute - Auth State:', { currentUser, loading });
     if (!loading && !currentUser) {
       // Don't redirect if we're on a public route
       const publicRoutes = ['/', '/login'];
@@ -65,6 +66,10 @@ function AppContent() {
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    console.log('AppContent - Initial Mount:', { currentUser, location });
+  }, []);
 
   // Load profile data on mount
   useEffect(() => {
@@ -222,6 +227,19 @@ function AppContent() {
 
 // Wrap the AppContent with ErrorBoundary
 function App() {
+  useEffect(() => {
+    console.log('App - Environment:', process.env.NODE_ENV);
+    console.log('App - Firebase Config:', {
+      apiKey: process.env.REACT_APP_FIREBASE_API_KEY ? 'Present' : 'Missing',
+      authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN ? 'Present' : 'Missing',
+      projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
+      storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET ? 'Present' : 'Missing',
+      messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID ? 'Present' : 'Missing',
+      appId: process.env.REACT_APP_FIREBASE_APP_ID ? 'Present' : 'Missing',
+      measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID ? 'Present' : 'Missing'
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <AppContent />
