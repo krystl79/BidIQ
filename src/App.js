@@ -15,7 +15,7 @@ import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { getUserProfile, saveUserProfile } from './services/db';
-import { useAuth, AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 
 // Add ProtectedRoute component at the top level, before AppContent
