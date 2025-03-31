@@ -17,4 +17,10 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
-export const analytics = getAnalytics(app); 
+
+// Only initialize analytics in browser environment
+let analytics = null;
+if (typeof window !== 'undefined') {
+  analytics = getAnalytics(app);
+}
+export { analytics }; 
