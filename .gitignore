@@ -37,7 +37,6 @@ firebase-debug.*.log*
 
 # Netlify
 .netlify/
-netlify.toml
 
 # Optional npm cache directory
 .npm
