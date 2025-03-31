@@ -5,9 +5,6 @@ import AppWithRouter from './AppWithRouter';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './contexts/AuthContext';
 
-// Clear localStorage to ensure we start fresh
-localStorage.clear();
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
