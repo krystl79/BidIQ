@@ -83,9 +83,10 @@ describe('App Component', () => {
   test('renders login page when navigating to /login', () => {
     window.history.pushState({}, '', '/login');
     renderWithProviders(<App />);
-    expect(screen.getByText(/Welcome to BidIQ/i)).toBeInTheDocument();
+    expect(screen.getByText('Sign in to your account')).toBeInTheDocument();
     expect(screen.getByLabelText(/Email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+    expect(screen.getByText("Don't have an account? Sign up")).toBeInTheDocument();
   });
 });
 
