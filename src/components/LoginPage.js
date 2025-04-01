@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { saveUserProfile } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { isValidZipCode } from '../utils/validation';
 
 const LoginPage = () => {
   const { login, signup, resetPassword, loading: authLoading, error: authError, message: authMessage } = useAuth();
@@ -104,12 +105,6 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ZIP code validation function
-  const isValidZipCode = (zipCode) => {
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    return zipRegex.test(zipCode);
   };
 
   const handleSubmit = async (e) => {
