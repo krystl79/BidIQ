@@ -156,7 +156,10 @@ function AppContent() {
           path="/projects"
           element={
             <ProtectedRoute>
-              <ProjectList />
+              <div className="pb-16 md:pb-0">
+                <ProjectList />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />

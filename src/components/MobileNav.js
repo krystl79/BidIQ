@@ -3,18 +3,18 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const MobileNav = () => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Don't show navigation if user is not logged in
-  if (!user) return null;
+  if (!currentUser) return null;
 
   // Check if we're on a page that needs a back button
   const showBackButton = location.pathname === '/projects' || location.pathname === '/bids';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
       <div className="flex justify-around items-center h-16">
         {showBackButton ? (
           <button
