@@ -10,6 +10,7 @@ const LandingPage = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
   const [isInstallable, setIsInstallable] = useState(true);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -19,6 +20,7 @@ const LandingPage = () => {
       const isChrome = /chrome/i.test(userAgent);
       const isSafari = /safari/i.test(userAgent) && !isChrome;
       const isFirefox = /firefox/i.test(userAgent);
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
       
       console.log('Device Info:', {
         userAgent,
@@ -29,12 +31,13 @@ const LandingPage = () => {
         isFirefox,
         platform: navigator.platform,
         language: navigator.language,
-        standalone: window.matchMedia('(display-mode: standalone)').matches
+        standalone
       });
       
       setIsMobile(isMobileDevice);
       setIsIOS(isIOS);
       setIsSupportedBrowser(isChrome || isSafari || isFirefox);
+      setIsStandalone(standalone);
     };
 
     checkMobile();
