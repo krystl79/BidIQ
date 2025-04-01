@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getUserProfile, saveUserProfile } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
+import { getUserProfile, saveUserProfile } from '../services/db';
 
 const Profile = () => {
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
