@@ -17,7 +17,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
-import PrivateRoute from './components/PrivateRoute';
 import MobileNav from './components/MobileNav';
 
 // Add ProtectedRoute component at the top level, before AppContent
