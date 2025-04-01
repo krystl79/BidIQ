@@ -272,7 +272,7 @@ const ProjectForm = ({ initialData }) => {
 
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Project Timeline</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
                   Start <span className="text-red-500">*</span>

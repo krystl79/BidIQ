@@ -142,7 +142,7 @@ const ProjectList = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => (
               <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">{project.projectName}</h3>
                   <p className="text-sm text-gray-500 mb-4">{project.projectType}</p>
                   <div className="text-sm text-gray-600 space-y-2">
@@ -158,30 +158,30 @@ const ProjectList = () => {
                       </button>
                     </p>
                   </div>
-                  <div className="mt-4 flex justify-end space-x-3">
+                  <div className="mt-4 flex flex-wrap gap-2 justify-end">
                     <button
                       onClick={() => handleViewProject(project)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                      View Project
+                      View
                     </button>
                     <button
                       onClick={() => handleEditProject(project.id)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
-                      Edit Project
+                      Edit
                     </button>
                     <button
                       onClick={() => handleCreateBid(project)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                      className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                     >
-                      Create Bid
+                      Bid
                     </button>
                     <button
                       onClick={() => handleDeleteProject(project.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      Delete Project
+                      Delete
                     </button>
                   </div>
                 </div>
