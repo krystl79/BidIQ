@@ -1,16 +1,16 @@
-import { clientsClaim } from 'workbox-core';
-import { ExpirationPlugin } from 'workbox-expiration';
-import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
+/* eslint-disable no-restricted-globals */
+/* eslint-disable no-undef */
 
-clientsClaim();
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox-sw.js');
 
-precacheAndRoute(self.__WB_MANIFEST);
+workbox.core.clientsClaim();
+workbox.core.skipWaiting();
 
 const fileExtensionRegexp = new RegExp('/[^/?]+\\.[^/]+$');
+const pageRegexp = /^https:\/\/bidiq\.netlify\.app/;
+
+// Handle navigation requests
 registerRoute(
-  // Return false to exempt requests from being fulfilled by index.html.
   ({ request, url }) => {
     if (request.mode !== 'navigate') {
       return false;
@@ -26,22 +26,22 @@ registerRoute(
   createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
 );
 
+// Handle image requests
 registerRoute(
-  // Add in any other file extensions or routing criteria as needed.
-  ({ url }) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
+  ({ request }) => request.destination === 'image',
   new StaleWhileRevalidate({
     cacheName: 'images',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
 );
 
-// Push notification handling
-self.addEventListener('push', (event) => {
+// Handle push notifications
+self.addEventListener('push', function(event) {
   const options = {
     body: event.data.text(),
     icon: '/logo192.png',
@@ -62,7 +62,7 @@ self.addEventListener('push', (event) => {
         title: 'Close',
         icon: '/logo192.png'
       },
-    ]
+    ],
   };
 
   event.waitUntil(
@@ -70,45 +70,70 @@ self.addEventListener('push', (event) => {
   );
 });
 
-self.addEventListener('notificationclick', (event) => {
+// Handle notification clicks
+self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/dashboard')
+      clients.openWindow('/')
     );
   }
 });
 
-// Background sync for offline data
-self.addEventListener('sync', (event) => {
+// Handle background sync
+self.addEventListener('sync', function(event) {
   if (event.tag === 'sync-bids') {
     event.waitUntil(syncBids());
   }
 });
 
+// IndexedDB setup
+const DB_NAME = 'bidiq-offline';
+const DB_VERSION = 1;
+const STORE_NAME = 'bids';
+
+function openIndexedDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+// Sync function
 async function syncBids() {
   try {
     const db = await openIndexedDB();
-    const offlineBids = await db.getAll('offlineBids');
-    
-    for (const bid of offlineBids) {
-      await fetch('/api/bids', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bid),
-      });
-      await db.delete('offlineBids', bid.id);
-    }
-  } catch (error) {
-    console.error('Sync failed:', error);
-  }
-}
+    const transaction = db.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const bids = await new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
 
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+    // Here you would typically send the bids to your server
+    // For now, we'll just log them
+    console.log('Syncing bids:', bids);
+
+    // Clear the store after successful sync
+    const clearTransaction = db.transaction(STORE_NAME, 'readwrite');
+    const clearStore = clearTransaction.objectStore(STORE_NAME);
+    await new Promise((resolve, reject) => {
+      const request = clearStore.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error('Error syncing bids:', error);
   }
-}); 
+} 

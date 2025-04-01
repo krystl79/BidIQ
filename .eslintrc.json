@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "react-app",
+    "react-app/jest"
+  ],
+  "overrides": [
+    {
+      "files": ["**/service-worker.js"],
+      "env": {
+        "serviceworker": true
+      },
+      "rules": {
+        "no-restricted-globals": "off",
+        "no-undef": "off"
+      }
+    }
+  ]
+} 
