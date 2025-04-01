@@ -6,10 +6,22 @@ const LandingPage = () => {
   const { currentUser } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+      console.log('Is mobile device:', isMobileDevice);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Stash the event so it can be triggered later
@@ -20,25 +32,44 @@ const LandingPage = () => {
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
+      console.log('App installed successfully');
       // Clear the deferredPrompt
       setDeferredPrompt(null);
       // Hide the install button
       setShowInstallButton(false);
     });
+
+    // Check if the app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is already installed');
+      setShowInstallButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    // Show the install prompt
-    deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    await deferredPrompt.userChoice;
-    // Clear the deferredPrompt
-    setDeferredPrompt(null);
-    // Hide the install button
-    setShowInstallButton(false);
+    try {
+      console.log('Showing install prompt');
+      // Show the install prompt
+      deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      await deferredPrompt.userChoice;
+      // Clear the deferredPrompt
+      setDeferredPrompt(null);
+      // Hide the install button
+      setShowInstallButton(false);
+    } catch (error) {
+      console.error('Error during installation:', error);
+    }
   };
+
+  // Show install button only on mobile devices and when the app is installable
+  const shouldShowInstallButton = isMobile && showInstallButton;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,7 +104,7 @@ const LandingPage = () => {
                   </Link>
                 </>
               )}
-              {showInstallButton && (
+              {shouldShowInstallButton && (
                 <button
                   onClick={handleInstallClick}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
