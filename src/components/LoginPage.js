@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { saveUserProfile } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -30,12 +29,6 @@ const LoginPage = () => {
     'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
     'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
   ];
-
-  // ZIP code validation function
-  const isValidZipCode = (zipCode) => {
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    return zipRegex.test(zipCode);
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
