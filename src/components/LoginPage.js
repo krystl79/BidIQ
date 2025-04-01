@@ -118,69 +118,36 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      // Simple validation
-      if (!formData.email || !formData.password) {
-        setError('Please fill in all required fields');
-        return;
-      }
-
-      if (!formData.email.includes('@')) {
-        setError('Please enter a valid email address');
-        return;
-      }
-
-      if (isSignup) {
-        // Additional validation for signup
-        const requiredFields = [
-          { name: 'companyName', label: 'Company Name' },
-          { name: 'contactName', label: 'Contact Name' },
-          { name: 'phone', label: 'Phone' },
-          { name: 'address', label: 'Address' },
-          { name: 'city', label: 'City' },
-          { name: 'state', label: 'State' },
-          { name: 'zipCode', label: 'ZIP Code' }
-        ];
-
-        const missingFields = requiredFields.filter(field => !formData[field.name]);
-        if (missingFields.length > 0) {
-          setError(`Please fill in all required fields:\n${missingFields.map(field => field.label).join('\n')}`);
-          return;
-        }
-
-        // Validate ZIP code
-        if (!isValidZipCode(formData.zipCode)) {
-          setError('Please enter a valid ZIP code (e.g., 12345 or 12345-6789)');
-          return;
-        }
-
-        // Create the user account
-        await signup(formData.email, formData.password);
-        
-        // Save profile data
-        await saveUserProfile(formData);
-      } else {
-        // Attempt to log in
-        console.log('Attempting login with:', { email: formData.email });
+      // Try to sign in first
+      try {
         await login(formData.email, formData.password);
+        console.log('Login successful');
+        const from = location.state?.from || '/dashboard';
+        navigate(from);
+      } catch (loginError) {
+        console.log('Login failed:', loginError.code);
+        
+        // If user doesn't exist, try to create account
+        if (loginError.code === 'auth/user-not-found') {
+          try {
+            await signup(formData.email, formData.password);
+            console.log('Signup successful');
+            navigate('/dashboard');
+          } catch (signupError) {
+            console.log('Signup failed:', signupError.code);
+            if (signupError.code === 'auth/email-already-in-use') {
+              setError('This email is already registered. Please try logging in again.');
+            } else {
+              setError(signupError.message);
+            }
+          }
+        } else {
+          setError(loginError.message);
+        }
       }
-
-      // Navigate to the intended destination or dashboard
-      const from = location.state?.from || '/dashboard';
-      navigate(from);
     } catch (error) {
-      console.error('Auth error:', error);
-      // Handle specific error cases
-      if (error.message.includes('already exists')) {
-        // If account exists, switch to login mode
-        setIsSignup(false);
-        setError('An account with this email already exists. Please log in instead.');
-      } else if (error.message.includes('No account found')) {
-        // If no account exists, switch to signup mode
-        setIsSignup(true);
-        setError('No account found with this email. Please sign up first.');
-      } else {
-        setError(error.message);
-      }
+      console.error('Authentication error:', error);
+      setError('An error occurred during authentication. Please try again.');
     } finally {
       setLoading(false);
     }

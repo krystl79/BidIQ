@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setCurrentUser(user);
@@ -32,106 +33,37 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signup = async (email, password) => {
+    console.log('Attempting signup with:', email);
     try {
-      setError('');
-      setLoading(true);
-      console.log('Attempting signup with email:', email);
-      
-      // Check if user already exists
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      if (signInMethods.length > 0) {
-        console.log('User already exists with methods:', signInMethods);
-        throw new Error('An account with this email already exists. Please log in instead.');
-      }
-
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('Signup successful:', userCredential.user.email);
-      setCurrentUser(userCredential.user);
-      return userCredential.user;
-    } catch (err) {
-      console.error('Signup error:', err.code, err.message);
-      let errorMessage = 'Signup failed. ';
-      switch (err.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'An account with this email already exists. Please log in instead.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email format. Please enter a valid email address.';
-          break;
-        case 'auth/operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-          break;
-        case 'auth/weak-password':
-          errorMessage = 'Password should be at least 6 characters long.';
-          break;
-        default:
-          errorMessage = err.message;
-      }
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
+      return userCredential;
+    } catch (error) {
+      console.error('Signup error:', error.code, error.message);
+      throw error;
     }
   };
 
   const login = async (email, password) => {
+    console.log('Attempting login with:', email);
     try {
-      setError('');
-      setLoading(true);
-      console.log('Attempting login with email:', email);
-
-      // Check if user exists
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      if (signInMethods.length === 0) {
-        console.log('No account found for email:', email);
-        throw new Error('No account found with this email. Please sign up first.');
-      }
-
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Login successful:', userCredential.user.email);
-      setCurrentUser(userCredential.user);
-      return userCredential.user;
-    } catch (err) {
-      console.error('Login error:', err.code, err.message);
-      let errorMessage = 'Login failed. ';
-      switch (err.code) {
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid email or password. Please check your credentials.';
-          break;
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email. Please sign up first.';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email format. Please enter a valid email address.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
-          break;
-        default:
-          errorMessage = err.message;
-      }
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
+      return userCredential;
+    } catch (error) {
+      console.error('Login error:', error.code, error.message);
+      throw error;
     }
   };
 
   const logout = async () => {
+    console.log('Attempting logout');
     try {
-      setError('');
-      setLoading(true);
       await signOut(auth);
-      setCurrentUser(null);
-    } catch (err) {
-      console.error('Logout error:', err.code, err.message);
-      setError(`Logout failed: ${err.message}`);
-      throw err;
-    } finally {
-      setLoading(false);
+      console.log('Logout successful');
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
     }
   };
 
