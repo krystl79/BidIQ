@@ -10,38 +10,30 @@ const LandingPage = () => {
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
 
   useEffect(() => {
-    // Check if device is mobile and browser supports PWA installation
-    const checkDeviceAndBrowser = () => {
-      const userAgent = navigator.userAgent;
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-      const isChrome = /Chrome/.test(userAgent);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
-      const isFirefox = /Firefox/.test(userAgent);
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isChrome = /chrome/i.test(userAgent);
+      const isSafari = /safari/i.test(userAgent) && !isChrome;
+      const isFirefox = /firefox/i.test(userAgent);
       
-      // Log device and browser information
       console.log('Device Info:', {
         userAgent,
         isMobileDevice,
         isChrome,
         isSafari,
-        isFirefox
+        isFirefox,
+        platform: navigator.platform,
+        language: navigator.language,
+        standalone: window.matchMedia('(display-mode: standalone)').matches
       });
-
+      
       setIsMobile(isMobileDevice);
-      
-      // Check if browser supports PWA installation
-      const supportsPWA = isChrome || isFirefox || (isSafari && isMobileDevice);
-      setIsSupportedBrowser(supportsPWA);
-      
-      console.log('PWA Support:', {
-        supportsPWA,
-        isMobileDevice,
-        browser: isChrome ? 'Chrome' : isSafari ? 'Safari' : isFirefox ? 'Firefox' : 'Other'
-      });
+      setIsSupportedBrowser(isChrome || isSafari || isFirefox);
     };
 
-    checkDeviceAndBrowser();
-    window.addEventListener('resize', checkDeviceAndBrowser);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
 
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -70,7 +62,7 @@ const LandingPage = () => {
     }
 
     return () => {
-      window.removeEventListener('resize', checkDeviceAndBrowser);
+      window.removeEventListener('resize', checkMobile);
     };
   }, []);
 
