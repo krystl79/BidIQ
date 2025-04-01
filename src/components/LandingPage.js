@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 const LandingPage = () => {
   const { currentUser } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
@@ -79,7 +78,7 @@ const LandingPage = () => {
   };
 
   // Show install button only on mobile devices with supported browsers and when the app is installable
-  const shouldShowInstallButton = isMobile && isSupportedBrowser && showInstallButton;
+  const shouldShowInstallButton = isMobile && isSupportedBrowser && isInstallable;
 
   return (
     <div className="min-h-screen bg-gray-50">
