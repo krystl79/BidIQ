@@ -17,6 +17,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
+import PrivateRoute from './components/PrivateRoute';
+import MobileNav from './components/MobileNav';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
@@ -136,7 +138,10 @@ function AppContent() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <div className="pb-16 md:pb-0">
+                <Dashboard />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
@@ -176,7 +181,10 @@ function AppContent() {
           path="/bids"
           element={
             <ProtectedRoute>
-              <BidsList />
+              <div className="pb-16 md:pb-0">
+                <BidsList />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
@@ -184,7 +192,10 @@ function AppContent() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <Profile />
+              <div className="pb-16 md:pb-0">
+                <Profile />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
@@ -217,6 +228,17 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <ViewBid />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <Dashboard />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
