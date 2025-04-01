@@ -40,6 +40,73 @@ registerRoute(
   })
 );
 
+// Push notification handling
+self.addEventListener('push', (event) => {
+  const options = {
+    body: event.data.text(),
+    icon: '/logo192.png',
+    badge: '/logo192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'View Details',
+        icon: '/logo192.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/logo192.png'
+      },
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification('BidIQ Notification', options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/dashboard')
+    );
+  }
+});
+
+// Background sync for offline data
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-bids') {
+    event.waitUntil(syncBids());
+  }
+});
+
+async function syncBids() {
+  try {
+    const db = await openIndexedDB();
+    const offlineBids = await db.getAll('offlineBids');
+    
+    for (const bid of offlineBids) {
+      await fetch('/api/bids', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bid),
+      });
+      await db.delete('offlineBids', bid.id);
+    }
+  } catch (error) {
+    console.error('Sync failed:', error);
+  }
+}
+
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
