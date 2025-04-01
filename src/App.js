@@ -210,18 +210,24 @@ function AppContent() {
           }
         />
         <Route
-          path="/view-project/:projectId"
+          path="/project/:projectId"
           element={
             <ProtectedRoute>
-              <ViewProject />
+              <div className="pb-16 md:pb-0">
+                <ViewProject />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
         <Route
-          path="/edit-project/:projectId"
+          path="/projects/:projectId/edit"
           element={
             <ProtectedRoute>
-              <EditProject />
+              <div className="pb-16 md:pb-0">
+                <EditProject />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
