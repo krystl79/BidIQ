@@ -33,7 +33,7 @@ const LandingPage = () => {
     // Show the install prompt
     deferredPrompt.prompt();
     // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
+    await deferredPrompt.userChoice;
     // Clear the deferredPrompt
     setDeferredPrompt(null);
     // Hide the install button
