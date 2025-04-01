@@ -7,17 +7,41 @@ const LandingPage = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
 
   useEffect(() => {
-    // Check if device is mobile
-    const checkMobile = () => {
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Check if device is mobile and browser supports PWA installation
+    const checkDeviceAndBrowser = () => {
+      const userAgent = navigator.userAgent;
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isChrome = /Chrome/.test(userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+      const isFirefox = /Firefox/.test(userAgent);
+      
+      // Log device and browser information
+      console.log('Device Info:', {
+        userAgent,
+        isMobileDevice,
+        isChrome,
+        isSafari,
+        isFirefox
+      });
+
       setIsMobile(isMobileDevice);
-      console.log('Is mobile device:', isMobileDevice);
+      
+      // Check if browser supports PWA installation
+      const supportsPWA = isChrome || isFirefox || (isSafari && isMobileDevice);
+      setIsSupportedBrowser(supportsPWA);
+      
+      console.log('PWA Support:', {
+        supportsPWA,
+        isMobileDevice,
+        browser: isChrome ? 'Chrome' : isSafari ? 'Safari' : isFirefox ? 'Firefox' : 'Other'
+      });
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    checkDeviceAndBrowser();
+    window.addEventListener('resize', checkDeviceAndBrowser);
 
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -46,7 +70,7 @@ const LandingPage = () => {
     }
 
     return () => {
-      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('resize', checkDeviceAndBrowser);
     };
   }, []);
 
@@ -68,8 +92,8 @@ const LandingPage = () => {
     }
   };
 
-  // Show install button only on mobile devices and when the app is installable
-  const shouldShowInstallButton = isMobile && showInstallButton;
+  // Show install button only on mobile devices with supported browsers and when the app is installable
+  const shouldShowInstallButton = isMobile && isSupportedBrowser && showInstallButton;
 
   return (
     <div className="min-h-screen bg-gray-50">
