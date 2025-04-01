@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { saveUserProfile } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
 import { isValidZipCode } from '../utils/validation';
 
 const LoginPage = () => {
