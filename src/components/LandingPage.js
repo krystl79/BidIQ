@@ -7,12 +7,15 @@ const LandingPage = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
+  const [isInstallable, setIsInstallable] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isIOS = /iphone|ipad|ipod/i.test(userAgent.toLowerCase());
       const isChrome = /chrome/i.test(userAgent);
       const isSafari = /safari/i.test(userAgent) && !isChrome;
       const isFirefox = /firefox/i.test(userAgent);
@@ -20,6 +23,7 @@ const LandingPage = () => {
       console.log('Device Info:', {
         userAgent,
         isMobileDevice,
+        isIOS,
         isChrome,
         isSafari,
         isFirefox,
@@ -29,6 +33,7 @@ const LandingPage = () => {
       });
       
       setIsMobile(isMobileDevice);
+      setIsIOS(isIOS);
       setIsSupportedBrowser(isChrome || isSafari || isFirefox);
     };
 
@@ -38,28 +43,17 @@ const LandingPage = () => {
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
       console.log('beforeinstallprompt event fired');
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later
       setDeferredPrompt(e);
-      // Show the install button
-      setShowInstallButton(true);
+      setIsInstallable(true);
     });
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
       console.log('App installed successfully');
-      // Clear the deferredPrompt
+      setIsInstallable(false);
       setDeferredPrompt(null);
-      // Hide the install button
-      setShowInstallButton(false);
     });
-
-    // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('App is already installed');
-      setShowInstallButton(false);
-    }
 
     return () => {
       window.removeEventListener('resize', checkMobile);
@@ -68,19 +62,16 @@ const LandingPage = () => {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-
+    
     try {
-      console.log('Showing install prompt');
-      // Show the install prompt
+      console.log('Installing app...');
       deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
-      await deferredPrompt.userChoice;
-      // Clear the deferredPrompt
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Installation outcome:', outcome);
       setDeferredPrompt(null);
-      // Hide the install button
-      setShowInstallButton(false);
+      setIsInstallable(false);
     } catch (error) {
-      console.error('Error during installation:', error);
+      console.error('Installation error:', error);
     }
   };
 
@@ -248,6 +239,35 @@ const LandingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Download App Button */}
+      {isMobile && !isStandalone && (
+        <div className="mt-8">
+          {isIOS ? (
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">To install the app on your iPhone:</p>
+              <ol className="text-left text-gray-600 space-y-2 mb-4">
+                <li>1. Tap the share button <span className="font-semibold">(□↑)</span> at the bottom of your browser</li>
+                <li>2. Scroll down and tap <span className="font-semibold">"Add to Home Screen"</span></li>
+                <li>3. Tap <span className="font-semibold">"Add"</span> to confirm</li>
+              </ol>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Refresh Page
+              </button>
+            </div>
+          ) : isInstallable ? (
+            <button
+              onClick={handleInstallClick}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Download App
+            </button>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 };
