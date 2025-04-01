@@ -78,7 +78,7 @@ const LandingPage = () => {
   };
 
   // Show install button only on mobile devices with supported browsers and when the app is installable
-  const shouldShowInstallButton = isMobile && isSupportedBrowser && isInstallable;
+  const shouldShowInstallButton = isMobile && isSupportedBrowser && isInstallable && !isIOS;
 
   return (
     <div className="min-h-screen bg-gray-50">
