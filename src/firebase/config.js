@@ -3,6 +3,7 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Default configuration for development
 const defaultConfig = {
@@ -56,6 +57,7 @@ let storage;
 let functions;
 let analytics = null;
 let auth = null;
+let db = null;
 
 try {
   if (process.env.NODE_ENV !== 'test') {
@@ -63,6 +65,7 @@ try {
     auth = getAuth(app);
     storage = getStorage(app);
     functions = getFunctions(app);
+    db = getFirestore(app);
     
     // Only initialize analytics in browser environment
     if (typeof window !== 'undefined') {
@@ -78,6 +81,7 @@ try {
     auth = {};
     storage = {};
     functions = {};
+    db = {};
     console.log('Using mock Firebase services for testing');
   }
 } catch (error) {
@@ -85,4 +89,4 @@ try {
   throw error;
 }
 
-export { app, auth, storage, functions, analytics }; 
+export { app, auth, storage, functions, analytics, db }; 

@@ -1,4 +1,6 @@
 import { openDB } from 'idb';
+import { collection, query, orderBy, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const DB_NAME = 'buildiqDB';
 const DB_VERSION = 1;
@@ -243,4 +245,111 @@ export async function initializeDB(sampleData) {
   if (sampleData.bids) {
     await Promise.all(sampleData.bids.map(bid => saveBid(bid)));
   }
-} 
+}
+
+// RFP Response Functions
+export const getAllRFPResponses = async () => {
+  try {
+    const responsesRef = collection(db, 'rfpResponses');
+    const q = query(responsesRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting RFP responses:', error);
+    throw error;
+  }
+};
+
+export const getRFPResponse = async (responseId) => {
+  try {
+    const docRef = doc(db, 'rfpResponses', responseId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting RFP response:', error);
+    throw error;
+  }
+};
+
+export const createRFPResponseFromSolicitation = async (solicitationData) => {
+  try {
+    const responsesRef = collection(db, 'rfpResponses');
+    const newResponse = {
+      title: solicitationData.fileName || 'Untitled Solicitation',
+      solicitationId: solicitationData.id,
+      solicitationFile: {
+        name: solicitationData.fileName,
+        url: solicitationData.fileUrl,
+        uploadedAt: solicitationData.uploadedAt
+      },
+      status: 'New',
+      company: '',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      notes: ''
+    };
+    
+    const docRef = await addDoc(responsesRef, newResponse);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating RFP response:', error);
+    throw error;
+  }
+};
+
+export const updateRFPResponse = async (responseId, responseData) => {
+  try {
+    const docRef = doc(db, 'rfpResponses', responseId);
+    const updatedResponse = {
+      ...responseData,
+      updatedAt: serverTimestamp()
+    };
+    
+    await updateDoc(docRef, updatedResponse);
+  } catch (error) {
+    console.error('Error updating RFP response:', error);
+    throw error;
+  }
+};
+
+export const deleteRFPResponse = async (responseId) => {
+  try {
+    const docRef = doc(db, 'rfpResponses', responseId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting RFP response:', error);
+    throw error;
+  }
+};
+
+export const getRFPResponsesBySolicitation = async (solicitationId) => {
+  try {
+    const responsesRef = collection(db, 'rfpResponses');
+    const q = query(
+      responsesRef, 
+      where('solicitationId', '==', solicitationId),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting RFP responses by solicitation:', error);
+    throw error;
+  }
+}; 
