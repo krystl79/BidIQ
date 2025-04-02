@@ -2,6 +2,8 @@ import { storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
+import { db } from '../firebase/config';
+import { collection, addDoc } from 'firebase/firestore';
 
 export const uploadSolicitation = async (file, userId) => {
   try {
@@ -30,7 +32,28 @@ export const uploadSolicitation = async (file, userId) => {
       userId: userId
     });
 
-    return result.data;
+    // Create an RFP response entry
+    const rfpResponse = await addDoc(collection(db, 'rfpResponses'), {
+      title: result.data.projectData.name || 'Untitled Solicitation',
+      company: '',
+      status: 'Draft',
+      solicitationId: result.data.projectId,
+      solicitationFile: {
+        name: filename,
+        url: downloadURL,
+        uploadedAt: new Date().toISOString()
+      },
+      dueDate: result.data.projectData.dueDate || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      userId: userId,
+      notes: result.data.projectData.description || ''
+    });
+
+    return {
+      ...result.data,
+      rfpResponseId: rfpResponse.id
+    };
   } catch (error) {
     console.error('Error uploading solicitation:', error);
     throw new Error('Failed to upload solicitation. Please try again.');
@@ -44,7 +67,25 @@ export const processSolicitationLink = async (link, userId) => {
       link: link,
       userId: userId
     });
-    return result.data;
+
+    // Create an RFP response entry
+    const rfpResponse = await addDoc(collection(db, 'rfpResponses'), {
+      title: result.data.projectData.name || 'Untitled Solicitation',
+      company: '',
+      status: 'Draft',
+      solicitationId: result.data.projectId,
+      solicitationLink: link,
+      dueDate: result.data.projectData.dueDate || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      userId: userId,
+      notes: result.data.projectData.description || ''
+    });
+
+    return {
+      ...result.data,
+      rfpResponseId: rfpResponse.id
+    };
   } catch (error) {
     console.error('Error processing solicitation link:', error);
     throw new Error('Failed to process solicitation link. Please try again.');

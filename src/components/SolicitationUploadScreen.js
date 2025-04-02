@@ -24,6 +24,11 @@ const SolicitationUploadScreen = () => {
       const result = await uploadSolicitation(file, currentUser.uid);
       setAnalysisResult(result);
       setSuccess('Solicitation uploaded and processed successfully!');
+      
+      // Navigate to the RFP response view after a short delay
+      setTimeout(() => {
+        navigate(`/rfp-responses/${result.rfpResponseId}`);
+      }, 2000);
     } catch (err) {
       setError(err.message || 'Error uploading solicitation');
     } finally {
@@ -43,6 +48,11 @@ const SolicitationUploadScreen = () => {
       const result = await processSolicitationLink(link, currentUser.uid);
       setAnalysisResult(result);
       setSuccess('Solicitation processed successfully!');
+      
+      // Navigate to the RFP response view after a short delay
+      setTimeout(() => {
+        navigate(`/rfp-responses/${result.rfpResponseId}`);
+      }, 2000);
     } catch (err) {
       setError(err.message || 'Error processing solicitation link');
     } finally {
