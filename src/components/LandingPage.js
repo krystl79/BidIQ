@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../logo.svg';
 
 const LandingPage = () => {
   const { currentUser } = useAuth();
@@ -21,18 +22,6 @@ const LandingPage = () => {
       const isFirefox = /firefox/i.test(userAgent);
       const standalone = window.matchMedia('(display-mode: standalone)').matches;
       
-      console.log('Device Info:', {
-        userAgent,
-        isMobileDevice,
-        isIOS,
-        isChrome,
-        isSafari,
-        isFirefox,
-        platform: navigator.platform,
-        language: navigator.language,
-        standalone
-      });
-      
       setIsMobile(isMobileDevice);
       setIsIOS(isIOS);
       setIsSupportedBrowser(isChrome || isSafari || isFirefox);
@@ -41,18 +30,12 @@ const LandingPage = () => {
 
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
-    // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
     });
-
-    // Listen for successful installation
     window.addEventListener('appinstalled', () => {
-      console.log('App installed successfully');
       setIsInstallable(false);
       setDeferredPrompt(null);
     });
@@ -64,12 +47,9 @@ const LandingPage = () => {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    
     try {
-      console.log('Installing app...');
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log('Installation outcome:', outcome);
       setDeferredPrompt(null);
       setIsInstallable(false);
     } catch (error) {
@@ -77,7 +57,6 @@ const LandingPage = () => {
     }
   };
 
-  // Show install button only on mobile devices with supported browsers and when the app is installable
   const shouldShowInstallButton = isMobile && isSupportedBrowser && isInstallable && !isIOS;
 
   return (
@@ -87,7 +66,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">BidIQ</h1>
+              <Link to="/" className="flex items-center">
+                <img src="/logo.png" alt="BidIQ Logo" className="h-8 w-auto" />
+                <h1 className="ml-2 text-2xl font-bold text-blue-600">BidIQ</h1>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               {currentUser ? (
@@ -116,7 +98,7 @@ const LandingPage = () => {
               {shouldShowInstallButton && (
                 <button
                   onClick={handleInstallClick}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -130,44 +112,102 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-              <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block">Streamline Your</span>
-                  <span className="block text-blue-600">Construction Bids</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Manage construction bids efficiently with our comprehensive platform. Track, analyze, and win more projects with BidIQ.
-                </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                  <div className="rounded-md shadow">
-                    <Link
-                      to="/login?mode=signup"
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
-                    >
-                      Get Started
-                    </Link>
-                  </div>
-                  <div className="mt-3 sm:mt-0 sm:ml-3">
-                    <Link
-                      to="/login"
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10"
-                    >
-                      Sign In
-                    </Link>
-                  </div>
-                </div>
+      <div className="relative bg-blue-600 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="md:w-1/2">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Equipment Rental Bids in Minutes
+              </h1>
+              <p className="text-xl text-blue-100 mb-8">
+                Save time, win more bids, and get competitive pricing for every project.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/login?mode=signup"
+                  className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
+                >
+                  START ESTIMATE
+                </Link>
+                <Link
+                  to="/features"
+                  className="inline-flex justify-center items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-blue-700"
+                >
+                  EXPLORE FEATURES
+                </Link>
               </div>
-            </main>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rental Partners Box */}
+      <div className="bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">For Rental Partners</h3>
+            <p className="text-gray-600 mb-4">
+              Get real-time leads from active projects and connect with contractors in your area.
+            </p>
+            <Link
+              to="/partners/signup"
+              className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 w-full"
+            >
+              JOIN AS EQUIPMENT PARTNER
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Why Choose Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Why Choose BidIQ?
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">AI-Powered Estimates</h3>
+              <p className="text-gray-600">Get accurate equipment recommendations based on project type and requirements.</p>
+            </div>
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Save Time</h3>
+              <p className="text-gray-600">Create professional bids in minutes instead of hours.</p>
+            </div>
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Competitive Pricing</h3>
+              <p className="text-gray-600">Access real-time rental rates from local equipment providers.</p>
+            </div>
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Win More Bids</h3>
+              <p className="text-gray-600">Stand out with professional, detailed equipment quotes.</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Features Section */}
-      <div className="py-12 bg-white">
+      <div className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <h2 className="text-base text-blue-600 font-semibold tracking-wide uppercase">Features</h2>
@@ -176,7 +216,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-16">
             <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
               {/* Feature 1 */}
               <div className="relative">
@@ -242,34 +282,23 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Download App Button */}
-      {isMobile && !isStandalone && (
-        <div className="mt-8">
-          {isIOS ? (
-            <div className="text-center">
-              <p className="text-gray-600 mb-4">To install the app on your iPhone:</p>
-              <ol className="text-left text-gray-600 space-y-2 mb-4">
-                <li>1. Tap the share button <span className="font-semibold">(□↑)</span> at the bottom of your browser</li>
-                <li>2. Scroll down and tap <span className="font-semibold">"Add to Home Screen"</span></li>
-                <li>3. Tap <span className="font-semibold">"Add"</span> to confirm</li>
-              </ol>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Refresh Page
-              </button>
-            </div>
-          ) : isInstallable ? (
-            <button
-              onClick={handleInstallClick}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Download App
-            </button>
-          ) : null}
+      {/* Call to Action */}
+      <div className="bg-blue-600 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Create Better Equipment Rental Bids?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Start your first estimate in minutes and see the difference AI can make.
+          </p>
+          <Link
+            to="/login?mode=signup"
+            className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
+          >
+            START YOUR FIRST ESTIMATE
+          </Link>
         </div>
-      )}
+      </div>
     </div>
   );
 };
