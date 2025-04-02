@@ -74,39 +74,44 @@ const ChatBot = ({ onClose }) => {
 
   const handleCreateProject = useCallback(async () => {
     try {
-      // Create project in Firestore
-      const projectRef = await addDoc(collection(db, 'projects'), {
-        ...projectData,
-        userId: currentUser?.uid || 'anonymous',
-        createdAt: serverTimestamp(),
-        status: 'active'
-      });
+      if (currentUser) {
+        // Create project in Firestore only if user is signed in
+        const projectRef = await addDoc(collection(db, 'projects'), {
+          ...projectData,
+          userId: currentUser.uid,
+          createdAt: serverTimestamp(),
+          status: 'active'
+        });
 
-      // Create bid in Firestore
-      await addDoc(collection(db, 'bids'), {
-        projectId: projectRef.id,
-        userId: currentUser?.uid || 'anonymous',
-        status: 'draft',
-        createdAt: serverTimestamp(),
-        projectDetails: projectData
-      });
+        // Create bid in Firestore
+        await addDoc(collection(db, 'bids'), {
+          projectId: projectRef.id,
+          userId: currentUser.uid,
+          status: 'draft',
+          createdAt: serverTimestamp(),
+          projectDetails: projectData
+        });
 
-      // Update createdProjectId with actual project ID
-      setCreatedProjectId(projectRef.id);
+        // Update createdProjectId with actual project ID
+        setCreatedProjectId(projectRef.id);
+      } else {
+        // For non-signed in users, just set a temporary ID
+        setCreatedProjectId('temp-id');
+      }
 
       // Add success message
-      addBotMessage('Great! I\'ve created your project and bid.');
+      addBotMessage('Great! I\'ve prepared your bid.');
       
-      // Navigate to project details after a short delay
+      // Navigate to bid view after a short delay
       setTimeout(() => {
-        navigate(`/projects/${projectRef.id}`);
+        handleViewBid();
       }, 2000);
 
     } catch (error) {
       console.error('Error creating project:', error);
-      addBotMessage(`I'm sorry, there was an error creating your project: ${error.message}. Please try again or contact support if the issue persists.`);
+      addBotMessage(`I'm sorry, there was an error preparing your bid: ${error.message}. Please try again or contact support if the issue persists.`);
     }
-  }, [projectData, currentUser, navigate]);
+  }, [projectData, currentUser, handleViewBid]);
 
   const handleUserInput = useCallback(async (input) => {
     if (!input.trim()) return;
