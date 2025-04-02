@@ -324,12 +324,10 @@ function AppContent() {
         <Route
           path="/projects/:projectId/bid"
           element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <BidView />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
+            <div className="pb-16 md:pb-0">
+              <BidView />
+              <MobileNav />
+            </div>
           }
         />
       </Routes>
