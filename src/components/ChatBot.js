@@ -4,11 +4,34 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
+// Move steps array outside the component to prevent recreation on each render
+const steps = [
+  { type: 'text', question: "What is the name of your project?" },
+  { type: 'date', question: "What is the start date of your project?" },
+  { type: 'date', question: "When do you need your project completed by?" },
+  { type: 'location', question: "Where will your project be taking place? (Please enter City, State, Zip Code)" },
+  {
+    type: 'choice',
+    question: "What type of project are you working on?",
+    options: ["Install Holiday Decorations"]
+  },
+  {
+    type: 'choice',
+    question: "Is your home a single story or 2-story?",
+    options: ["Single Story", "2-Story"]
+  },
+  {
+    type: 'choice',
+    question: "Are you comfortable climbing a ladder?",
+    options: ["Yes", "No"]
+  }
+];
+
 const ChatBot = ({ onClose }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [currentStep, setCurrentStep] = useState('project_name');
+  const [currentStep, setCurrentStep] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [projectData, setProjectData] = useState({
     projectName: '',
@@ -19,7 +42,7 @@ const ChatBot = ({ onClose }) => {
       state: '',
       zipCode: ''
     },
-    projectType: 'Standard',
+    projectType: '',
     homeType: '',
     climbingLadder: null,
     equipmentNeeded: []
@@ -40,7 +63,7 @@ const ChatBot = ({ onClose }) => {
     // Only show initial messages once
     if (!hasShownInitialMessages.current) {
       addBotMessage("👋 Hi! I'm here to help you get started with your project.");
-      addBotMessage("What would you like to name this project?");
+      addBotMessage(steps[0].question);
       hasShownInitialMessages.current = true;
     }
   }, []); // Empty dependency array since we only want this to run once
@@ -98,88 +121,38 @@ const ChatBot = ({ onClose }) => {
 
     try {
       switch (currentStep) {
-        case 'project_name':
-          setProjectData(prev => ({ ...prev, name: input }));
-          setCurrentStep('project_description');
-          setMessages(prev => [...prev, {
-            text: "Please describe your project in detail.",
-            sender: 'bot'
-          }]);
+        case 0:
+          setProjectData(prev => ({ ...prev, projectName: input }));
+          setCurrentStep(1);
+          addBotMessage(steps[1].question);
           break;
-        case 'project_description':
-          setProjectData(prev => ({ ...prev, description: input }));
-          setCurrentStep('project_location');
-          setMessages(prev => [...prev, {
-            text: "Where is the project located?",
-            sender: 'bot'
-          }]);
-          break;
-        case 'project_location':
-          setProjectData(prev => ({ ...prev, location: input }));
-          setCurrentStep('project_start_date');
-          setMessages(prev => [...prev, {
-            text: "When would you like the project to start?",
-            sender: 'bot'
-          }]);
-          break;
-        case 'project_start_date':
+        case 1:
           setProjectData(prev => ({ ...prev, startDate: input }));
-          setCurrentStep('project_end_date');
-          setMessages(prev => [...prev, {
-            text: "When would you like the project to be completed?",
-            sender: 'bot'
-          }]);
+          setCurrentStep(2);
+          addBotMessage(steps[2].question);
           break;
-        case 'project_end_date':
+        case 2:
           setProjectData(prev => ({ ...prev, endDate: input }));
-          setCurrentStep('project_budget');
-          setMessages(prev => [...prev, {
-            text: "What is your budget for this project?",
-            sender: 'bot'
-          }]);
+          setCurrentStep(3);
+          addBotMessage(steps[3].question);
           break;
-        case 'project_budget':
-          setProjectData(prev => ({ ...prev, budget: input }));
-          setCurrentStep('project_scope');
-          setMessages(prev => [...prev, {
-            text: "What is the scope of work for this project?",
-            sender: 'bot'
-          }]);
+        case 3:
+          setProjectData(prev => ({ ...prev, location: input }));
+          setCurrentStep(4);
+          addBotMessage(steps[4].question);
           break;
-        case 'project_scope':
-          setProjectData(prev => ({ ...prev, scope: input }));
-          setCurrentStep('project_requirements');
-          setMessages(prev => [...prev, {
-            text: "What are the specific requirements for this project?",
-            sender: 'bot'
-          }]);
+        case 4:
+          setProjectData(prev => ({ ...prev, projectType: input }));
+          setCurrentStep(5);
+          addBotMessage(steps[5].question);
           break;
-        case 'project_requirements':
-          setProjectData(prev => ({ ...prev, requirements: input }));
-          setCurrentStep('project_timeline');
-          setMessages(prev => [...prev, {
-            text: "What is the timeline for this project?",
-            sender: 'bot'
-          }]);
+        case 5:
+          setProjectData(prev => ({ ...prev, homeType: input }));
+          setCurrentStep(6);
+          addBotMessage(steps[6].question);
           break;
-        case 'project_timeline':
-          setProjectData(prev => ({ ...prev, timeline: input }));
-          setCurrentStep('project_equipment');
-          setMessages(prev => [...prev, {
-            text: "What equipment will be needed for this project?",
-            sender: 'bot'
-          }]);
-          break;
-        case 'project_equipment':
-          setProjectData(prev => ({ ...prev, equipment: input }));
-          setCurrentStep('project_ladder_comfort');
-          setMessages(prev => [...prev, {
-            text: "Are you comfortable working on a ladder?",
-            sender: 'bot'
-          }]);
-          break;
-        case 'project_ladder_comfort':
-          setProjectData(prev => ({ ...prev, ladderComfort: input }));
+        case 6:
+          setProjectData(prev => ({ ...prev, climbingLadder: input }));
           setCreatedProjectId('temp-id'); // Set temporary ID to trigger View Bid button
           handleCreateProject();
           break;
@@ -257,7 +230,7 @@ const ChatBot = ({ onClose }) => {
         </div>
 
         <div className="p-4 border-t">
-          {currentStep === 'project_equipment' && !createdProjectId && (
+          {currentStep === 4 && !createdProjectId && (
             <div className="mb-4">
               <button
                 onClick={() => setUserInput("Install Holiday Decorations")}
@@ -268,7 +241,24 @@ const ChatBot = ({ onClose }) => {
             </div>
           )}
           
-          {currentStep === 'project_ladder_comfort' && !createdProjectId && (
+          {currentStep === 5 && !createdProjectId && (
+            <div className="mb-4 space-y-2">
+              <button
+                onClick={() => setUserInput("Single Story")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                Single Story
+              </button>
+              <button
+                onClick={() => setUserInput("2-Story")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                2-Story
+              </button>
+            </div>
+          )}
+          
+          {currentStep === 6 && !createdProjectId && (
             <div className="mb-4 space-y-2">
               <button
                 onClick={() => setUserInput("Yes")}
@@ -288,7 +278,7 @@ const ChatBot = ({ onClose }) => {
           {!createdProjectId ? (
             <div className="flex space-x-2">
               <input
-                type={currentStep === 'project_start_date' || currentStep === 'project_end_date' ? 'date' : 'text'}
+                type={steps[currentStep]?.type === 'date' ? 'date' : 'text'}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyPress={handleKeyPress}
