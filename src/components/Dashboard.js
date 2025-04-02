@@ -10,9 +10,20 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-            Welcome back, {currentUser?.email}
-          </h2>
+          <div className="flex flex-col items-center">
+            <img 
+              src="/logo.png" 
+              alt="BidIQ Logo" 
+              className="h-16 w-auto mb-4"
+              onError={(e) => {
+                console.error('Logo failed to load');
+                e.target.style.display = 'none';
+              }}
+            />
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              Welcome back, {currentUser?.email}
+            </h2>
+          </div>
         </div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
