@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllRFPResponses } from '../services/db';
+import { getAllRFPResponses, deleteRFPResponse } from '../services/db';
 
 const RFPProposalsList = () => {
   const navigate = useNavigate();
