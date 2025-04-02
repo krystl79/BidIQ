@@ -34,7 +34,7 @@ export default function SolicitationUpload() {
 
   const handleUpload = async () => {
     if (!user) {
-      setError('Please sign in to upload solicitations');
+      setError('Please sign in to upload solicitations or RFPs');
       return;
     }
 
@@ -145,7 +145,7 @@ export default function SolicitationUpload() {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">
-        Upload Solicitation
+        Upload Solicitation or RFP
       </h1>
 
       {error && (

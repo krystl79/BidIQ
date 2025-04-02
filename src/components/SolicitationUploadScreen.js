@@ -55,7 +55,7 @@ const SolicitationUploadScreen = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Upload Solicitation</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Upload Solicitation or RFP</h2>
             <button
               onClick={() => navigate('/dashboard')}
               className="text-gray-600 hover:text-gray-900"
