@@ -22,9 +22,7 @@ import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 import MobileNav from './components/MobileNav';
 import TopNav from './components/TopNav';
-import PrivateRoute from './components/PrivateRoute';
 import ProjectDetails from './components/ProjectDetails';
-import BidList from './components/BidList';
 import BidDetails from './components/BidDetails';
 import BidView from './components/BidView';
 

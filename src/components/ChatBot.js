@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
@@ -96,145 +96,140 @@ const ChatBot = ({ onClose }) => {
     return true;
   };
 
-  const handleUserInput = () => {
-    if (!userInput.trim()) return;
+  const handleUserInput = useCallback(async (input) => {
+    if (!input.trim()) return;
 
-    const input = userInput.trim();
-    addUserMessage(input);
-    setUserInput('');
+    const userMessage = { text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
 
-    // Handle login prompt response
-    if (createdProjectId && !currentUser) {
-      if (input.toLowerCase() === 'yes') {
-        navigate('/login?mode=signup');
-        return;
-      } else if (input.toLowerCase() === 'no') {
-        addBotMessage('You can continue using the app without an account. Your project and bid will be available for 24 hours.');
-        addBotMessage('You can create an account or log in later to save your work permanently.');
-        return;
+    try {
+      switch (currentStep) {
+        case 'project_type':
+          if (input.toLowerCase() === 'yes') {
+            setProjectData(prev => ({ ...prev, projectType: 'RFP' }));
+            setCurrentStep('solicitation_upload');
+            setMessages(prev => [...prev, {
+              text: "Great! Please upload your solicitation document.",
+              sender: 'bot'
+            }]);
+          } else {
+            setProjectData(prev => ({ ...prev, projectType: 'Standard' }));
+            setCurrentStep('project_name');
+            setMessages(prev => [...prev, {
+              text: "What would you like to name this project?",
+              sender: 'bot'
+            }]);
+          }
+          break;
+        case 'solicitation_upload':
+          // Handle file upload
+          setCurrentStep('project_name');
+          setMessages(prev => [...prev, {
+            text: "What would you like to name this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_name':
+          setProjectData(prev => ({ ...prev, name: input }));
+          setCurrentStep('project_description');
+          setMessages(prev => [...prev, {
+            text: "Please describe your project in detail.",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_description':
+          setProjectData(prev => ({ ...prev, description: input }));
+          setCurrentStep('project_location');
+          setMessages(prev => [...prev, {
+            text: "Where is the project located?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_location':
+          setProjectData(prev => ({ ...prev, location: input }));
+          setCurrentStep('project_start_date');
+          setMessages(prev => [...prev, {
+            text: "When would you like the project to start?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_start_date':
+          setProjectData(prev => ({ ...prev, startDate: input }));
+          setCurrentStep('project_end_date');
+          setMessages(prev => [...prev, {
+            text: "When would you like the project to be completed?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_end_date':
+          setProjectData(prev => ({ ...prev, endDate: input }));
+          setCurrentStep('project_budget');
+          setMessages(prev => [...prev, {
+            text: "What is your budget for this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_budget':
+          setProjectData(prev => ({ ...prev, budget: input }));
+          setCurrentStep('project_scope');
+          setMessages(prev => [...prev, {
+            text: "What is the scope of work for this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_scope':
+          setProjectData(prev => ({ ...prev, scope: input }));
+          setCurrentStep('project_requirements');
+          setMessages(prev => [...prev, {
+            text: "What are the specific requirements for this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_requirements':
+          setProjectData(prev => ({ ...prev, requirements: input }));
+          setCurrentStep('project_timeline');
+          setMessages(prev => [...prev, {
+            text: "What is the timeline for this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_timeline':
+          setProjectData(prev => ({ ...prev, timeline: input }));
+          setCurrentStep('project_equipment');
+          setMessages(prev => [...prev, {
+            text: "What equipment will be needed for this project?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_equipment':
+          setProjectData(prev => ({ ...prev, equipment: input }));
+          setCurrentStep('project_ladder_comfort');
+          setMessages(prev => [...prev, {
+            text: "Are you comfortable working on a ladder?",
+            sender: 'bot'
+          }]);
+          break;
+        case 'project_ladder_comfort':
+          setProjectData(prev => ({ ...prev, ladderComfort: input }));
+          setCreatedProjectId('temp-id'); // Set temporary ID to trigger View Bid button
+          handleCreateProject();
+          break;
+        default:
+          console.warn('Unknown step:', currentStep);
+          break;
       }
+    } catch (error) {
+      console.error('Error handling user input:', error);
+      setMessages(prev => [...prev, {
+        text: "I apologize, but I encountered an error. Please try again.",
+        sender: 'bot'
+      }]);
     }
-
-    let isValid = true;
-    let errorMessage = '';
-
-    // Validate input based on current step
-    switch (currentStep) {
-      case 0: // Project Name
-        if (input.length < 3) {
-          isValid = false;
-          errorMessage = 'Project name must be at least 3 characters long';
-        }
-        break;
-      case 1: // Start Date
-      case 2: // End Date
-        const date = new Date(input);
-        if (isNaN(date.getTime())) {
-          isValid = false;
-          errorMessage = 'Please enter a valid date (YYYY-MM-DD)';
-        }
-        break;
-      case 3: // Location
-        if (!validateLocation(input)) {
-          isValid = false;
-          errorMessage = 'Please enter a valid location (City, State, Zip Code)';
-        }
-        break;
-      case 4: // Project Type
-        if (input.toLowerCase() !== 'install holiday decorations') {
-          isValid = false;
-          errorMessage = 'Please enter "Install Holiday Decorations"';
-        }
-        break;
-      case 5: // Home Type
-        if (!['single story', '2-story'].includes(input.toLowerCase())) {
-          isValid = false;
-          errorMessage = 'Please select either "Single Story" or "2-Story"';
-        }
-        break;
-      case 6: // Ladder Comfort
-        if (!['yes', 'no'].includes(input.toLowerCase())) {
-          isValid = false;
-          errorMessage = 'Please answer "Yes" or "No"';
-        }
-        break;
-      default:
-        isValid = false;
-        errorMessage = 'Invalid step';
-    }
-
-    if (!isValid) {
-      addBotMessage(errorMessage);
-      return;
-    }
-
-    // Update project data based on current step
-    switch (currentStep) {
-      case 0: // Project Name
-        setProjectData(prev => ({ ...prev, projectName: input }));
-        addBotMessage(steps[1].question);
-        break;
-
-      case 1: // Start Date
-        setProjectData(prev => ({ ...prev, startDate: input }));
-        addBotMessage(steps[2].question);
-        break;
-
-      case 2: // End Date
-        setProjectData(prev => ({ ...prev, endDate: input }));
-        addBotMessage(steps[3].question);
-        break;
-
-      case 3: // Location
-        if (handleLocationInput(input)) {
-          addBotMessage(steps[4].question);
-          addBotMessage("Currently, we only support 'Install Holiday Decorations'");
-        } else {
-          addBotMessage("Please enter the location in the format: City, State, Zip Code");
-        }
-        break;
-
-      case 4: // Project Type
-        if (input === "Install Holiday Decorations") {
-          setProjectData(prev => ({ ...prev, projectType: input }));
-          addBotMessage(steps[5].question);
-        } else {
-          addBotMessage("Currently, we only support 'Install Holiday Decorations'. Please select this option.");
-        }
-        break;
-
-      case 5: // Home Type
-        if (input === "Single Story" || input === "2-Story") {
-          setProjectData(prev => ({ ...prev, homeType: input }));
-          addBotMessage(steps[6].question);
-        } else {
-          addBotMessage("Please select either 'Single Story' or '2-Story'");
-        }
-        break;
-
-      case 6: // Ladder Comfort
-        setProjectData(prev => ({ 
-          ...prev, 
-          climbingLadder: input.toLowerCase() === 'yes',
-          equipmentNeeded: input.toLowerCase() === 'yes' ? 
-            ["20 ft. ladder", "20 ft. ladder"] : 
-            ["25' boom lift", "19' scissor lift"]
-        }));
-        // Set createdProjectId to trigger View Bid button
-        setCreatedProjectId('temp-id');
-        // Create project immediately after last question
-        handleCreateProject();
-        return;
-    }
-
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
+  }, [currentStep, handleCreateProject]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleUserInput();
+      handleUserInput(userInput);
     }
   };
 
@@ -390,7 +385,7 @@ const ChatBot = ({ onClose }) => {
                 className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
-                onClick={handleUserInput}
+                onClick={() => handleUserInput(userInput)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Send
