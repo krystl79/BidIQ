@@ -21,6 +21,7 @@ import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 import MobileNav from './components/MobileNav';
+import TopNav from './components/TopNav';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
@@ -132,7 +133,16 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showNavbar && <Navbar user={currentUser} onLogout={handleLogout} />}
+      {showNavbar && (
+        <>
+          <div className="hidden md:block">
+            <TopNav />
+          </div>
+          <div className="md:hidden">
+            <Navbar user={currentUser} onLogout={handleLogout} />
+          </div>
+        </>
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
