@@ -97,15 +97,10 @@ const ChatBot = ({ onClose }) => {
       // Add success message
       addBotMessage('Great! I\'ve created your project and bid.');
       
-      if (!currentUser) {
-        addBotMessage('To save your project and bid, or to download the bid details, please create an account or log in.');
-        addBotMessage('Would you like to create an account or log in now? (Yes/No)');
-      } else {
-        // Navigate to project details after a short delay
-        setTimeout(() => {
-          navigate(`/projects/${projectRef.id}`);
-        }, 2000);
-      }
+      // Navigate to project details after a short delay
+      setTimeout(() => {
+        navigate(`/projects/${projectRef.id}`);
+      }, 2000);
 
     } catch (error) {
       console.error('Error creating project:', error);
@@ -118,6 +113,7 @@ const ChatBot = ({ onClose }) => {
 
     const userMessage = { text: input, sender: 'user' };
     setMessages(prev => [...prev, userMessage]);
+    setUserInput(''); // Clear the input field
 
     try {
       switch (currentStep) {
