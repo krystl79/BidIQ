@@ -72,30 +72,6 @@ const ChatBot = ({ onClose }) => {
     setMessages(prev => [...prev, { type: 'bot', text }]);
   };
 
-  const addUserMessage = (text) => {
-    setMessages(prev => [...prev, { type: 'user', text }]);
-  };
-
-  const validateLocation = (input) => {
-    const parts = input.split(',').map(part => part.trim());
-    return parts.length === 3;
-  };
-
-  const handleLocationInput = (input) => {
-    const parts = input.split(',').map(part => part.trim());
-    if (parts.length !== 3) {
-      addBotMessage("Please enter the location in the format: City, State, Zip Code");
-      return false;
-    }
-    
-    const [city, state, zipCode] = parts;
-    setProjectData(prev => ({
-      ...prev,
-      location: { city, state, zipCode }
-    }));
-    return true;
-  };
-
   const handleCreateProject = useCallback(async () => {
     try {
       // Create project in Firestore
