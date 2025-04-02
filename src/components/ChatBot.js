@@ -72,6 +72,25 @@ const ChatBot = ({ onClose }) => {
     setMessages(prev => [...prev, { type: 'bot', text }]);
   };
 
+  const handleViewBid = useCallback(() => {
+    if (createdProjectId) {
+      navigate(`/projects/${createdProjectId}/bid`, {
+        state: {
+          projectData: {
+            projectName: projectData.projectName,
+            projectType: projectData.projectType,
+            startDate: projectData.startDate,
+            endDate: projectData.endDate,
+            location: projectData.location,
+            homeType: projectData.homeType,
+            climbingLadder: projectData.climbingLadder,
+            equipmentNeeded: projectData.equipmentNeeded
+          }
+        }
+      });
+    }
+  }, [createdProjectId, projectData, navigate]);
+
   const handleCreateProject = useCallback(async () => {
     try {
       if (currentUser) {
@@ -173,25 +192,6 @@ const ChatBot = ({ onClose }) => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleUserInput(userInput);
-    }
-  };
-
-  const handleViewBid = () => {
-    if (createdProjectId) {
-      navigate(`/projects/${createdProjectId}/bid`, {
-        state: {
-          projectData: {
-            projectName: projectData.projectName,
-            projectType: projectData.projectType,
-            startDate: projectData.startDate,
-            endDate: projectData.endDate,
-            location: projectData.location,
-            homeType: projectData.homeType,
-            climbingLadder: projectData.climbingLadder,
-            equipmentNeeded: projectData.equipmentNeeded
-          }
-        }
-      });
     }
   };
 
