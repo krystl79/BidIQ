@@ -4,29 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-// Move steps array outside the component to prevent recreation on each render
-const steps = [
-  { type: 'text', question: "What is the name of your project?" },
-  { type: 'date', question: "What is the start date of your project?" },
-  { type: 'date', question: "When do you need your project completed by?" },
-  { type: 'location', question: "Where will your project be taking place? (Please enter City, State, Zip Code)" },
-  {
-    type: 'choice',
-    question: "What type of project are you working on?",
-    options: ["Install Holiday Decorations"]
-  },
-  {
-    type: 'choice',
-    question: "Is your home a single story or 2-story?",
-    options: ["Single Story", "2-Story"]
-  },
-  {
-    type: 'choice',
-    question: "Are you comfortable climbing a ladder?",
-    options: ["Yes", "No"]
-  }
-];
-
 const ChatBot = ({ onClose }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
