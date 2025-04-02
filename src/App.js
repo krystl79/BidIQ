@@ -15,6 +15,8 @@ import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import SolicitationUploadScreen from './components/SolicitationUploadScreen';
+import RFPProposalsList from './components/RFPResponsesList';
+import ViewRFPProposal from './components/ViewRFPResponse';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
@@ -140,6 +142,28 @@ function AppContent() {
             <ProtectedRoute>
               <div className="pb-16 md:pb-0">
                 <Dashboard />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rfp-responses"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <RFPProposalsList />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rfp-responses/:responseId"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <ViewRFPProposal />
                 <MobileNav />
               </div>
             </ProtectedRoute>
