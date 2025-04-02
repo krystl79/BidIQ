@@ -14,9 +14,9 @@ const MobileNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden">
       <div className="flex justify-around items-center h-16">
         <Link
-          to="/upload-solicitation"
+          to="/"
           className={`flex flex-col items-center justify-center flex-1 h-full ${
-            isActive('/upload-solicitation') ? 'text-blue-600' : 'text-gray-500'
+            isActive('/') ? 'text-blue-600' : 'text-gray-500'
           }`}
         >
           <img
@@ -25,7 +25,7 @@ const MobileNav = () => {
             className="h-6 mb-1"
             onError={(e) => console.error('Error loading logo:', e)}
           />
-          <span className="text-xs">Upload</span>
+          <span className="text-xs">Home</span>
         </Link>
 
         <Link
