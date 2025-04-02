@@ -85,7 +85,8 @@ const ChatBot = ({ onClose }) => {
             homeType: projectData.homeType,
             climbingLadder: projectData.climbingLadder,
             equipmentNeeded: projectData.equipmentNeeded
-          }
+          },
+          isTemporary: createdProjectId === 'temp-id'
         }
       });
     }
