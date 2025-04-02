@@ -139,87 +139,54 @@ const ProjectList = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Project Name
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timeline
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bids
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProjects.map((project) => (
-                  <tr key={project.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{project.projectType}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{project.location.city}, {project.location.state}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleViewBids(project.id)}
-                        className="text-blue-600 hover:text-blue-800 hover:underline text-sm"
-                      >
-                        {projectBidCounts[project.id] || 0} {projectBidCounts[project.id] === 1 ? 'Bid' : 'Bids'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleViewProject(project)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEditProject(project.id)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleCreateBid(project)}
-                        className="text-purple-600 hover:text-purple-900"
-                      >
-                        Bid
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProject(project.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProjects.map((project) => (
+            <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="p-4 sm:p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{project.projectName}</h3>
+                <p className="text-sm text-gray-500 mb-4">{project.projectType}</p>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <p>Location: {project.location.city}, {project.location.state}</p>
+                  <p>Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}</p>
+                  <p>Equipment Markup: {project.equipmentMarkup}%</p>
+                  <p>
+                    <button
+                      onClick={() => handleViewBids(project.id)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {projectBidCounts[project.id] || 0} {projectBidCounts[project.id] === 1 ? 'Bid' : 'Bids'}
+                    </button>
+                  </p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 justify-end">
+                  <button
+                    onClick={() => handleViewProject(project)}
+                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleEditProject(project.id)}
+                    className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleCreateBid(project)}
+                    className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Bid
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProject(project.id)}
+                    className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
