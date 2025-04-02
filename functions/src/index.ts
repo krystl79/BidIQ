@@ -3,8 +3,18 @@ import * as admin from "firebase-admin";
 import pdf from "pdf-parse";
 import * as mammoth from "mammoth";
 import axios from "axios";
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import fetch from 'node-fetch';
+import * as natural from 'natural';
 
 admin.initializeApp();
+
+// Initialize NLP tools
+const tokenizer = new natural.WordTokenizer();
+const TfIdf = natural.TfIdf;
+const tfidf = new TfIdf();
 
 interface ProcessSolicitationData {
   fileUrl: string;
@@ -16,6 +26,40 @@ interface ProcessSolicitationData {
 interface ProcessSolicitationLinkData {
   link: string;
   userId: string;
+}
+
+interface Entity {
+  text: string;
+  label: string;
+  start: number;
+  end: number;
+}
+
+interface Keyword {
+  term: string;
+  tfidf: number;
+}
+
+interface AnalysisData {
+  entities: Entity[];
+  keywords: string[];
+  dates: Entity[];
+  money: Entity[];
+  organizations: Entity[];
+  sentiment: number;
+  requirements: {
+    timeline: {
+      start: string | undefined;
+      end: string | undefined;
+      milestones: string[];
+    };
+    budget: {
+      amount: number;
+      text: string;
+    };
+    stakeholders: Entity[];
+    keyPhrases: string[];
+  };
 }
 
 export const processSolicitation = functions.https.onCall(async (data: ProcessSolicitationData, context) => {
@@ -124,4 +168,119 @@ function extractProjectData(text: string) {
     type: "solicitation",
     source: "upload",
   };
+}
+
+export const processNLP = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'The function must be called while authenticated.'
+    );
+  }
+
+  const { text } = data;
+  
+  try {
+    // Extract entities using natural's NER
+    const entities: Entity[] = [];
+    const tokens = tokenizer.tokenize(text);
+    
+    // Use natural's built-in NER
+    const language = "EN";
+    const classifier = new natural.BayesClassifier();
+    
+    // Train classifier with some basic patterns
+    classifier.addDocument('deadline', 'DATE');
+    classifier.addDocument('due date', 'DATE');
+    classifier.addDocument('budget', 'MONEY');
+    classifier.addDocument('cost', 'MONEY');
+    classifier.addDocument('company', 'ORG');
+    classifier.addDocument('corporation', 'ORG');
+    classifier.train();
+
+    // Process tokens
+    tokens.forEach((token, index) => {
+      const label = classifier.classify(token.toLowerCase());
+      if (label) {
+        entities.push({
+          text: token,
+          label,
+          start: text.indexOf(token),
+          end: text.indexOf(token) + token.length
+        });
+      }
+    });
+
+    // Extract key phrases using TF-IDF
+    tfidf.addDocument(tokens);
+    const keywords: Keyword[] = tfidf.listTerms(0).slice(0, 10);
+
+    // Filter entities by type
+    const dates = entities.filter(ent => ent.label === 'DATE');
+    const money = entities.filter(ent => ent.label === 'MONEY');
+    const organizations = entities.filter(ent => ent.label === 'ORG');
+
+    // Analyze sentiment
+    const analyzer = new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn');
+    const sentiment = analyzer.getSentiment(tokens);
+
+    // Generate analysis data
+    const analysisData: AnalysisData = {
+      entities,
+      keywords: keywords.map(k => k.term),
+      dates,
+      money,
+      organizations,
+      sentiment,
+      requirements: {
+        timeline: extractTimeline(dates),
+        budget: extractBudget(money),
+        stakeholders: organizations,
+        keyPhrases: keywords.map(k => k.term)
+      }
+    };
+
+    // Store analysis results
+    await admin.firestore()
+      .collection('solicitations')
+      .doc(context.auth.uid)
+      .collection('analyses')
+      .add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        analysis: analysisData
+      });
+
+    return analysisData;
+
+  } catch (error) {
+    console.error('Error in NLP processing:', error);
+    throw new functions.https.HttpsError('internal', 'Error processing document');
+  }
+});
+
+function extractTimeline(dates: Entity[]): { start: string | undefined; end: string | undefined; milestones: string[] } {
+  // Sort dates chronologically
+  const sortedDates = dates.sort((a, b) => {
+    const dateA = new Date(a.text);
+    const dateB = new Date(b.text);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  return {
+    start: sortedDates[0]?.text,
+    end: sortedDates[sortedDates.length - 1]?.text,
+    milestones: sortedDates.slice(1, -1).map(d => d.text)
+  };
+}
+
+function extractBudget(money: Entity[]): { amount: number; text: string } {
+  // Find the largest monetary value as the likely budget
+  const amounts = money.map(m => {
+    const amount = parseFloat(m.text.replace(/[^0-9.]/g, ''));
+    return { amount, text: m.text };
+  });
+
+  return amounts.reduce((max, current) => 
+    current.amount > max.amount ? current : max
+  , { amount: 0, text: '' });
 } 

@@ -47,7 +47,7 @@ const Dashboard = ({ profileData, userEmail, onProfileUpdate }) => {
               <h3 className="text-lg font-medium text-gray-900">Upload Solicitation/RFP</h3>
               <p className="mt-2 text-gray-600">Upload or link a solicitation to create a project</p>
               <button
-                onClick={handleSolicitationClick}
+                onClick={() => navigate('/upload-solicitation')}
                 className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Upload Solicitation

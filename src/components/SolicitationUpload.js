@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { uploadSolicitation, processSolicitationLink } from '../services/solicitationService';
+import { analyzeDocument, generateBidScore, generateRiskAssessment } from '../services/nlpService';
 import { useAuth } from '../contexts/AuthContext';
 
-const SolicitationUpload = ({ onClose }) => {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const [uploadType, setUploadType] = useState('file'); // 'file' or 'link'
+export default function SolicitationUpload() {
+  const { user } = useAuth();
   const [file, setFile] = useState(null);
   const [link, setLink] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [success, setSuccess] = useState('');
+  const [analysisResults, setAnalysisResults] = useState(null);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      // Check file type
       if (selectedFile.type === 'application/pdf' || 
           selectedFile.type === 'application/msword' || 
           selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
@@ -29,138 +27,208 @@ const SolicitationUpload = ({ onClose }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!currentUser) {
-      setError('Please log in to upload a solicitation');
+  const handleLinkChange = (e) => {
+    setLink(e.target.value);
+    setError('');
+  };
+
+  const handleUpload = async () => {
+    if (!user) {
+      setError('Please sign in to upload solicitations');
       return;
     }
-    
-    setIsUploading(true);
-    setError('');
-    setProgress(0);
 
     try {
-      let result;
-      if (uploadType === 'file' && file) {
-        result = await uploadSolicitation(file, currentUser.uid);
-      } else if (uploadType === 'link' && link) {
-        result = await processSolicitationLink(link, currentUser.uid);
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      setAnalysisResults(null);
+
+      let text;
+      if (file) {
+        const uploadResult = await uploadSolicitation(file, user.uid);
+        text = uploadResult.text;
+      } else if (link) {
+        const linkResult = await processSolicitationLink(link, user.uid);
+        text = linkResult.text;
+      } else {
+        throw new Error('Please provide a file or link');
       }
 
-      // Navigate to create-project with the processed data
-      navigate('/create-project', { 
-        state: { 
-          message: 'Solicitation processed successfully. Please review and complete the project details.',
-          projectData: result.projectData
-        }
-      });
+      // Perform NLP analysis
+      const analysis = await analyzeDocument(text);
+      
+      // Generate bid score and risk assessment
+      const bidScore = generateBidScore(analysis);
+      const risks = generateRiskAssessment(analysis);
+
+      // Combine all results
+      const results = {
+        ...analysis,
+        bidScore,
+        risks,
+        source: file ? 'upload' : 'link',
+        timestamp: new Date().toISOString()
+      };
+
+      setAnalysisResults(results);
+      setSuccess('Solicitation processed successfully');
     } catch (err) {
-      setError(err.message || 'Failed to process solicitation. Please try again.');
+      setError(err.message);
     } finally {
-      setIsUploading(false);
-      setProgress(0);
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Solicitation/RFP</h3>
-          
-          <div className="mb-4">
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setUploadType('file')}
-                className={`px-4 py-2 rounded-md ${
-                  uploadType === 'file'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                Upload File
-              </button>
-              <button
-                onClick={() => setUploadType('link')}
-                className={`px-4 py-2 rounded-md ${
-                  uploadType === 'link'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                Provide Link
-              </button>
+  const renderAnalysisResults = () => {
+    if (!analysisResults) return null;
+
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+        
+        {/* Bid Score */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-blue-600 mb-2">
+            Bid Score: {analysisResults.bidScore.score}/100
+          </h3>
+          <p className="text-gray-600 text-sm">
+            Based on alignment, feasibility, competition, and profitability
+          </p>
+        </div>
+
+        {/* Timeline */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-2">Timeline</h3>
+          <p className="text-gray-700">
+            Start: {analysisResults.requirements.timeline.start || 'Not specified'}<br />
+            End: {analysisResults.requirements.timeline.end || 'Not specified'}
+          </p>
+        </div>
+
+        {/* Budget */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-2">Budget</h3>
+          <p className="text-gray-700">
+            Estimated: {analysisResults.requirements.budget.text || 'Not specified'}
+          </p>
+        </div>
+
+        {/* Key Requirements */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-2">Key Requirements</h3>
+          <p className="text-gray-700">
+            {analysisResults.requirements.keyPhrases.join(', ')}
+          </p>
+        </div>
+
+        {/* Risk Assessment */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Risk Assessment</h3>
+          {analysisResults.risks.map((risk, index) => (
+            <div 
+              key={index}
+              className={`p-4 rounded-lg mb-2 ${
+                risk.severity === 'high' ? 'bg-red-50 text-red-700' :
+                risk.severity === 'medium' ? 'bg-yellow-50 text-yellow-700' :
+                'bg-green-50 text-green-700'
+              }`}
+            >
+              {risk.description}
             </div>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {uploadType === 'file' ? (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Document (PDF or Word)
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-              </div>
-            ) : (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter Solicitation/RFP Link
-                </label>
-                <input
-                  type="url"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="https://example.com/solicitation"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-              </div>
-            )}
-
-            {isUploading && (
-              <div className="mb-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Processing your solicitation...</p>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isUploading || (!file && !link)}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  isUploading || (!file && !link)
-                    ? 'bg-blue-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isUploading ? 'Processing...' : 'Upload & Create Project'}
-              </button>
-            </div>
-          </form>
+          ))}
         </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">
+        Upload Solicitation
+      </h1>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+          {success}
+        </div>
+      )}
+
+      <div
+        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-colors duration-200"
+        onClick={() => document.getElementById('solicitation-file').click()}
+      >
+        <input
+          type="file"
+          id="solicitation-file"
+          accept=".pdf,.doc,.docx"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <svg
+          className="w-12 h-12 text-blue-500 mx-auto mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+          />
+        </svg>
+        <h3 className="text-lg font-medium mb-2">
+          {file ? file.name : 'Drop a file here or click to upload'}
+        </h3>
+        <p className="text-gray-500 text-sm">
+          Supported formats: PDF, DOC, DOCX
+        </p>
+      </div>
+
+      <div className="flex flex-col items-center gap-4 mt-6">
+        <div className="text-lg font-medium text-gray-500">
+          Or
+        </div>
+
+        <input
+          type="text"
+          placeholder="Paste solicitation link"
+          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          value={link}
+          onChange={handleLinkChange}
+        />
+
+        <button
+          className={`w-full max-w-md px-4 py-2 rounded-lg text-white font-medium ${
+            loading || (!file && !link)
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
+          } transition-colors duration-200 flex items-center justify-center gap-2`}
+          onClick={handleUpload}
+          disabled={loading || (!file && !link)}
+        >
+          {loading ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </>
+          ) : (
+            'Process Solicitation'
+          )}
+        </button>
+      </div>
+
+      {renderAnalysisResults()}
     </div>
   );
-};
-
-export default SolicitationUpload; 
+} 

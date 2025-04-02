@@ -16,11 +16,16 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@types/natural": "^5.1.5",
+    "@types/node-fetch": "^2.6.12",
     "axios": "^1.6.7",
     "firebase-admin": "^11.8.0",
     "firebase-functions": "^4.3.1",
     "mammoth": "^1.6.0",
-    "pdf-parse": "^1.1.1"
+    "natural": "^8.0.1",
+    "node-fetch": "^3.3.2",
+    "pdf-parse": "^1.1.1",
+    "spacy": "^0.0.4"
   },
   "devDependencies": {
     "@types/node": "^18.11.9",

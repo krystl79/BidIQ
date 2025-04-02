@@ -14,6 +14,7 @@ import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import SolicitationUploadScreen from './components/SolicitationUploadScreen';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
@@ -245,6 +246,17 @@ function AppContent() {
             <ProtectedRoute>
               <div className="pb-16 md:pb-0">
                 <Dashboard />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload-solicitation"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <SolicitationUploadScreen />
                 <MobileNav />
               </div>
             </ProtectedRoute>
