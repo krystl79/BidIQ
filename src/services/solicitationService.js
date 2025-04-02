@@ -1,23 +1,31 @@
+import { storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
-import { storage, functions } from '../firebase/config';
+import { functions } from '../firebase/config';
 
 export const uploadSolicitation = async (file, userId) => {
   try {
     // Create a unique filename
     const timestamp = Date.now();
-    const filename = `${userId}/${timestamp}-${file.name}`;
-    const storageRef = ref(storage, `solicitations/${filename}`);
+    const filename = `${timestamp}-${file.name}`;
+    const storageRef = ref(storage, `solicitations/${userId}/${filename}`);
 
-    // Upload the file
-    const snapshot = await uploadBytes(storageRef, file);
+    // Upload the file with metadata
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        userId: userId
+      }
+    };
+
+    const snapshot = await uploadBytes(storageRef, file, metadata);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
     // Call the Cloud Function to process the document
-    const processDocument = httpsCallable(functions, 'processSolicitation');
-    const result = await processDocument({
+    const processSolicitation = httpsCallable(functions, 'processSolicitation');
+    const result = await processSolicitation({
       fileUrl: downloadURL,
-      filename: file.name,
+      filename: filename,
       fileType: file.type,
       userId: userId
     });
@@ -25,22 +33,20 @@ export const uploadSolicitation = async (file, userId) => {
     return result.data;
   } catch (error) {
     console.error('Error uploading solicitation:', error);
-    throw error;
+    throw new Error('Failed to upload solicitation. Please try again.');
   }
 };
 
 export const processSolicitationLink = async (link, userId) => {
   try {
-    // Call the Cloud Function to process the link
-    const processLink = httpsCallable(functions, 'processSolicitationLink');
-    const result = await processLink({
+    const processSolicitationLink = httpsCallable(functions, 'processSolicitationLink');
+    const result = await processSolicitationLink({
       link: link,
       userId: userId
     });
-
     return result.data;
   } catch (error) {
     console.error('Error processing solicitation link:', error);
-    throw error;
+    throw new Error('Failed to process solicitation link. Please try again.');
   }
 }; 
