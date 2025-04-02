@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import logo from '../logo.svg';
 
 const LandingPage = () => {
   const { currentUser } = useAuth();
@@ -10,7 +9,6 @@ const LandingPage = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
   const [isInstallable, setIsInstallable] = useState(true);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -20,12 +18,10 @@ const LandingPage = () => {
       const isChrome = /chrome/i.test(userAgent);
       const isSafari = /safari/i.test(userAgent) && !isChrome;
       const isFirefox = /firefox/i.test(userAgent);
-      const standalone = window.matchMedia('(display-mode: standalone)').matches;
       
       setIsMobile(isMobileDevice);
       setIsIOS(isIOS);
       setIsSupportedBrowser(isChrome || isSafari || isFirefox);
-      setIsStandalone(standalone);
     };
 
     checkMobile();
