@@ -96,6 +96,47 @@ const ChatBot = ({ onClose }) => {
     return true;
   };
 
+  const handleCreateProject = useCallback(async () => {
+    try {
+      // Create project in Firestore
+      const projectRef = await addDoc(collection(db, 'projects'), {
+        ...projectData,
+        userId: currentUser?.uid || 'anonymous',
+        createdAt: serverTimestamp(),
+        status: 'active'
+      });
+
+      // Create bid in Firestore
+      await addDoc(collection(db, 'bids'), {
+        projectId: projectRef.id,
+        userId: currentUser?.uid || 'anonymous',
+        status: 'draft',
+        createdAt: serverTimestamp(),
+        projectDetails: projectData
+      });
+
+      // Update createdProjectId with actual project ID
+      setCreatedProjectId(projectRef.id);
+
+      // Add success message
+      addBotMessage('Great! I\'ve created your project and bid.');
+      
+      if (!currentUser) {
+        addBotMessage('To save your project and bid, or to download the bid details, please create an account or log in.');
+        addBotMessage('Would you like to create an account or log in now? (Yes/No)');
+      } else {
+        // Navigate to project details after a short delay
+        setTimeout(() => {
+          navigate(`/projects/${projectRef.id}`);
+        }, 2000);
+      }
+
+    } catch (error) {
+      console.error('Error creating project:', error);
+      addBotMessage(`I'm sorry, there was an error creating your project: ${error.message}. Please try again or contact support if the issue persists.`);
+    }
+  }, [projectData, currentUser, navigate]);
+
   const handleUserInput = useCallback(async (input) => {
     if (!input.trim()) return;
 
@@ -249,47 +290,6 @@ const ChatBot = ({ onClose }) => {
           }
         }
       });
-    }
-  };
-
-  const handleCreateProject = async () => {
-    try {
-      // Create project in Firestore
-      const projectRef = await addDoc(collection(db, 'projects'), {
-        ...projectData,
-        userId: currentUser?.uid || 'anonymous',
-        createdAt: serverTimestamp(),
-        status: 'active'
-      });
-
-      // Create bid in Firestore
-      await addDoc(collection(db, 'bids'), {
-        projectId: projectRef.id,
-        userId: currentUser?.uid || 'anonymous',
-        status: 'draft',
-        createdAt: serverTimestamp(),
-        projectDetails: projectData
-      });
-
-      // Update createdProjectId with actual project ID
-      setCreatedProjectId(projectRef.id);
-
-      // Add success message
-      addBotMessage('Great! I\'ve created your project and bid.');
-      
-      if (!currentUser) {
-        addBotMessage('To save your project and bid, or to download the bid details, please create an account or log in.');
-        addBotMessage('Would you like to create an account or log in now? (Yes/No)');
-      } else {
-        // Navigate to project details after a short delay
-        setTimeout(() => {
-          navigate(`/projects/${projectRef.id}`);
-        }, 2000);
-      }
-
-    } catch (error) {
-      console.error('Error creating project:', error);
-      addBotMessage(`I'm sorry, there was an error creating your project: ${error.message}. Please try again or contact support if the issue persists.`);
     }
   };
 
