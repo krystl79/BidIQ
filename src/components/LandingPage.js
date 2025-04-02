@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ChatBot from './ChatBot';
 
 const LandingPage = () => {
   const { currentUser } = useAuth();
@@ -9,6 +10,7 @@ const LandingPage = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isSupportedBrowser, setIsSupportedBrowser] = useState(false);
   const [isInstallable, setIsInstallable] = useState(true);
+  const [showChatBot, setShowChatBot] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -133,6 +135,23 @@ const LandingPage = () => {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Start Here Section */}
+      <div className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Not sure where to start? We can help!
+            </h2>
+            <button
+              onClick={() => setShowChatBot(true)}
+              className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Start Here
+            </button>
           </div>
         </div>
       </div>
@@ -295,6 +314,11 @@ const LandingPage = () => {
           </Link>
         </div>
       </div>
+
+      {/* ChatBot Modal */}
+      {showChatBot && (
+        <ChatBot onClose={() => setShowChatBot(false)} />
+      )}
     </div>
   );
 };

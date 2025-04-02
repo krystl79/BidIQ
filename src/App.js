@@ -22,6 +22,11 @@ import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 import MobileNav from './components/MobileNav';
 import TopNav from './components/TopNav';
+import PrivateRoute from './components/PrivateRoute';
+import ProjectDetails from './components/ProjectDetails';
+import BidList from './components/BidList';
+import BidDetails from './components/BidDetails';
+import BidView from './components/BidView';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
@@ -136,7 +141,7 @@ function AppContent() {
       {showNavbar && (
         <>
           <div className="hidden md:block">
-            <TopNav />
+            <TopNav onLogout={handleLogout} />
           </div>
           <div className="md:hidden">
             <Navbar user={currentUser} onLogout={handleLogout} />
@@ -291,6 +296,39 @@ function AppContent() {
             <ProtectedRoute>
               <div className="pb-16 md:pb-0">
                 <SolicitationUploadScreen />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <ProjectDetails />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bids/:bidId"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <BidDetails />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/bid"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <BidView />
                 <MobileNav />
               </div>
             </ProtectedRoute>

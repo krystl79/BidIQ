@@ -2,8 +2,11 @@ import { storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
-import { db } from '../firebase/config';
+import { getFirestore } from 'firebase/firestore';
 import { collection, addDoc } from 'firebase/firestore';
+import { app } from '../firebase/config';
+
+const db = getFirestore(app);
 
 export const uploadSolicitation = async (file, userId) => {
   try {

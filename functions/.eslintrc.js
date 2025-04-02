@@ -5,54 +5,42 @@ module.exports = {
     node: true,
   },
   extends: [
-    "eslint:recommended"
+    "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "google",
+    "plugin:@typescript-eslint/recommended",
   ],
+  parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 2018,
+    project: ["tsconfig.json", "tsconfig.dev.json"],
+    tsconfigRootDir: __dirname,
     sourceType: "module",
   },
-  rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "indent": ["error", 2],
-    "max-len": ["error", { "code": 120 }],
-    "require-jsdoc": 0,
-    "comma-dangle": ["error", "always-multiline"],
-    "arrow-parens": ["error", "as-needed"],
-    "object-curly-spacing": ["error", "always"],
-    "no-invalid-this": 0,
-    "no-var": 0,
-    "space-before-function-paren": 0,
-    "camelcase": 0,
-    "spaced-comment": 0,
-    "no-trailing-spaces": 0,
-    "eol-last": 0,
-  },
-  overrides: [
-    {
-      files: ["*.ts"],
-      extends: [
-        "plugin:@typescript-eslint/recommended"
-      ],
-      parser: "@typescript-eslint/parser",
-      parserOptions: {
-        project: ["tsconfig.json", "tsconfig.dev.json"],
-        sourceType: "module",
-        ecmaVersion: 2018,
-        tsconfigRootDir: __dirname,
-      },
-      plugins: [
-        "@typescript-eslint"
-      ],
-      rules: {
-        "@typescript-eslint/no-explicit-any": 0,
-        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
-      },
-    }
-  ],
   ignorePatterns: [
-    "/lib/**/*",
-    ".eslintrc.js"
-  ]
+    "/lib/**/*", // Ignore built files.
+    ".eslintrc.js",
+    "index.js",
+  ],
+  plugins: [
+    "@typescript-eslint",
+    "import",
+  ],
+  rules: {
+    "quotes": ["error", "double"],
+    "import/no-unresolved": 0,
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-unused-vars": "off",
+    "max-len": "off",
+    "comma-dangle": "off",
+    "object-curly-spacing": "off",
+    "indent": "off",
+    "require-jsdoc": "off",
+    "arrow-parens": "off",
+    "no-trailing-spaces": "off",
+    "eol-last": "off",
+    "padded-blocks": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+  },
 };

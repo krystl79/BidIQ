@@ -3,11 +3,7 @@ import * as admin from "firebase-admin";
 import pdf from "pdf-parse";
 import * as mammoth from "mammoth";
 import axios from "axios";
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import fetch from 'node-fetch';
-import * as natural from 'natural';
+import * as natural from "natural";
 
 admin.initializeApp();
 
@@ -62,6 +58,37 @@ interface AnalysisData {
   };
 }
 
+function extractProjectData(text: string) {
+  // This is a simple example. You might want to use more sophisticated NLP techniques
+  // or AI models to extract information from the text.
+  
+  // Extract project name (assuming it's in the first line or after "Project Name:")
+  const projectNameMatch = text.match(/Project Name:\s*([^\n]+)/i) || text.split("\n")[0];
+  const projectName = projectNameMatch[1] || projectNameMatch;
+
+  // Extract project description (first paragraph)
+  const description = text.split("\n\n")[0];
+
+  // Extract required items (looking for lists or bullet points)
+  const requiredItems = text
+    .split("\n")
+    .filter(line => line.trim().match(/^[-•*]\s+/))
+    .map(line => line.replace(/^[-•*]\s+/, "").trim());
+
+  // Extract due date (looking for common date formats)
+  const dueDateMatch = text.match(/(?:due date|deadline|submission date):\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/i);
+  const dueDate = dueDateMatch ? dueDateMatch[1] : null;
+
+  return {
+    name: projectName,
+    description,
+    requiredItems,
+    dueDate,
+    type: "solicitation",
+    source: "upload",
+  };
+}
+
 export const processSolicitation = functions.https.onCall(async (data: ProcessSolicitationData, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
@@ -111,11 +138,26 @@ export const processSolicitationLink = functions.https.onCall(async (data: Proce
 
   try {
     // Fetch the content from the link
-    const response = await axios.get(data.link);
-    const html = response.data;
+    const response = await axios.get(data.link, { 
+      responseType: "arraybuffer",
+      headers: {
+        "Accept": "*/*",
+        "User-Agent": "Mozilla/5.0 (compatible; BidIQ/1.0)",
+      },
+    });
 
-    // Extract text from HTML (you might want to use a more sophisticated HTML parser)
-    const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    let text = "";
+    // Process based on file type
+    if (data.link.toLowerCase().endsWith(".pdf")) {
+      const pdfData = await pdf(response.data);
+      text = pdfData.text;
+    } else if (data.link.toLowerCase().endsWith(".docx") || data.link.toLowerCase().endsWith(".doc")) {
+      const result = await mammoth.extractRawText({ buffer: response.data });
+      text = result.value;
+    } else {
+      // For HTML content
+      text = response.data.toString().replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    }
 
     // Extract project information from the text
     const projectData = extractProjectData(text);
@@ -139,42 +181,11 @@ export const processSolicitationLink = functions.https.onCall(async (data: Proce
   }
 });
 
-function extractProjectData(text: string) {
-  // This is a simple example. You might want to use more sophisticated NLP techniques
-  // or AI models to extract information from the text.
-  
-  // Extract project name (assuming it's in the first line or after "Project Name:")
-  const projectNameMatch = text.match(/Project Name:\s*([^\n]+)/i) || text.split("\n")[0];
-  const projectName = projectNameMatch[1] || projectNameMatch;
-
-  // Extract project description (first paragraph)
-  const description = text.split("\n\n")[0];
-
-  // Extract required items (looking for lists or bullet points)
-  const requiredItems = text
-    .split("\n")
-    .filter(line => line.trim().match(/^[-•*]\s+/))
-    .map(line => line.replace(/^[-•*]\s+/, "").trim());
-
-  // Extract due date (looking for common date formats)
-  const dueDateMatch = text.match(/(?:due date|deadline|submission date):\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/i);
-  const dueDate = dueDateMatch ? dueDateMatch[1] : null;
-
-  return {
-    name: projectName,
-    description,
-    requiredItems,
-    dueDate,
-    type: "solicitation",
-    source: "upload",
-  };
-}
-
 export const processNLP = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      'unauthenticated',
-      'The function must be called while authenticated.'
+      "unauthenticated",
+      "The function must be called while authenticated."
     );
   }
 
@@ -190,12 +201,12 @@ export const processNLP = functions.https.onCall(async (data, context) => {
     const classifier = new natural.BayesClassifier();
     
     // Train classifier with some basic patterns
-    classifier.addDocument('deadline', 'DATE');
-    classifier.addDocument('due date', 'DATE');
-    classifier.addDocument('budget', 'MONEY');
-    classifier.addDocument('cost', 'MONEY');
-    classifier.addDocument('company', 'ORG');
-    classifier.addDocument('corporation', 'ORG');
+    classifier.addDocument("deadline", "DATE");
+    classifier.addDocument("due date", "DATE");
+    classifier.addDocument("budget", "MONEY");
+    classifier.addDocument("cost", "MONEY");
+    classifier.addDocument("company", "ORG");
+    classifier.addDocument("corporation", "ORG");
     classifier.train();
 
     // Process tokens
@@ -216,12 +227,12 @@ export const processNLP = functions.https.onCall(async (data, context) => {
     const keywords: Keyword[] = tfidf.listTerms(0).slice(0, 10);
 
     // Filter entities by type
-    const dates = entities.filter(ent => ent.label === 'DATE');
-    const money = entities.filter(ent => ent.label === 'MONEY');
-    const organizations = entities.filter(ent => ent.label === 'ORG');
+    const dates = entities.filter(ent => ent.label === "DATE");
+    const money = entities.filter(ent => ent.label === "MONEY");
+    const organizations = entities.filter(ent => ent.label === "ORG");
 
     // Analyze sentiment
-    const analyzer = new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn');
+    const analyzer = new natural.SentimentAnalyzer("English", natural.PorterStemmer, "afinn");
     const sentiment = analyzer.getSentiment(tokens);
 
     // Generate analysis data
@@ -242,9 +253,9 @@ export const processNLP = functions.https.onCall(async (data, context) => {
 
     // Store analysis results
     await admin.firestore()
-      .collection('solicitations')
+      .collection("solicitations")
       .doc(context.auth.uid)
-      .collection('analyses')
+      .collection("analyses")
       .add({
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         analysis: analysisData
@@ -253,8 +264,8 @@ export const processNLP = functions.https.onCall(async (data, context) => {
     return analysisData;
 
   } catch (error) {
-    console.error('Error in NLP processing:', error);
-    throw new functions.https.HttpsError('internal', 'Error processing document');
+    console.error("Error in NLP processing:", error);
+    throw new functions.https.HttpsError("internal", "Error processing document");
   }
 });
 
@@ -276,11 +287,11 @@ function extractTimeline(dates: Entity[]): { start: string | undefined; end: str
 function extractBudget(money: Entity[]): { amount: number; text: string } {
   // Find the largest monetary value as the likely budget
   const amounts = money.map(m => {
-    const amount = parseFloat(m.text.replace(/[^0-9.]/g, ''));
+    const amount = parseFloat(m.text.replace(/[^0-9.]/g, ""));
     return { amount, text: m.text };
   });
 
   return amounts.reduce((max, current) => 
     current.amount > max.amount ? current : max
-  , { amount: 0, text: '' });
+  , { amount: 0, text: "" });
 } 

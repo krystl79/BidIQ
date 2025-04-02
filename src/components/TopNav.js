@@ -2,9 +2,9 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const TopNav = () => {
+const TopNav = ({ onLogout }) => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -68,7 +68,7 @@ const TopNav = () => {
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-700">{user?.email}</span>
                 <button
-                  onClick={signOut}
+                  onClick={onLogout}
                   className="px-4 py-2 text-sm font-medium text-white bg-[#4263EB] rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Sign Out
