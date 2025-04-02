@@ -27,71 +27,46 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900">Upload Solicitation or RFP</h3>
-              <p className="mt-2 text-gray-600">Upload or link a solicitation to create a project</p>
-              <button
-                onClick={() => navigate('/upload-solicitation')}
-                className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Upload Solicitation or RFP
-              </button>
-            </div>
-          </div>
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <button
+            onClick={() => navigate('/upload-solicitation')}
+            className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+          >
+            <svg className="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span className="text-lg font-medium text-gray-900">Upload Solicitation or RFP</span>
+          </button>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900">View Projects</h3>
-              <p className="mt-2 text-gray-600">View and manage your construction projects</p>
-              <button
-                onClick={() => navigate('/projects')}
-                className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                View Projects
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => navigate('/projects')}
+            className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+          >
+            <svg className="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span className="text-lg font-medium text-gray-900">View Projects</span>
+          </button>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900">View Bids</h3>
-              <p className="mt-2 text-gray-600">View and manage your bids</p>
-              <button
-                onClick={() => navigate('/bids')}
-                className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                View Bids
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => navigate('/bids')}
+            className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+          >
+            <svg className="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-lg font-medium text-gray-900">View Bids</span>
+          </button>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900">Create Bid</h3>
-              <p className="mt-2 text-gray-600">Create a new bid for a project</p>
-              <button
-                onClick={() => navigate('/create-bid')}
-                className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create Bid
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900">Profile Settings</h3>
-              <p className="mt-2 text-gray-600">Update your profile and preferences</p>
-              <button
-                onClick={() => navigate('/profile')}
-                className="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Profile Settings
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => navigate('/profile')}
+            className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+          >
+            <svg className="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-lg font-medium text-gray-900">Profile</span>
+          </button>
         </div>
       </div>
     </div>
