@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getRFPResponse, updateRFPResponse } from '../services/db';
 
@@ -11,11 +11,7 @@ const ViewRFPProposal = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedResponse, setEditedResponse] = useState(null);
 
-  useEffect(() => {
-    loadResponse();
-  }, [responseId]);
-
-  const loadResponse = async () => {
+  const loadResponse = useCallback(async () => {
     try {
       const responseData = await getRFPResponse(responseId);
       if (!responseData) {
@@ -30,7 +26,11 @@ const ViewRFPProposal = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [responseId]);
+
+  useEffect(() => {
+    loadResponse();
+  }, [loadResponse]);
 
   const handleBack = () => {
     navigate('/rfp-responses');
