@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50">

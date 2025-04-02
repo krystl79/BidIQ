@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const MobileNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  useAuth();
 
   const isActive = (path) => {
     return location.pathname === path;
