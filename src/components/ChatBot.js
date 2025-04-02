@@ -31,7 +31,7 @@ const ChatBot = ({ onClose }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState('project_name');
   const [userInput, setUserInput] = useState('');
   const [projectData, setProjectData] = useState({
     projectName: '',
@@ -42,7 +42,7 @@ const ChatBot = ({ onClose }) => {
       state: '',
       zipCode: ''
     },
-    projectType: '',
+    projectType: 'Standard',
     homeType: '',
     climbingLadder: null,
     equipmentNeeded: []
@@ -63,7 +63,7 @@ const ChatBot = ({ onClose }) => {
     // Only show initial messages once
     if (!hasShownInitialMessages.current) {
       addBotMessage("👋 Hi! I'm here to help you get started with your project.");
-      addBotMessage(steps[0].question);
+      addBotMessage("What would you like to name this project?");
       hasShownInitialMessages.current = true;
     }
   }, []); // Empty dependency array since we only want this to run once
@@ -121,31 +121,6 @@ const ChatBot = ({ onClose }) => {
 
     try {
       switch (currentStep) {
-        case 'project_type':
-          if (input.toLowerCase() === 'yes') {
-            setProjectData(prev => ({ ...prev, projectType: 'RFP' }));
-            setCurrentStep('solicitation_upload');
-            setMessages(prev => [...prev, {
-              text: "Great! Please upload your solicitation document.",
-              sender: 'bot'
-            }]);
-          } else {
-            setProjectData(prev => ({ ...prev, projectType: 'Standard' }));
-            setCurrentStep('project_name');
-            setMessages(prev => [...prev, {
-              text: "What would you like to name this project?",
-              sender: 'bot'
-            }]);
-          }
-          break;
-        case 'solicitation_upload':
-          // Handle file upload
-          setCurrentStep('project_name');
-          setMessages(prev => [...prev, {
-            text: "What would you like to name this project?",
-            sender: 'bot'
-          }]);
-          break;
         case 'project_name':
           setProjectData(prev => ({ ...prev, name: input }));
           setCurrentStep('project_description');
@@ -305,7 +280,7 @@ const ChatBot = ({ onClose }) => {
         </div>
 
         <div className="p-4 border-t">
-          {currentStep === 4 && !createdProjectId && (
+          {currentStep === 'project_equipment' && !createdProjectId && (
             <div className="mb-4">
               <button
                 onClick={() => setUserInput("Install Holiday Decorations")}
@@ -316,24 +291,7 @@ const ChatBot = ({ onClose }) => {
             </div>
           )}
           
-          {currentStep === 5 && !createdProjectId && (
-            <div className="mb-4 space-y-2">
-              <button
-                onClick={() => setUserInput("Single Story")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                Single Story
-              </button>
-              <button
-                onClick={() => setUserInput("2-Story")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                2-Story
-              </button>
-            </div>
-          )}
-          
-          {currentStep === 6 && !createdProjectId && (
+          {currentStep === 'project_ladder_comfort' && !createdProjectId && (
             <div className="mb-4 space-y-2">
               <button
                 onClick={() => setUserInput("Yes")}
@@ -353,7 +311,7 @@ const ChatBot = ({ onClose }) => {
           {!createdProjectId ? (
             <div className="flex space-x-2">
               <input
-                type={steps[currentStep].type === 'date' ? 'date' : 'text'}
+                type={currentStep === 'project_start_date' || currentStep === 'project_end_date' ? 'date' : 'text'}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyPress={handleKeyPress}
