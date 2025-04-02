@@ -49,7 +49,7 @@ const LandingPage = () => {
     if (!deferredPrompt) return;
     try {
       deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+      await deferredPrompt.userChoice;
       setDeferredPrompt(null);
       setIsInstallable(false);
     } catch (error) {
