@@ -1,9 +1,16 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
-import { Dashboard as DashboardIcon, Description, Business, Assignment } from '@mui/icons-material';
+import { BottomNavigation, BottomNavigationAction, Paper, useMediaQuery, useTheme } from '@mui/material';
+import { Dashboard as DashboardIcon, Description, Business, Assignment, Person } from '@mui/icons-material';
 
 const MobileNav = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  if (!isMobile) {
+    return null;
+  }
+
   return (
     <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
       <BottomNavigation>
@@ -16,7 +23,7 @@ const MobileNav = () => {
         <BottomNavigationAction
           component={RouterLink}
           to="/rfp-responses"
-          label="RFP Responses"
+          label="RFPs and Solicitations"
           icon={<Description />}
         />
         <BottomNavigationAction
@@ -30,6 +37,12 @@ const MobileNav = () => {
           to="/bids"
           label="Bids"
           icon={<Assignment />}
+        />
+        <BottomNavigationAction
+          component={RouterLink}
+          to="/profile"
+          label="Profile"
+          icon={<Person />}
         />
       </BottomNavigation>
     </Paper>

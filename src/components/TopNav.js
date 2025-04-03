@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { Dashboard as DashboardIcon, Description, Business, Assignment } from '@mui/icons-material';
+import { Dashboard as DashboardIcon, Description, Business, Assignment, Person } from '@mui/icons-material';
 
 // Top navigation bar component for desktop view
 const TopNav = () => {
@@ -26,7 +26,7 @@ const TopNav = () => {
             color="inherit"
             startIcon={<Description />}
           >
-            RFP Responses
+            RFPs and Solicitations
           </Button>
           <Button
             component={RouterLink}
@@ -43,6 +43,14 @@ const TopNav = () => {
             startIcon={<Assignment />}
           >
             Bids
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/profile"
+            color="inherit"
+            startIcon={<Person />}
+          >
+            Profile
           </Button>
         </Box>
       </Toolbar>
