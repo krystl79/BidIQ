@@ -75,8 +75,15 @@ const extractContentRequirements = (text) => {
 
 export const extractProposalInfo = async (file, userId) => {
   try {
+    // Validate inputs
+    if (!file) {
+      throw new Error('File is required');
+    }
     if (!userId) {
       throw new Error('User ID is required');
+    }
+    if (!file.name || !file.size) {
+      throw new Error('Invalid file object');
     }
 
     // Convert file to ArrayBuffer
@@ -97,50 +104,49 @@ export const extractProposalInfo = async (file, userId) => {
 
     // Extract information using helper functions
     const proposalInfo = {
-      dueDate: extractDueDate(fullText),
-      dueTime: extractDueTime(fullText),
-      solicitationNumber: extractSolicitationNumber(fullText),
-      projectNumber: extractProjectNumber(fullText),
-      projectName: extractProjectName(fullText),
-      projectDescription: extractProjectDescription(fullText),
-      projectSchedule: extractProjectSchedule(fullText),
-      soqRequirements: extractSOQRequirements(fullText),
-      contentRequirements: extractContentRequirements(fullText),
+      dueDate: extractDueDate(fullText) || '',
+      dueTime: extractDueTime(fullText) || '',
+      solicitationNumber: extractSolicitationNumber(fullText) || '',
+      projectNumber: extractProjectNumber(fullText) || '',
+      projectName: extractProjectName(fullText) || '',
+      projectDescription: extractProjectDescription(fullText) || '',
+      projectSchedule: extractProjectSchedule(fullText) || '',
+      soqRequirements: extractSOQRequirements(fullText) || '',
+      contentRequirements: extractContentRequirements(fullText) || '',
       userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       metadata: {
         fileName: file.name,
         fileSize: file.size,
-        pageCount: pdf.numPages
+        pageCount: pdf.numPages,
+        mimeType: file.type || 'application/pdf'
       },
       status: 'processed'
     };
 
-    // Clean the data before storing in Firestore
-    const cleanProposalInfo = Object.fromEntries(
-      Object.entries(proposalInfo).map(([key, value]) => [
-        key,
-        value === null ? '' : value // Convert null values to empty strings
-      ])
-    );
+    // Validate required fields
+    if (!proposalInfo.solicitationNumber && !proposalInfo.projectNumber) {
+      console.warn('No solicitation or project number found in document');
+    }
 
     try {
-      // Store in Firestore
+      // Store in Firestore with proper error handling
       const proposalsRef = collection(db, 'users', userId, 'proposals');
-      const docRef = await addDoc(proposalsRef, cleanProposalInfo);
+      const docRef = await addDoc(proposalsRef, proposalInfo);
       console.log('Document stored in Firestore with ID:', docRef.id);
 
       return {
         id: docRef.id,
-        ...cleanProposalInfo
+        ...proposalInfo
       };
     } catch (firestoreError) {
       console.error('Error storing document in Firestore:', firestoreError);
       // Return the extracted info even if Firestore storage fails
       return {
         id: null,
-        ...cleanProposalInfo
+        ...proposalInfo,
+        error: 'Failed to store in database'
       };
     }
   } catch (error) {
