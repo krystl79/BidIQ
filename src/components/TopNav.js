@@ -5,7 +5,6 @@ import { AppBar, Toolbar, Button, Box } from '@mui/material';
 
 const TopNav = ({ onLogout }) => {
   const location = useLocation();
-  const { user } = useAuth();
 
   const isActive = (path) => {
     return location.pathname === path;
