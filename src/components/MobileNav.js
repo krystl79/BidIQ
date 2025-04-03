@@ -25,7 +25,7 @@ const MobileNav = () => {
             className="h-6 mb-1"
             onError={(e) => console.error('Error loading logo:', e)}
           />
-          <span className="text-xs">Home</span>
+          <span className="text-xs">Dashboard</span>
         </Link>
 
         <Link
