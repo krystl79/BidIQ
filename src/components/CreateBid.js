@@ -2,6 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveBid } from '../services/db';
 import EquipmentList from './EquipmentList';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Grid,
+  Paper,
+  CircularProgress,
+  Alert,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select
+} from '@mui/material';
 
 const CreateBid = () => {
   const navigate = useNavigate();
@@ -218,175 +233,179 @@ const CreateBid = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   if (error || !projectData) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h5" component="h2" gutterBottom color="error">
             {error || 'No Project Selected'}
-          </h2>
-          <p className="text-gray-600 mb-4">
+          </Typography>
+          <Typography color="text.secondary" paragraph>
             {error ? 'An error occurred while loading the data.' : 'Please select a project to create a bid.'}
-          </p>
-          <button
+          </Typography>
+          <Button
+            variant="outlined"
             onClick={() => navigate('/projects')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Go to Projects
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Paper>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-xl p-8 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Create New Bid</h2>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper sx={{ p: 4 }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Create New Bid
+          </Typography>
           
           {/* Project Information */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Project Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Project Name</p>
-                <p className="mt-1 text-sm text-gray-900">{projectData.projectName}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Project Type</p>
-                <p className="mt-1 text-sm text-gray-900">{projectData.projectType}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Location</p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {projectData.location.address}<br />
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Project Information
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Project Name
+                </Typography>
+                <Typography>{projectData.projectName}</Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Project Type
+                </Typography>
+                <Typography>{projectData.projectType}</Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Location
+                </Typography>
+                <Typography>
                   {projectData.location.city}, {projectData.location.state}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Timeline</p>
-                <p className="mt-1 text-sm text-gray-900">
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Timeline
+                </Typography>
+                <Typography>
                   {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
 
           {/* Client Information */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Company Name *</label>
-                <input
-                  type="text"
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Client Information
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Company Name"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Contact Name *</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Contact Name"
                   name="contactName"
                   value={formData.contactName}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email *</label>
-                <input
-                  type="email"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Email"
                   name="email"
+                  type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone *</label>
-                <input
-                  type="tel"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Address</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address"
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">State</label>
-                  <select
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="City"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>State</InputLabel>
+                  <Select
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    label="State"
                   >
-                    <option value="">Select State</option>
                     {states.map(state => (
-                      <option key={state} value={state}>{state}</option>
+                      <MenuItem key={state} value={state}>
+                        {state}
+                      </MenuItem>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="ZIP Code"
+                  name="zipCode"
+                  value={formData.zipCode}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+            </Grid>
+          </Box>
 
           {/* Equipment Selection */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Equipment</h3>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Equipment
+            </Typography>
             <EquipmentList
               projectDetails={{
                 projectType: projectData?.projectType || '',
@@ -396,48 +415,49 @@ const CreateBid = () => {
               initialSelectedEquipment={formData.selectedEquipment}
               onEquipmentChange={handleEquipmentChange}
             />
-          </div>
+          </Box>
 
           {/* Notes */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
-            <textarea
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Notes
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
-              rows={4}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Add any additional notes or special instructions..."
             />
-          </div>
+          </Box>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button
+              variant="outlined"
               onClick={handleCancel}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
-            </button>
-            <button
-              type="submit"
+            </Button>
+            <Button
+              variant="contained"
               onClick={handleSubmit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Create Bid
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 

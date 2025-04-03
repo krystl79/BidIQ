@@ -94,11 +94,6 @@ const Dashboard = () => {
           title="Create Project"
         />
         <DashboardCard
-          to="/rfp-responses"
-          icon={Description}
-          title="Proposals"
-        />
-        <DashboardCard
           to="/projects"
           icon={Business}
           title="Projects"
@@ -107,6 +102,11 @@ const Dashboard = () => {
           to="/bids"
           icon={CheckCircle}
           title="Bids"
+        />
+        <DashboardCard
+          to="/rfp-responses"
+          icon={Description}
+          title="Proposals"
         />
         <DashboardCard
           to="/profile"
