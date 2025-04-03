@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { extractProposalInfo } from '../services/pdfService';
 import { Box, Button, Container, Typography, Paper, CircularProgress, Alert } from '@mui/material';
-import ProposalChecklist from './ProposalChecklist';
+import ProposalCard from './ProposalCard';
 
 const SolicitationUploadScreen = () => {
   const [file, setFile] = useState(null);
@@ -94,16 +94,26 @@ const SolicitationUploadScreen = () => {
 
       {extractedInfo && (
         <>
-          <ProposalChecklist proposalInfo={extractedInfo} />
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleContinue}
-            >
-              Continue to Proposal
-            </Button>
-          </Box>
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h5" gutterBottom>
+              Proposal Created Successfully
+            </Typography>
+            <Typography variant="body1" paragraph>
+              Your proposal has been processed and saved. You can view the details below or continue to the full proposal view.
+            </Typography>
+            
+            <ProposalCard proposal={extractedInfo} />
+            
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleContinue}
+              >
+                Continue to Proposal
+              </Button>
+            </Box>
+          </Paper>
         </>
       )}
     </Container>

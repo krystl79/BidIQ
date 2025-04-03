@@ -21,7 +21,7 @@ const ProposalChecklist = ({ proposalInfo }) => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>
-        Proposal Checklist
+        Proposal Information
       </Typography>
 
       <Grid container spacing={3}>
