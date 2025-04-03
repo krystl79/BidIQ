@@ -38,6 +38,7 @@ export const uploadSolicitation = async (file, userId) => {
     // Call the Cloud Function to process the document
     const response = await fetch('https://us-central1-bidiq-8a697.cloudfunctions.net/processSolicitation', {
       method: 'POST',
+      mode: 'no-cors',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
@@ -86,6 +87,7 @@ export const processSolicitationLink = async (link, userId) => {
     // Call the Cloud Function to process the link
     const response = await fetch('https://us-central1-bidiq-8a697.cloudfunctions.net/processSolicitationLink', {
       method: 'POST',
+      mode: 'no-cors',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
