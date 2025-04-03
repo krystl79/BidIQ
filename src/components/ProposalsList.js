@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Container, Typography, Grid, CircularProgress } from '@mui/material';
+import { Box, Container, Typography, Grid, CircularProgress, Alert, Button } from '@mui/material';
 import ProposalCard from './ProposalCard';
 
 const ProposalsList = () => {
@@ -13,6 +13,11 @@ const ProposalsList = () => {
 
   useEffect(() => {
     const loadProposals = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const proposalsRef = collection(db, 'users', currentUser.uid, 'proposals');
         const q = query(proposalsRef, orderBy('createdAt', 'desc'));
@@ -32,16 +37,17 @@ const ProposalsList = () => {
       }
     };
 
-    if (currentUser) {
-      loadProposals();
-    }
+    loadProposals();
   }, [currentUser]);
 
   if (loading) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <CircularProgress size={40} />
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            Loading proposals...
+          </Typography>
         </Box>
       </Container>
     );
@@ -51,9 +57,12 @@ const ProposalsList = () => {
     return (
       <Container maxWidth="lg">
         <Box sx={{ py: 4 }}>
-          <Typography color="error" variant="h6">
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
-          </Typography>
+          </Alert>
+          <Button variant="contained" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </Box>
       </Container>
     );
@@ -67,9 +76,11 @@ const ProposalsList = () => {
         </Typography>
 
         {proposals.length === 0 ? (
-          <Typography variant="body1" color="text.secondary">
-            No proposals found. Upload a solicitation document to get started.
-          </Typography>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body1">
+              No proposals found. Upload a solicitation document to get started.
+            </Typography>
+          </Alert>
         ) : (
           <Grid container spacing={3}>
             {proposals.map((proposal) => (

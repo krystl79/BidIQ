@@ -29,12 +29,15 @@ const SolicitationUploadScreen = () => {
     try {
       setLoading(true);
       setError(null);
-      await extractProposalInfo(file, currentUser.uid);
+      const result = await extractProposalInfo(file, currentUser.uid);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
       setSuccess(true);
-      // Navigate to proposals list after a short delay to show the success message
-      setTimeout(() => {
-        navigate('/proposals');
-      }, 1500);
+      // Navigate immediately to proposals list
+      navigate('/proposals');
     } catch (error) {
       console.error('Error processing PDF:', error);
       setError('Error processing PDF. Please try again.');
@@ -93,10 +96,23 @@ const SolicitationUploadScreen = () => {
 
       <Snackbar
         open={success}
-        autoHideDuration={1500}
+        autoHideDuration={3000}
         onClose={handleCloseSnackbar}
-        message="Document processed successfully! Redirecting to proposals..."
-      />
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity="success" 
+          sx={{ width: '100%' }}
+        >
+          <Typography variant="subtitle1" gutterBottom>
+            Document processed successfully!
+          </Typography>
+          <Typography variant="body2">
+            Redirecting to proposals list...
+          </Typography>
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
