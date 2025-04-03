@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { extractProposalInfo } from '../services/pdfService';
-import { Box, Button, Container, Typography, Paper, CircularProgress, Alert } from '@mui/material';
-import ProposalCard from './ProposalCard';
+import { Box, Button, Container, Typography, Paper, CircularProgress, Alert, Snackbar } from '@mui/material';
 
 const SolicitationUploadScreen = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [extractedInfo, setExtractedInfo] = useState(null);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -18,7 +17,6 @@ const SolicitationUploadScreen = () => {
     if (selectedFile && selectedFile.type === 'application/pdf') {
       setFile(selectedFile);
       setError(null);
-      setExtractedInfo(null);
     } else {
       setError('Please select a valid PDF file');
       setFile(null);
@@ -32,8 +30,11 @@ const SolicitationUploadScreen = () => {
       setLoading(true);
       setError(null);
       const result = await extractProposalInfo(file, currentUser.uid);
-      setExtractedInfo(result);
-      // Don't navigate away immediately, let user review the extracted information
+      setSuccess(true);
+      // Navigate to proposals list after a short delay to show the success message
+      setTimeout(() => {
+        navigate('/proposals');
+      }, 1500);
     } catch (error) {
       console.error('Error processing PDF:', error);
       setError('Error processing PDF. Please try again.');
@@ -42,10 +43,8 @@ const SolicitationUploadScreen = () => {
     }
   };
 
-  const handleContinue = () => {
-    if (extractedInfo) {
-      navigate(`/proposals/${extractedInfo.id}`);
-    }
+  const handleCloseSnackbar = () => {
+    setSuccess(false);
   };
 
   return (
@@ -92,30 +91,12 @@ const SolicitationUploadScreen = () => {
         )}
       </Paper>
 
-      {extractedInfo && (
-        <>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Proposal Created Successfully
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Your proposal has been processed and saved. You can view the details below or continue to the full proposal view.
-            </Typography>
-            
-            <ProposalCard proposal={extractedInfo} />
-            
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleContinue}
-              >
-                Continue to Proposal
-              </Button>
-            </Box>
-          </Paper>
-        </>
-      )}
+      <Snackbar
+        open={success}
+        autoHideDuration={1500}
+        onClose={handleCloseSnackbar}
+        message="Document processed successfully! Redirecting to proposals..."
+      />
     </Container>
   );
 };
