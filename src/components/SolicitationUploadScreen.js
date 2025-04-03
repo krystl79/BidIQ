@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { extractProposalInfo } from '../services/docupandaService';
+import { extractProposalInfo } from '../services/pdfService';
 import { Box, Button, Container, Typography, Paper, CircularProgress, Alert } from '@mui/material';
 import ProposalChecklist from './ProposalChecklist';
 

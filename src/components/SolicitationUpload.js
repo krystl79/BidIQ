@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { extractProposalInfo } from '../services/docupandaService';
+import { extractProposalInfo } from '../services/pdfService';
 import { analyzeDocument, generateBidScore, generateRiskAssessment } from '../services/nlpService';
 import { useAuth } from '../contexts/AuthContext';
 
