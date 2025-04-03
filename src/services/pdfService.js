@@ -1,7 +1,7 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import * as pdfjsLib from 'pdfjs-dist';
-import { app } from '../config';
+import { app } from '../config.js';
 
 // Initialize services using the existing Firebase app
 const storage = getStorage(app);
