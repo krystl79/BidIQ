@@ -114,4 +114,32 @@ export const extractProposalInfo = async (file, userId) => {
     console.error('Error processing PDF:', error);
     throw error;
   }
+};
+
+export const uploadFile = async (file, userId) => {
+  try {
+    const timestamp = new Date().getTime();
+    const fileName = `${timestamp}-${file.name}`;
+    const storageRef = ref(storage, `solicitations/${userId}/${fileName}`);
+    
+    // Set custom metadata including CORS headers
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    return {
+      fileName,
+      downloadURL,
+      timestamp
+    };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
 }; 
