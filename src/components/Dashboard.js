@@ -1,192 +1,126 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Grid, Paper, Typography, Button, Box } from '@mui/material';
-import { Description, Business, Assignment, Add, Person } from '@mui/icons-material';
+import { Container, Box, Typography } from '@mui/material';
+import { Add, Description, Business, CheckCircle, Person } from '@mui/icons-material';
+
+const DashboardCard = ({ to, icon: Icon, title }) => (
+  <Link 
+    to={to}
+    style={{ 
+      textDecoration: 'none',
+      color: 'inherit'
+    }}
+  >
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '32px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        },
+      }}
+    >
+      <Icon 
+        sx={{ 
+          fontSize: 48, 
+          color: '#4F46E5',
+          marginBottom: 2
+        }} 
+      />
+      <Typography
+        variant="h6"
+        sx={{
+          color: '#111827',
+          fontSize: '1.25rem',
+          fontWeight: 500,
+          textAlign: 'center'
+        }}
+      >
+        {title}
+      </Typography>
+    </Box>
+  </Link>
+);
 
 const Dashboard = () => {
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Dashboard
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <img 
+          src="/logo.png" 
+          alt="BidIQ Logo" 
+          style={{ 
+            height: '64px',
+            marginBottom: '24px'
+          }} 
+        />
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 'bold',
+            color: '#111827',
+            marginBottom: '16px'
+          }}
+        >
+          Welcome to BidIQ
         </Typography>
-        
-        <Grid container spacing={3}>
-          {/* Create Project */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                height: '100%',
-                transition: '0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                },
-              }}
-            >
-              <Add sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Create Project
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Create a new project
-              </Typography>
-              <Button
-                component={Link}
-                to="/create-project"
-                variant="contained"
-                color="primary"
-              >
-                Create
-              </Button>
-            </Paper>
-          </Grid>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            color: '#6B7280',
+            fontWeight: 'normal'
+          }}
+        >
+          Your AI-powered bid assistant
+        </Typography>
+      </Box>
 
-          {/* RFPs and Solicitations */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                height: '100%',
-                transition: '0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                },
-              }}
-            >
-              <Description sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                RFPs and Solicitations
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                View and manage your RFPs and solicitations
-              </Typography>
-              <Button
-                component={Link}
-                to="/rfp-responses"
-                variant="contained"
-                color="primary"
-              >
-                View
-              </Button>
-            </Paper>
-          </Grid>
-
-          {/* Projects */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                height: '100%',
-                transition: '0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                },
-              }}
-            >
-              <Business sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Projects
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                View and manage your projects
-              </Typography>
-              <Button
-                component={Link}
-                to="/projects"
-                variant="contained"
-                color="primary"
-              >
-                View
-              </Button>
-            </Paper>
-          </Grid>
-
-          {/* Bids */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                height: '100%',
-                transition: '0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                },
-              }}
-            >
-              <Assignment sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Bids
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                View and manage your bids
-              </Typography>
-              <Button
-                component={Link}
-                to="/bids"
-                variant="contained"
-                color="primary"
-              >
-                View
-              </Button>
-            </Paper>
-          </Grid>
-
-          {/* Profile */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-              sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                height: '100%',
-                transition: '0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                },
-              }}
-            >
-              <Person sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Profile
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                View and edit your profile
-              </Typography>
-              <Button
-                component={Link}
-                to="/profile"
-                variant="contained"
-                color="primary"
-              >
-                View
-              </Button>
-            </Paper>
-          </Grid>
-        </Grid>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+            lg: 'repeat(5, 1fr)',
+          },
+          gap: 3,
+          mt: 4,
+        }}
+      >
+        <DashboardCard
+          to="/create-project"
+          icon={Add}
+          title="Create Project"
+        />
+        <DashboardCard
+          to="/rfp-responses"
+          icon={Description}
+          title="Proposals"
+        />
+        <DashboardCard
+          to="/projects"
+          icon={Business}
+          title="Projects"
+        />
+        <DashboardCard
+          to="/bids"
+          icon={CheckCircle}
+          title="Bids"
+        />
+        <DashboardCard
+          to="/profile"
+          icon={Person}
+          title="Profile"
+        />
       </Box>
     </Container>
   );
