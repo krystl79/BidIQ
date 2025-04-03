@@ -1,7 +1,7 @@
 import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { pdfjs } from 'react-pdf';
+import * as pdfjsLib from 'pdfjs-dist';
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -19,13 +19,15 @@ const storage = getStorage(app);
 const db = getFirestore(app);
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs-5.1.91-dist/build/pdf.worker.min.js';
+}
 
 export const extractProposalInfo = async (file, userId) => {
   try {
     // Process PDF locally first
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
     // Extract text from all pages
     let fullText = '';
