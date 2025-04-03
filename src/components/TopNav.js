@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Box } from '@mui/material';
 
+// Top navigation bar component for desktop view
 const TopNav = ({ onLogout }) => {
   const location = useLocation();
 
