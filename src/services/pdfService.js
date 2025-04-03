@@ -1,22 +1,9 @@
-import { initializeApp } from 'firebase/app';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import * as pdfjsLib from 'pdfjs-dist';
+import { app } from '../config';
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBxXhXhXhXhXhXhXhXhXhXhXhXhXhXhXhXh",
-  authDomain: "bidiq-7c0c1.firebaseapp.com",
-  projectId: "bidiq-7c0c1",
-  storageBucket: "bidiq-7c0c1.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
-};
-
-// Initialize Firebase app
-const app = initializeApp(firebaseConfig);
-
-// Initialize services
+// Initialize services using the existing Firebase app
 const storage = getStorage(app);
 const db = getFirestore(app);
 
