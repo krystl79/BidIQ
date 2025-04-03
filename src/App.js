@@ -7,7 +7,6 @@ import Dashboard from './components/Dashboard';
 import CreateBid from './components/CreateBid';
 import BidsList from './components/BidsList';
 import Profile from './components/Profile';
-import Navbar from './components/Navbar';
 import ViewBid from './components/ViewBid';
 import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
@@ -19,7 +18,6 @@ import ViewRFPProposal from './components/ViewRFPResponse';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
-import MobileNav from './components/MobileNav';
 import TopNav from './components/TopNav';
 import ProposalDetails from './components/ProposalDetails';
 import ProposalsList from './components/ProposalsList';
@@ -29,7 +27,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -68,15 +66,6 @@ function AppContent() {
     loadData();
   }, [currentUser]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -93,16 +82,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showNavbar && (
-        <>
-          <div className="hidden md:block">
-            <TopNav onLogout={handleLogout} />
-          </div>
-          <div className="md:hidden">
-            <Navbar user={currentUser} onLogout={handleLogout} />
-          </div>
-        </>
-      )}
+      {showNavbar && <TopNav />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -110,10 +90,7 @@ function AppContent() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <Dashboard />
-                <MobileNav />
-              </div>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
@@ -121,10 +98,7 @@ function AppContent() {
           path="/upload-solicitation"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <SolicitationUploadScreen />
-                <MobileNav />
-              </div>
+              <SolicitationUploadScreen />
             </ProtectedRoute>
           }
         />
@@ -132,10 +106,7 @@ function AppContent() {
           path="/proposals"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ProposalsList />
-                <MobileNav />
-              </div>
+              <ProposalsList />
             </ProtectedRoute>
           }
         />
@@ -143,10 +114,7 @@ function AppContent() {
           path="/rfp-responses"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <RFPProposalsList />
-                <MobileNav />
-              </div>
+              <RFPProposalsList />
             </ProtectedRoute>
           }
         />
@@ -154,10 +122,7 @@ function AppContent() {
           path="/rfp-responses/:responseId"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ViewRFPProposal />
-                <MobileNav />
-              </div>
+              <ViewRFPProposal />
             </ProtectedRoute>
           }
         />
@@ -165,10 +130,7 @@ function AppContent() {
           path="/proposals/:proposalId/details"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ProposalDetails />
-                <MobileNav />
-              </div>
+              <ProposalDetails />
             </ProtectedRoute>
           }
         />
@@ -184,10 +146,7 @@ function AppContent() {
           path="/projects"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ProjectList />
-                <MobileNav />
-              </div>
+              <ProjectList />
             </ProtectedRoute>
           }
         />
@@ -195,10 +154,7 @@ function AppContent() {
           path="/projects/:projectId"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ViewProject />
-                <MobileNav />
-              </div>
+              <ViewProject />
             </ProtectedRoute>
           }
         />
@@ -214,10 +170,7 @@ function AppContent() {
           path="/projects/:projectId/bids"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <BidsList />
-                <MobileNav />
-              </div>
+              <BidsList />
             </ProtectedRoute>
           }
         />
@@ -233,10 +186,7 @@ function AppContent() {
           path="/bids/:bidId"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ViewBid />
-                <MobileNav />
-              </div>
+              <ViewBid />
             </ProtectedRoute>
           }
         />
@@ -244,10 +194,7 @@ function AppContent() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <Profile />
-                <MobileNav />
-              </div>
+              <Profile />
             </ProtectedRoute>
           }
         />
@@ -256,10 +203,12 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <ErrorBoundary>
       <AppContent />
     </ErrorBoundary>
   );
 }
+
+export default App;
