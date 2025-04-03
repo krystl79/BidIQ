@@ -61,11 +61,24 @@ const extractContentRequirements = (text) => {
   return match ? match[1].trim() : null;
 };
 
+// Helper function to convert file to base64 in chunks
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // Convert file to base64
-    const fileBuffer = await file.arrayBuffer();
-    const base64File = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    // Convert file to base64 using FileReader
+    const base64File = await fileToBase64(file);
 
     // First, post the document to Docupanda
     const postResponse = await fetch('https://app.docupanda.io/document', {
