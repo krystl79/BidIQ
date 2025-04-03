@@ -5,7 +5,9 @@ import {
   signOut,
   onAuthStateChanged,
   fetchSignInMethodsForEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
@@ -47,6 +49,9 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     console.log('Attempting login with:', email);
     try {
+      // Set persistence to LOCAL
+      await setPersistence(auth, browserLocalPersistence);
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Login successful:', userCredential.user.email);
       return userCredential;
