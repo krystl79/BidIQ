@@ -8,12 +8,18 @@
  */
 
 const functions = require("firebase-functions");
-const cors = require("cors")({ origin: true });
+const cors = require("cors")({ 
+  origin: ['https://67ee000573287e0008357415--bidiq.netlify.app', 'http://localhost:3000'],
+  methods: ['POST', 'OPTIONS'],
+  credentials: true
+});
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
 const { PDFDocument } = require("pdf-lib");
 const { TextractClient, AnalyzeDocumentCommand } = require("@aws-sdk/client-textract");
 const fetch = require('node-fetch');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
 admin.initializeApp();
 
@@ -107,44 +113,62 @@ exports.processSolicitationLink = functions.https.onRequest((request, response) 
 exports.processDocument = functions.https.onRequest((request, response) => {
   cors(request, response, async () => {
     try {
+      if (request.method === 'OPTIONS') {
+        response.status(204).send('');
+        return;
+      }
+
       if (request.method !== 'POST') {
         response.status(405).send('Method Not Allowed');
         return;
       }
 
-      const file = request.files.file;
-      if (!file) {
-        response.status(400).send('No file provided');
-        return;
-      }
+      // Handle file upload using multer
+      upload.single('file')(request, response, async (err) => {
+        if (err) {
+          console.error('Error processing file upload:', err);
+          response.status(400).json({ error: 'Error processing file upload' });
+          return;
+        }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('options', JSON.stringify({
-        extractText: true,
-        extractMetadata: true,
-        extractTables: true,
-        extractForms: true
-      }));
+        if (!request.file) {
+          response.status(400).json({ error: 'No file provided' });
+          return;
+        }
 
-      const docupandaResponse = await fetch('https://api.docupanda.com/v1/process', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${functions.config().docupanda.api_key}`,
-          'Accept': 'application/json'
-        },
-        body: formData
+        try {
+          const formData = new FormData();
+          formData.append('file', new Blob([request.file.buffer]), request.file.originalname);
+          formData.append('options', JSON.stringify({
+            extractText: true,
+            extractMetadata: true,
+            extractTables: true,
+            extractForms: true
+          }));
+
+          const docupandaResponse = await fetch('https://api.docupanda.com/v1/process', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${functions.config().docupanda.api_key}`,
+              'Accept': 'application/json'
+            },
+            body: formData
+          });
+
+          if (!docupandaResponse.ok) {
+            const errorData = await docupandaResponse.json();
+            throw new Error(errorData.message || 'Failed to process document with Docupanda');
+          }
+
+          const result = await docupandaResponse.json();
+          response.status(200).json(result);
+        } catch (error) {
+          console.error('Error processing document:', error);
+          response.status(500).json({ error: error.message });
+        }
       });
-
-      if (!docupandaResponse.ok) {
-        const errorData = await docupandaResponse.json();
-        throw new Error(errorData.message || 'Failed to process document with Docupanda');
-      }
-
-      const result = await docupandaResponse.json();
-      response.status(200).json(result);
     } catch (error) {
-      console.error('Error processing document:', error);
+      console.error('Error in CORS handler:', error);
       response.status(500).json({ error: error.message });
     }
   });
