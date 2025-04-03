@@ -29,48 +29,6 @@ import ProposalDetails from './components/ProposalDetails';
 import ProposalsList from './components/ProposalsList';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Add ProtectedRoute component at the top level, before AppContent
-const ProtectedRoute = ({ children }) => {
-  const { currentUser, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    console.log('ProtectedRoute - Auth State:', { currentUser, loading });
-    if (!loading && !currentUser) {
-      // Don't redirect if we're on a public route
-      const publicRoutes = ['/', '/login'];
-      if (!publicRoutes.includes(location.pathname)) {
-        navigate('/login', { state: { from: location.pathname } });
-      }
-    }
-  }, [currentUser, loading, navigate, location]);
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Always allow rendering for public routes
-  if (['/', '/login'].includes(location.pathname)) {
-    return children;
-  }
-
-  // For protected routes, check authentication
-  if (!currentUser) {
-    return null;
-  }
-
-  return children;
-};
-
 // Create a wrapper component to use hooks
 function AppContent() {
   const navigate = useNavigate();
@@ -164,6 +122,17 @@ function AppContent() {
           }
         />
         <Route
+          path="/upload-solicitation"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <SolicitationUploadScreen />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/proposals"
           element={
             <ProtectedRoute>
@@ -227,27 +196,49 @@ function AppContent() {
           }
         />
         <Route
-          path="/create-bid"
+          path="/projects/:projectId"
           element={
             <ProtectedRoute>
-              <CreateBid />
+              <div className="pb-16 md:pb-0">
+                <ViewProject />
+                <MobileNav />
+              </div>
             </ProtectedRoute>
           }
         />
         <Route
-          path="/edit-bid/:bidId"
+          path="/projects/:projectId/edit"
           element={
             <ProtectedRoute>
-              <CreateBid />
+              <EditProject />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/bids"
+          path="/projects/:projectId/bids"
           element={
             <ProtectedRoute>
               <div className="pb-16 md:pb-0">
                 <BidsList />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/bids/new"
+          element={
+            <ProtectedRoute>
+              <CreateBid />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bids/:bidId"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <ViewBid />
                 <MobileNav />
               </div>
             </ProtectedRoute>
@@ -264,122 +255,15 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/select-project"
-          element={
-            <ProtectedRoute>
-              <SelectProject />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/project/:projectId"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ViewProject />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/edit"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <EditProject />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/view-bid/:bidId"
-          element={
-            <ProtectedRoute>
-              <ViewBid />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <Dashboard />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/upload-solicitation"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <SolicitationUploadScreen />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <ProjectDetails />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bids/:bidId"
-          element={
-            <ProtectedRoute>
-              <div className="pb-16 md:pb-0">
-                <BidDetails />
-                <MobileNav />
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/bid"
-          element={
-            <div className="pb-16 md:pb-0">
-              <BidView />
-              <MobileNav />
-            </div>
-          }
-        />
       </Routes>
     </div>
   );
 }
 
-// Wrap the AppContent with ErrorBoundary
-function App() {
-  useEffect(() => {
-    console.log('App - Environment:', process.env.NODE_ENV);
-    console.log('App - Firebase Config:', {
-      apiKey: process.env.REACT_APP_FIREBASE_API_KEY ? 'Present' : 'Missing',
-      authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN ? 'Present' : 'Missing',
-      projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
-      storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET ? 'Present' : 'Missing',
-      messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID ? 'Present' : 'Missing',
-      appId: process.env.REACT_APP_FIREBASE_APP_ID ? 'Present' : 'Missing',
-      measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID ? 'Present' : 'Missing'
-    });
-  }, []);
-
+export default function App() {
   return (
     <ErrorBoundary>
       <AppContent />
     </ErrorBoundary>
   );
 }
-
-export default App;
