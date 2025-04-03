@@ -2,7 +2,6 @@ import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import * as pdfjsLib from 'pdfjs-dist';
-import { pdfjs } from 'react-pdf';
 
 // Initialize Firebase
 const firebaseConfig = {
