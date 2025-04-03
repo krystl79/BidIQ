@@ -60,128 +60,140 @@ const ViewProject = () => {
   const handleCreateBid = () => {
     // Store current project in session storage for bid creation
     sessionStorage.setItem('currentProject', JSON.stringify(projectData));
-    navigate('/create-bid');
+    navigate(`/projects/${projectId}/bids/new`);
   };
 
   const handleViewBids = () => {
-    navigate(`/bids?projectId=${projectId}`);
+    navigate(`/projects/${projectId}/bids`);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   if (error || !projectData) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h5" component="h2" gutterBottom color="error">
             {error || 'Project Not Found'}
-          </h2>
-          <p className="text-gray-600 mb-4">
+          </Typography>
+          <Typography color="text.secondary" paragraph>
             {error ? 'An error occurred while loading the project.' : 'The project you\'re looking for could not be found.'}
-          </p>
-          <button
+          </Typography>
+          <Button
+            variant="outlined"
             onClick={handleBack}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Back to Projects
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Paper>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper sx={{ p: 4 }}>
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{projectData.projectName}</h1>
-            <p className="text-gray-600">Created: {new Date(projectData.createdAt).toLocaleDateString()}</p>
-          </div>
-          <div className="flex space-x-4">
-            <button
-              onClick={handleBack}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Back to Projects
-            </button>
-            <button
-              onClick={handleCreateBid}
-              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Create New Bid
-            </button>
-          </div>
-        </div>
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Box>
+              <Typography variant="h4" component="h1" gutterBottom>
+                {projectData.projectName}
+              </Typography>
+              <Typography color="text.secondary">
+                Created: {new Date(projectData.createdAt).toLocaleDateString()}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={handleBack}
+              >
+                Back to Projects
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleCreateBid}
+                color="primary"
+              >
+                Create New Bid
+              </Button>
+            </Box>
+          </Box>
+        </Box>
 
         {/* Project Details */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Project Details</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Project Type</p>
-              <p className="font-medium">{projectData.projectType}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-medium">
-                {projectData.location.city}, {projectData.location.state} {projectData.location.zipCode}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Start Date</p>
-              <p className="font-medium">
-                {new Date(projectData.timeline.startDate).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">End Date</p>
-              <p className="font-medium">
-                {new Date(projectData.timeline.endDate).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Equipment Markup</p>
-              <p className="font-medium">{projectData.equipmentMarkup}%</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Number of Bids</p>
-              <p className="font-medium">
-                <button
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Project Details
+            </Typography>
+            <Box sx={{ display: 'grid', gap: 2 }}>
+              <Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Project Type
+                </Typography>
+                <Typography>{projectData.projectType}</Typography>
+              </Box>
+              <Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Location
+                </Typography>
+                <Typography>
+                  {projectData.location.city}, {projectData.location.state} {projectData.location.zipCode}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Timeline
+                </Typography>
+                <Typography>
+                  {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Equipment Markup
+                </Typography>
+                <Typography>{projectData.equipmentMarkup}%</Typography>
+              </Box>
+              <Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Bids
+                </Typography>
+                <Button
                   onClick={handleViewBids}
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  startIcon={<Chip label={bids.length} size="small" />}
+                  color="primary"
                 >
-                  {bids.length} {bids.length === 1 ? 'Bid' : 'Bids'}
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
+                  View Bids
+                </Button>
+              </Box>
+            </Box>
+          </Grid>
 
-        {/* Notes */}
-        {projectData.notes && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Notes</h3>
-            <p className="text-gray-600 whitespace-pre-wrap">{projectData.notes}</p>
-          </div>
-        )}
-      </div>
-    </div>
+          {/* Notes */}
+          {projectData.notes && (
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                Notes
+              </Typography>
+              <Typography color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                {projectData.notes}
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
+      </Paper>
+    </Container>
   );
 };
 
