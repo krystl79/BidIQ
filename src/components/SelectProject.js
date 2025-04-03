@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllProjects } from '../services/db';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  CircularProgress,
+  Alert
+} from '@mui/material';
 
 const SelectProject = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadProjects();
@@ -14,10 +26,13 @@ const SelectProject = () => {
 
   const loadProjects = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const allProjects = await getAllProjects();
       setProjects(allProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
+      setError('Failed to load projects. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -27,83 +42,98 @@ const SelectProject = () => {
     // Store selected project in session storage
     sessionStorage.setItem('currentProject', JSON.stringify(project));
     // Navigate to create bid page
-    navigate('/create-bid');
+    navigate(`/projects/${project.id}/bids/new`);
   };
 
   const filteredProjects = projects.filter(project =>
-    project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.projectType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.location.state.toLowerCase().includes(searchQuery.toLowerCase())
+    project.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.projectType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.location?.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.location?.state?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Select Project for Bid</h1>
-          <button
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Select Project for Bid
+          </Typography>
+          <Button
+            variant="outlined"
             onClick={() => navigate('/bids')}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
           >
             Back to Bids
-          </button>
-        </div>
+          </Button>
+        </Box>
 
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-        <div className="grid grid-cols-1 gap-6">
+        <TextField
+          fullWidth
+          placeholder="Search projects by name, type, or location..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          sx={{ mb: 3 }}
+        />
+
+        <Box sx={{ display: 'grid', gap: 2 }}>
           {filteredProjects.map((project) => (
-            <div
+            <Card
               key={project.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+              sx={{
+                cursor: 'pointer',
+                '&:hover': {
+                  boxShadow: 3,
+                  transform: 'translateY(-2px)',
+                  transition: 'all 0.2s ease-in-out'
+                }
+              }}
               onClick={() => handleSelectProject(project)}
             >
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{project.projectName}</h2>
-                <p className="text-gray-600 mb-1">{project.projectType}</p>
-                <p className="text-gray-600 mb-1">
-                  {project.location.city}, {project.location.state}
-                </p>
-                <p className="text-gray-600">
-                  {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {project.projectName}
+                </Typography>
+                <Typography color="text.secondary" gutterBottom>
+                  {project.projectType}
+                </Typography>
+                <Typography color="text.secondary" gutterBottom>
+                  {project.location?.city}, {project.location?.state}
+                </Typography>
+                <Typography color="text.secondary">
+                  {project.timeline?.startDate && new Date(project.timeline.startDate).toLocaleDateString()} 
+                  {project.timeline?.endDate && ` - ${new Date(project.timeline.endDate).toLocaleDateString()}`}
+                </Typography>
+              </CardContent>
+            </Card>
           ))}
 
           {filteredProjects.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No projects found.</p>
-            </div>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography color="text.secondary">
+                {searchQuery ? 'No projects match your search.' : 'No projects found.'}
+              </Typography>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Container>
   );
 };
 
