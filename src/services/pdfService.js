@@ -28,9 +28,9 @@ export const extractProposalInfo = async (file, userId) => {
     await uploadBytes(storageRef, file);
     const fileUrl = await getDownloadURL(storageRef);
 
-    // Load PDF document
-    const loadingTask = pdfjsLib.getDocument(fileUrl);
-    const pdf = await loadingTask.promise;
+    // Read PDF file using FileReader
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
     // Extract text from all pages
     let fullText = '';
