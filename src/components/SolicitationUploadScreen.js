@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadSolicitation } from '../services/solicitationService';
 import { useAuth } from '../contexts/AuthContext';
+import { extractProposalInfo } from '../services/pdfService';
 
 const SolicitationUploadScreen = () => {
   const navigate = useNavigate();
@@ -20,13 +20,13 @@ const SolicitationUploadScreen = () => {
     setSuccess('');
 
     try {
-      const result = await uploadSolicitation(file, currentUser.uid);
+      const result = await extractProposalInfo(file, currentUser.uid);
       setAnalysisResult(result);
       setSuccess('Solicitation uploaded and processed successfully!');
       
-      // Navigate to the RFP response view after a short delay
+      // Navigate to the proposal view after a short delay
       setTimeout(() => {
-        navigate(`/rfp-responses/${result.rfpResponseId}`);
+        navigate(`/rfp-responses/${result.id}`);
       }, 2000);
     } catch (err) {
       setError(err.message || 'Error uploading solicitation');
@@ -97,45 +97,61 @@ const SolicitationUploadScreen = () => {
                       type="file"
                       className="sr-only"
                       onChange={handleFileUpload}
-                      accept=".pdf,.doc,.docx,.txt"
+                      accept=".pdf"
                       disabled={isUploading}
                     />
                   </label>
                   <p className="pl-1">or drag and drop</p>
                 </div>
-                <p className="text-xs text-gray-500">PDF, DOC, DOCX, or TXT up to 10MB</p>
+                <p className="text-xs text-gray-500">PDF files only</p>
               </div>
             </div>
           </div>
 
           {analysisResult && (
             <div className="mt-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Analysis Results</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Extracted Information</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500">Bid Score</h4>
-                    <p className="mt-1 text-sm text-gray-900">{analysisResult.bidScore}</p>
+                    <h4 className="text-sm font-medium text-gray-500">Due Date</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.dueDate || 'Not found'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500">Timeline</h4>
-                    <p className="mt-1 text-sm text-gray-900">{analysisResult.timeline}</p>
+                    <h4 className="text-sm font-medium text-gray-500">Due Time</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.dueTime || 'Not found'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500">Budget</h4>
-                    <p className="mt-1 text-sm text-gray-900">{analysisResult.budget}</p>
+                    <h4 className="text-sm font-medium text-gray-500">Solicitation Number</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.solicitationNumber || 'Not found'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500">Key Requirements</h4>
+                    <h4 className="text-sm font-medium text-gray-500">Project Number</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.projectNumber || 'Not found'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Project Name</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.projectName || 'Not found'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Project Description</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.projectDescription || 'Not found'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Project Schedule</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.projectSchedule || 'Not found'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">SOQ Requirements</h4>
                     <ul className="mt-1 text-sm text-gray-900 list-disc list-inside">
-                      {analysisResult.keyRequirements.map((req, index) => (
-                        <li key={index}>{req}</li>
-                      ))}
+                      <li>Length Limit: {analysisResult.soqRequirements.lengthLimit || 'Not specified'}</li>
+                      <li>Font Size: {analysisResult.soqRequirements.fontSize || 'Not specified'}</li>
+                      <li>Font Type: {analysisResult.soqRequirements.fontType || 'Not specified'}</li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500">Risk Assessment</h4>
-                    <p className="mt-1 text-sm text-gray-900">{analysisResult.riskAssessment}</p>
+                    <h4 className="text-sm font-medium text-gray-500">Content Requirements</h4>
+                    <p className="mt-1 text-sm text-gray-900">{analysisResult.contentRequirements || 'Not found'}</p>
                   </div>
                 </div>
               </div>
