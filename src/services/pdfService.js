@@ -23,7 +23,10 @@ const db = getFirestore(app);
 
 // Set up PDF.js worker
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs-5.1.91-dist/web/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.js',
+    import.meta.url
+  ).toString();
 }
 
 export const extractProposalInfo = async (file, userId) => {
