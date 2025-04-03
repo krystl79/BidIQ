@@ -3,7 +3,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import { collection, addDoc } from 'firebase/firestore';
 import { app } from '../firebase/config';
-import { getAuth } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const db = getFirestore(app);
@@ -29,7 +28,7 @@ export const uploadSolicitation = async (file, userId) => {
 
     // Call the Cloud Function to process the document
     const processSolicitation = httpsCallable(functions, 'processSolicitation');
-    const result = await processSolicitation({
+    await processSolicitation({
       fileUrl: downloadURL,
       filename: filename,
       fileType: file.type,
