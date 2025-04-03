@@ -81,6 +81,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showNavbar && <TopNav />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -205,7 +206,6 @@ function AppContent() {
           }
         />
       </Routes>
-      {showNavbar && <TopNav />}
     </div>
   );
 }
