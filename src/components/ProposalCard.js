@@ -25,7 +25,7 @@ const ProposalCard = ({ proposal }) => {
   const handleClose = () => setOpen(false);
   
   const handleViewDetails = () => {
-    navigate(`/proposals/${proposal.id}`);
+    navigate(`/proposals/${proposal.id}/details`, { state: { proposal } });
   };
 
   // Format date for display
