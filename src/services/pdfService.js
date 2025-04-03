@@ -122,39 +122,23 @@ export const uploadFile = async (file, userId) => {
     const fileName = `${timestamp}-${file.name}`;
     const storageRef = ref(storage, `solicitations/${userId}/${fileName}`);
     
-    // Get the upload URL
-    const uploadUrl = await getDownloadURL(storageRef);
+    // Create a resumable upload session
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        'userId': userId
+      }
+    };
+
+    // Upload the file using the Firebase SDK
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    const downloadURL = await getDownloadURL(snapshot.ref);
     
-    // Create a new XMLHttpRequest
-    const xhr = new XMLHttpRequest();
-    
-    // Set up the request
-    xhr.open('PUT', uploadUrl, true);
-    xhr.setRequestHeader('Content-Type', file.type);
-    
-    // Create a promise to handle the upload
-    const uploadPromise = new Promise((resolve, reject) => {
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve({
-            fileName,
-            downloadURL: uploadUrl,
-            timestamp
-          });
-        } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      };
-      
-      xhr.onerror = () => {
-        reject(new Error('Upload failed'));
-      };
-    });
-    
-    // Send the file
-    xhr.send(file);
-    
-    return uploadPromise;
+    return {
+      fileName,
+      downloadURL,
+      timestamp
+    };
   } catch (error) {
     console.error('Error uploading file:', error);
     throw new Error(`Failed to upload file: ${error.message}`);
