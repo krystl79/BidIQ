@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Grid, Paper, Typography, Button, Box } from '@mui/material';
-import { Dashboard as DashboardIcon, Description, Business, Assignment, Add } from '@mui/icons-material';
+import { Description, Business, Assignment, Add } from '@mui/icons-material';
 
 const Dashboard = () => {
   return (
