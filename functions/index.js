@@ -9,10 +9,11 @@
 
 const functions = require("firebase-functions");
 const cors = require("cors")({ 
-  origin: ['https://67eefc16b0b7f30008e67ca9--bidiq.netlify.app', 'http://localhost:3000'],
+  origin: ['https://67eeff8a659a320008513c8f--bidiq.netlify.app', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+  maxAge: 86400 // 24 hours
 });
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
@@ -38,9 +39,21 @@ const textract = new TextractClient({
 
 // Initialize Cloud Functions
 exports.processSolicitation = functions.https.onRequest((request, response) => {
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    cors(request, response, () => {
+      response.status(204).send('');
+    });
+    return;
+  }
+
   cors(request, response, async () => {
     try {
       const { fileUrl, filename, fileType, userId } = request.body;
+
+      if (!fileUrl || !filename || !fileType || !userId) {
+        throw new Error('Missing required parameters');
+      }
 
       // Download the file from Firebase Storage
       const bucket = storage.bucket("bidiq-8a697.appspot.com");
@@ -85,15 +98,30 @@ exports.processSolicitation = functions.https.onRequest((request, response) => {
       response.json({ success: true, text });
     } catch (error) {
       console.error("Error processing solicitation:", error);
-      response.status(500).json({ error: "Failed to process solicitation" });
+      response.status(500).json({ 
+        error: "Failed to process solicitation",
+        details: error.message 
+      });
     }
   });
 });
 
 exports.processSolicitationLink = functions.https.onRequest((request, response) => {
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    cors(request, response, () => {
+      response.status(204).send('');
+    });
+    return;
+  }
+
   cors(request, response, async () => {
     try {
       const { link, userId } = request.body;
+
+      if (!link || !userId) {
+        throw new Error('Missing required parameters');
+      }
 
       // Process the link and store in Firestore
       await admin.firestore().collection("solicitations").add({
@@ -106,7 +134,10 @@ exports.processSolicitationLink = functions.https.onRequest((request, response) 
       response.json({ success: true });
     } catch (error) {
       console.error("Error processing solicitation link:", error);
-      response.status(500).json({ error: "Failed to process solicitation link" });
+      response.status(500).json({ 
+        error: "Failed to process solicitation link",
+        details: error.message 
+      });
     }
   });
 });
