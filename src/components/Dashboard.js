@@ -104,7 +104,7 @@ const Dashboard = () => {
           title="Bids"
         />
         <DashboardCard
-          to="/rfp-responses"
+          to="/proposals"
           icon={Description}
           title="Proposals"
         />
