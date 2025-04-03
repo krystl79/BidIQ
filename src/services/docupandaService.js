@@ -151,7 +151,10 @@ export const extractProposalInfo = async (file, userId) => {
       throw new Error('Document processing timed out');
     }
 
-    const fullText = docupandaResult.result.pagesText.join('\n');
+    // Check if pagesText exists and is an array before joining
+    const fullText = docupandaResult.result.pagesText && Array.isArray(docupandaResult.result.pagesText) 
+      ? docupandaResult.result.pagesText.join('\n')
+      : '';
 
     // Extract information using helper functions
     const proposalInfo = {
