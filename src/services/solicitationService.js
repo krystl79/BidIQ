@@ -42,7 +42,6 @@ export const uploadSolicitation = async (file, userId) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
       },
-      credentials: 'include',
       body: JSON.stringify({
         fileUrl: downloadURL,
         filename: filename,
@@ -53,33 +52,27 @@ export const uploadSolicitation = async (file, userId) => {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Server error:', error);
       throw new Error(error.error || 'Failed to process solicitation');
     }
 
     const result = await response.json();
-    console.log('Server response:', result);
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
-      ...result.projectData,
       userId,
-      solicitationId: result.solicitationId,
+      filename,
+      fileType: file.type,
+      fileUrl: downloadURL,
       status: 'Draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      file: {
-        name: filename,
-        url: downloadURL,
-        type: file.type,
-        uploadedAt: new Date().toISOString()
-      }
+      updatedAt: new Date().toISOString()
     });
 
     return {
-      ...result.projectData,
       id: proposalRef.id,
-      solicitationId: result.solicitationId
+      filename,
+      fileType: file.type,
+      fileUrl: downloadURL
     };
   } catch (error) {
     console.error('Error uploading solicitation:', error);
@@ -99,7 +92,6 @@ export const processSolicitationLink = async (link, userId) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
       },
-      credentials: 'include',
       body: JSON.stringify({
         link: link,
         userId: userId
@@ -108,31 +100,23 @@ export const processSolicitationLink = async (link, userId) => {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Server error:', error);
       throw new Error(error.error || 'Failed to process solicitation link');
     }
 
     const result = await response.json();
-    console.log('Server response:', result);
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
-      ...result.projectData,
       userId,
-      solicitationId: result.solicitationId,
+      link,
       status: 'Draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      link: {
-        url: link,
-        processedAt: new Date().toISOString()
-      }
+      updatedAt: new Date().toISOString()
     });
 
     return {
-      ...result.projectData,
       id: proposalRef.id,
-      solicitationId: result.solicitationId
+      link
     };
   } catch (error) {
     console.error('Error processing solicitation link:', error);

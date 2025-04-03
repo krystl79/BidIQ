@@ -8,18 +8,8 @@
  */
 
 const functions = require("firebase-functions");
-const cors = require("cors")({ 
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow any Netlify domain or localhost
-    if (origin.match(/^https:\/\/.*\.netlify\.app$/) || origin === 'http://localhost:3000') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+const cors = require("cors")({
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
@@ -49,46 +39,17 @@ const textract = new TextractClient({
 
 // Initialize Cloud Functions
 exports.processSolicitation = functions.https.onRequest((request, response) => {
-  console.log('Received request:', request.method, request.url);
-  
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    console.log('Handling preflight request');
-    cors(request, response, () => {
-      response.status(204).send('');
-    });
-    return;
-  }
-
   cors(request, response, async () => {
-    console.log('Processing request with CORS');
-    
-    if (!request.auth) {
-      console.log('Authentication failed: No auth token');
-      response.status(401).json({ error: 'User must be authenticated' });
-      return;
-    }
-
     try {
       const { fileUrl, filename, fileType, userId } = request.body;
-      console.log('Processing solicitation:', { fileUrl, filename, fileType, userId });
-
-      if (!fileUrl || !filename || !fileType || !userId) {
-        console.log('Missing required parameters:', { fileUrl, filename, fileType, userId });
-        response.status(400).json({ error: 'Missing required parameters' });
-        return;
-      }
 
       // Download the file from Firebase Storage
-      console.log('Downloading file from Firebase Storage');
       const bucket = storage.bucket("bidiq-8a697.appspot.com");
       const file = bucket.file(`solicitations/${userId}/${filename}`);
       const [buffer] = await file.download();
-      console.log('File downloaded successfully');
 
       let text;
       if (fileType === "application/pdf") {
-        console.log('Processing PDF file');
         // Process PDF
         const pdfDoc = await PDFDocument.load(buffer);
         text = "";
@@ -98,9 +59,7 @@ exports.processSolicitation = functions.https.onRequest((request, response) => {
           const textContent = await page.getTextContent();
           text += textContent + "\n";
         }
-        console.log('PDF processed successfully, text length:', text.length);
       } else {
-        console.log('Processing non-PDF file with AWS Textract');
         // Process other document types using AWS Textract
         const command = new AnalyzeDocumentCommand({
           Document: {
@@ -112,53 +71,22 @@ exports.processSolicitation = functions.https.onRequest((request, response) => {
           .filter(block => block.BlockType === "LINE")
           .map(block => block.Text)
           .join("\n");
-        console.log('Textract processing completed, text length:', text.length);
       }
 
-      // Extract structured data from the text
-      console.log('Extracting structured data from text');
-      const projectData = {
-        projectName: extractProjectName(text),
-        solicitationNumber: extractSolicitationNumber(text),
-        projectNumber: extractProjectNumber(text),
-        dueDate: extractDueDate(text),
-        dueTime: extractDueTime(text),
-        projectDescription: extractProjectDescription(text),
-        projectSchedule: extractProjectSchedule(text),
-        soqRequirements: extractSOQRequirements(text),
-        contentRequirements: extractContentRequirements(text),
-        metadata: {
-          fileName: filename,
-          fileType: fileType,
-          fileUrl: fileUrl,
-          pageCount: fileType === "application/pdf" ? pdfDoc.getPageCount() : null
-        }
-      };
-      console.log('Extracted project data:', projectData);
-
-      // Store the processed data in Firestore
-      console.log('Storing data in Firestore');
-      const docRef = await admin.firestore().collection("solicitations").add({
+      // Store the processed text in Firestore
+      await admin.firestore().collection("solicitations").add({
         userId,
-        ...projectData,
+        filename,
+        fileType,
+        text,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: "processed"
+        status: "processed",
       });
-      console.log('Data stored in Firestore with ID:', docRef.id);
 
-      response.json({ 
-        success: true, 
-        solicitationId: docRef.id,
-        projectData 
-      });
+      response.json({ success: true, text });
     } catch (error) {
       console.error("Error processing solicitation:", error);
-      console.error("Error stack:", error.stack);
-      response.status(500).json({ 
-        error: "Failed to process solicitation",
-        details: error.message 
-      });
+      response.status(500).json({ error: "Failed to process solicitation" });
     }
   });
 });
