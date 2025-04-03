@@ -15,21 +15,27 @@ const SolicitationUploadScreen = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    if (!file.type.includes('pdf')) {
+      setError('Please upload a PDF file');
+      return;
+    }
+
     setIsUploading(true);
-    setError('');
-    setSuccess('');
+    setError(null);
+    setAnalysisResult(null);
 
     try {
       const result = await extractProposalInfo(file, currentUser.uid);
       setAnalysisResult(result);
-      setSuccess('Solicitation uploaded and processed successfully!');
+      setSuccess('Solicitation processed successfully!');
       
       // Navigate to the proposal view after a short delay
       setTimeout(() => {
         navigate(`/rfp-responses/${result.id}`);
       }, 2000);
-    } catch (err) {
-      setError(err.message || 'Error uploading solicitation');
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      setError('Error processing PDF. Please try again or contact support if the issue persists.');
     } finally {
       setIsUploading(false);
     }
