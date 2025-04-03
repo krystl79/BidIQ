@@ -1,5 +1,5 @@
 import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -23,12 +23,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // Upload file to Firebase Storage
-    const storageRef = ref(storage, `solicitations/${userId}/${file.name}`);
-    await uploadBytes(storageRef, file);
-    const fileUrl = await getDownloadURL(storageRef);
-
-    // Read PDF file using FileReader
+    // Process PDF locally first
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
@@ -54,18 +49,26 @@ export const extractProposalInfo = async (file, userId) => {
       contentRequirements: extractContentRequirements(fullText),
     };
 
-    // Create proposal task list in Firestore
+    // Create proposal task list in Firestore first
     const proposalData = {
       ...info,
       userId,
       createdAt: new Date(),
       status: 'draft',
-      fileUrl,
       fileName: file.name,
     };
 
     const docRef = await addDoc(collection(db, 'proposals'), proposalData);
-    return { id: docRef.id, ...proposalData };
+
+    // Upload file to Firebase Storage after creating the document
+    const storageRef = ref(storage, `solicitations/${userId}/${docRef.id}/${file.name}`);
+    await uploadBytes(storageRef, file);
+    const fileUrl = await getDownloadURL(storageRef);
+
+    // Update the document with the file URL
+    await updateDoc(docRef, { fileUrl });
+
+    return { id: docRef.id, ...proposalData, fileUrl };
   } catch (error) {
     console.error('Error processing PDF:', error);
     throw error;
