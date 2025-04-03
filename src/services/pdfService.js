@@ -1,17 +1,16 @@
-import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import * as pdfjsLib from 'pdfjs-dist';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import pdfParse from 'pdf-parse';
 
-// Initialize Firebase
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyBxXhXhXhXhXhXhXhXhXhXhXhXhXhXhXhXh",
+  authDomain: "bidiq-7c0c1.firebaseapp.com",
+  projectId: "bidiq-7c0c1",
+  storageBucket: "bidiq-7c0c1.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef1234567890"
 };
 
 // Initialize Firebase app
@@ -21,221 +20,99 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
-// Set up PDF.js worker
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.min.js';
-}
+// Helper functions to extract information using regex
+const extractDueDate = (text) => {
+  const datePattern = /(?:due date|submission deadline|proposal due):\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const match = text.match(datePattern);
+  return match ? match[1] : null;
+};
+
+const extractDueTime = (text) => {
+  const timePattern = /(?:due time|submission time|proposal time):\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i;
+  const match = text.match(timePattern);
+  return match ? match[1] : null;
+};
+
+const extractSolicitationNumber = (text) => {
+  const pattern = /(?:solicitation number|rfq number|proposal number):\s*([A-Z0-9-]+)/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+};
+
+const extractProjectNumber = (text) => {
+  const pattern = /(?:project number|job number):\s*([A-Z0-9-]+)/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+};
+
+const extractProjectName = (text) => {
+  const pattern = /(?:project name|project title):\s*([^\n]+)/i;
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+};
+
+const extractProjectDescription = (text) => {
+  const pattern = /(?:project description|scope of work):\s*([^\n]+(?:\n[^\n]+)*)/i;
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+};
+
+const extractProjectSchedule = (text) => {
+  const pattern = /(?:project schedule|timeline|duration):\s*([^\n]+(?:\n[^\n]+)*)/i;
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+};
+
+const extractSOQRequirements = (text) => {
+  const pattern = /(?:soq requirements|statement of qualifications requirements):\s*([^\n]+(?:\n[^\n]+)*)/i;
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+};
+
+const extractContentRequirements = (text) => {
+  const pattern = /(?:content requirements|proposal content):\s*([^\n]+(?:\n[^\n]+)*)/i;
+  const match = text.match(pattern);
+  return match ? match[1].trim() : null;
+};
 
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // Process PDF locally first
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    // Extract text from all pages
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + ' ';
-    }
-
-    // Extract information using regex patterns
-    const info = {
-      dueDate: extractDueDate(fullText),
-      dueTime: extractDueTime(fullText),
-      solicitationNumber: extractSolicitationNumber(fullText),
-      projectNumber: extractProjectNumber(fullText),
-      projectName: extractProjectName(fullText),
-      projectDescription: extractProjectDescription(fullText),
-      projectSchedule: extractProjectSchedule(fullText),
-      soqRequirements: extractSOQRequirements(fullText),
-      contentRequirements: extractContentRequirements(fullText),
-    };
-
-    // Create proposal task list in Firestore first
-    const proposalData = {
-      ...info,
-      userId,
-      createdAt: new Date(),
-      status: 'draft',
-      fileName: file.name,
-    };
-
-    const docRef = await addDoc(collection(db, 'proposals'), proposalData);
-
-    // Upload file to Firebase Storage after creating the document
-    const storageRef = ref(storage, `solicitations/${userId}/${docRef.id}/${file.name}`);
+    // Upload file to Firebase Storage
+    const storageRef = ref(storage, `solicitations/${userId}/${file.name}`);
     await uploadBytes(storageRef, file);
-    const fileUrl = await getDownloadURL(storageRef);
+    const downloadURL = await getDownloadURL(storageRef);
 
-    // Update the document with the file URL
-    await updateDoc(docRef, { fileUrl });
+    // Read the PDF file
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const data = await pdfParse(buffer);
+    const text = data.text;
 
-    return { id: docRef.id, ...proposalData, fileUrl };
+    // Extract information using helper functions
+    const proposalInfo = {
+      dueDate: extractDueDate(text),
+      dueTime: extractDueTime(text),
+      solicitationNumber: extractSolicitationNumber(text),
+      projectNumber: extractProjectNumber(text),
+      projectName: extractProjectName(text),
+      projectDescription: extractProjectDescription(text),
+      projectSchedule: extractProjectSchedule(text),
+      soqRequirements: extractSOQRequirements(text),
+      contentRequirements: extractContentRequirements(text),
+      fileUrl: downloadURL,
+      userId,
+      createdAt: new Date().toISOString()
+    };
+
+    // Store in Firestore
+    const docRef = await addDoc(collection(db, 'proposals'), proposalInfo);
+
+    return {
+      id: docRef.id,
+      ...proposalInfo
+    };
   } catch (error) {
     console.error('Error processing PDF:', error);
     throw error;
   }
-};
-
-// Helper functions to extract specific information
-const extractDueDate = (text) => {
-  const datePatterns = [
-    /due date:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
-    /submission deadline:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
-    /proposal due:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
-  ];
-
-  for (const pattern of datePatterns) {
-    const match = text.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-const extractDueTime = (text) => {
-  const timePatterns = [
-    /due time:?\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i,
-    /submission time:?\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i,
-  ];
-
-  for (const pattern of timePatterns) {
-    const match = text.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-const extractSolicitationNumber = (text) => {
-  const patterns = [
-    /solicitation number:?\s*([A-Z0-9-]+)/i,
-    /rfp number:?\s*([A-Z0-9-]+)/i,
-    /rfq number:?\s*([A-Z0-9-]+)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-const extractProjectNumber = (text) => {
-  const patterns = [
-    /project number:?\s*([A-Z0-9-]+)/i,
-    /contract number:?\s*([A-Z0-9-]+)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-const extractProjectName = (text) => {
-  const patterns = [
-    /project name:?\s*([^\n]+)/i,
-    /project title:?\s*([^\n]+)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1].trim();
-  }
-  return null;
-};
-
-const extractProjectDescription = (text) => {
-  const patterns = [
-    /project description:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-    /scope of work:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1].trim();
-  }
-  return null;
-};
-
-const extractProjectSchedule = (text) => {
-  const patterns = [
-    /project schedule:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-    /timeline:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1].trim();
-  }
-  return null;
-};
-
-const extractSOQRequirements = (text) => {
-  const requirements = {
-    lengthLimit: null,
-    fontSize: null,
-    fontType: null,
-  };
-
-  // Extract length limit
-  const lengthPatterns = [
-    /page limit:?\s*(\d+)/i,
-    /length limit:?\s*(\d+)/i,
-    /maximum length:?\s*(\d+)/i,
-  ];
-
-  for (const pattern of lengthPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      requirements.lengthLimit = match[1];
-      break;
-    }
-  }
-
-  // Extract font size
-  const fontSizePatterns = [
-    /font size:?\s*(\d+)/i,
-    /text size:?\s*(\d+)/i,
-  ];
-
-  for (const pattern of fontSizePatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      requirements.fontSize = match[1];
-      break;
-    }
-  }
-
-  // Extract font type
-  const fontTypePatterns = [
-    /font type:?\s*([A-Za-z\s]+)/i,
-    /font family:?\s*([A-Za-z\s]+)/i,
-  ];
-
-  for (const pattern of fontTypePatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      requirements.fontType = match[1].trim();
-      break;
-    }
-  }
-
-  return requirements;
-};
-
-const extractContentRequirements = (text) => {
-  const patterns = [
-    /content requirements:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-    /proposal requirements:?\s*([^\n]+(?:\n[^\n]+)*)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return match[1].trim();
-  }
-  return null;
 }; 
