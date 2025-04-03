@@ -13,8 +13,7 @@ import {
   DialogActions,
   Box,
   Grid,
-  Paper,
-  Divider
+  Paper
 } from '@mui/material';
 import { format } from 'date-fns';
 
