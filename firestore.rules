@@ -2,9 +2,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read and write their own RFP responses
+    // Allow authenticated users to read and write only their own RFP responses
     match /rfpResponses/{responseId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Allow authenticated users to read and write their own user profile
