@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
@@ -7,7 +7,14 @@ import {
   Grid, 
   Chip, 
   Button,
-  Container
+  Container,
+  Checkbox,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import { format } from 'date-fns';
 
@@ -15,9 +22,27 @@ const ProposalDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const proposal = location.state?.proposal;
+  const [checklist, setChecklist] = useState({
+    projectName: false,
+    solicitationNumber: false,
+    projectNumber: false,
+    dueDate: false,
+    dueTime: false,
+    projectDescription: false,
+    projectSchedule: false,
+    soqRequirements: false,
+    contentRequirements: false
+  });
 
   const handleBack = () => {
     navigate(-1); // Go back to previous page
+  };
+
+  const handleChecklistChange = (item) => {
+    setChecklist(prev => ({
+      ...prev,
+      [item]: !prev[item]
+    }));
   };
 
   // Format date for display
@@ -67,6 +92,142 @@ const ProposalDetails = () => {
         </Box>
 
         <Grid container spacing={3}>
+          {/* Checklist */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Proposal Checklist
+              </Typography>
+              <List>
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.projectName}
+                      onChange={() => handleChecklistChange('projectName')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Project Name" 
+                    secondary={proposal.projectName || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.solicitationNumber}
+                      onChange={() => handleChecklistChange('solicitationNumber')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Solicitation Number" 
+                    secondary={proposal.solicitationNumber || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.projectNumber}
+                      onChange={() => handleChecklistChange('projectNumber')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Project Number" 
+                    secondary={proposal.projectNumber || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.dueDate}
+                      onChange={() => handleChecklistChange('dueDate')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Due Date" 
+                    secondary={formatDate(proposal.dueDate)}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.dueTime}
+                      onChange={() => handleChecklistChange('dueTime')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Due Time" 
+                    secondary={proposal.dueTime || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.projectDescription}
+                      onChange={() => handleChecklistChange('projectDescription')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Project Description" 
+                    secondary={proposal.projectDescription || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.projectSchedule}
+                      onChange={() => handleChecklistChange('projectSchedule')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Project Schedule" 
+                    secondary={proposal.projectSchedule || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.soqRequirements}
+                      onChange={() => handleChecklistChange('soqRequirements')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="SOQ Requirements" 
+                    secondary={proposal.soqRequirements || 'Not found'}
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={checklist.contentRequirements}
+                      onChange={() => handleChecklistChange('contentRequirements')}
+                    />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Content Requirements" 
+                    secondary={proposal.contentRequirements || 'Not found'}
+                  />
+                </ListItem>
+              </List>
+            </Paper>
+          </Grid>
+
           {/* Basic Information */}
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
