@@ -6,6 +6,7 @@ const db = getFirestore(app);
 
 // Get the API key from environment variables or use a fallback
 const DOCUPANDA_API_KEY = process.env.REACT_APP_DOCUPANDA_API_KEY || 'l45nUglczgYCBT3rF0fHs5Cerkt2';
+const DOCUPANDA_SCHEMA_ID = '4ad88272';
 
 // Helper functions to extract information using regex
 const extractDueDate = (text) => {
@@ -92,7 +93,7 @@ export const extractProposalInfo = async (file, userId) => {
     // Convert file to base64 using FileReader
     const base64File = await fileToBase64(file);
 
-    // First, post the document to Docupanda
+    // First, post the document to Docupanda with the schema ID
     const postResponse = await fetch('https://app.docupanda.io/document', {
       method: 'POST',
       headers: {
@@ -105,7 +106,8 @@ export const extractProposalInfo = async (file, userId) => {
           file: {
             contents: base64File,
             filename: file.name
-          }
+          },
+          schemaId: DOCUPANDA_SCHEMA_ID
         }
       })
     });
@@ -153,27 +155,24 @@ export const extractProposalInfo = async (file, userId) => {
       throw new Error('Document processing timed out');
     }
 
-    // Check if pagesText exists and is an array before joining
-    const fullText = docupandaResult.result.pagesText && Array.isArray(docupandaResult.result.pagesText) 
-      ? docupandaResult.result.pagesText.join('\n')
-      : '';
-
-    // Extract information using helper functions
+    // Extract information from the schema-based result
+    const extractedData = docupandaResult.result.extractedData || {};
+    
+    // Create proposal info from the extracted data
     const proposalInfo = {
-      dueDate: extractDueDate(fullText),
-      dueTime: extractDueTime(fullText),
-      solicitationNumber: extractSolicitationNumber(fullText),
-      projectNumber: extractProjectNumber(fullText),
-      projectName: extractProjectName(fullText),
-      projectDescription: extractProjectDescription(fullText),
-      projectSchedule: extractProjectSchedule(fullText),
-      soqRequirements: extractSOQRequirements(fullText),
-      contentRequirements: extractContentRequirements(fullText),
+      dueDate: extractedData.dueDate || null,
+      dueTime: extractedData.dueTime || null,
+      solicitationNumber: extractedData.solicitationNumber || null,
+      projectNumber: extractedData.projectNumber || null,
+      projectName: extractedData.projectName || null,
+      projectDescription: extractedData.projectDescription || null,
+      projectSchedule: extractedData.projectSchedule || null,
+      soqRequirements: extractedData.soqRequirements || null,
+      contentRequirements: extractedData.contentRequirements || null,
       userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       metadata: docupandaResult.result.metadata || {},
-      pagesText: docupandaResult.result.pagesText || [],
       docupandaId: documentId,
       status: 'processed'
     };
