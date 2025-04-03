@@ -51,7 +51,7 @@ const ProjectList = () => {
   const handleCreateBid = (project) => {
     // Store current project in session storage for bid creation
     sessionStorage.setItem('currentProject', JSON.stringify(project));
-    navigate('/create-bid');
+    navigate(`/projects/${project.id}/bids/new`);
   };
 
   const handleDeleteProject = async (projectId) => {
