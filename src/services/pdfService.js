@@ -2,6 +2,7 @@ import { getStorage, ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.js';
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -19,7 +20,7 @@ const storage = getStorage(app);
 const db = getFirestore(app);
 
 // Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export const extractProposalInfo = async (file, userId) => {
   try {
