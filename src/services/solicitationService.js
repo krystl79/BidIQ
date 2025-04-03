@@ -1,12 +1,18 @@
 import { storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase/config';
 import { getFirestore } from 'firebase/firestore';
 import { collection, addDoc } from 'firebase/firestore';
 import { app } from '../firebase/config';
+import { getAuth } from 'firebase/auth';
 
 const db = getFirestore(app);
+
+const getAuthToken = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error('No authenticated user');
+  return user.getIdToken();
+};
 
 export const uploadSolicitation = async (file, userId) => {
   try {
@@ -26,20 +32,39 @@ export const uploadSolicitation = async (file, userId) => {
     const snapshot = await uploadBytes(storageRef, file, metadata);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
+    // Get the auth token
+    const authToken = await getAuthToken();
+
     // Call the Cloud Function to process the document
-    const processSolicitation = httpsCallable(functions, 'processSolicitation');
-    const result = await processSolicitation({
-      fileUrl: downloadURL,
-      filename: filename,
-      fileType: file.type,
-      userId: userId
+    const response = await fetch('https://us-central1-bidiq-8a697.cloudfunctions.net/processSolicitation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        fileUrl: downloadURL,
+        filename: filename,
+        fileType: file.type,
+        userId: userId
+      })
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Server error:', error);
+      throw new Error(error.error || 'Failed to process solicitation');
+    }
+
+    const result = await response.json();
+    console.log('Server response:', result);
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
-      ...result.data.projectData,
+      ...result.projectData,
       userId,
-      solicitationId: result.data.solicitationId,
+      solicitationId: result.solicitationId,
       status: 'Draft',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -52,9 +77,9 @@ export const uploadSolicitation = async (file, userId) => {
     });
 
     return {
-      ...result.data.projectData,
+      ...result.projectData,
       id: proposalRef.id,
-      solicitationId: result.data.solicitationId
+      solicitationId: result.solicitationId
     };
   } catch (error) {
     console.error('Error uploading solicitation:', error);
@@ -64,17 +89,37 @@ export const uploadSolicitation = async (file, userId) => {
 
 export const processSolicitationLink = async (link, userId) => {
   try {
-    const processSolicitationLink = httpsCallable(functions, 'processSolicitationLink');
-    const result = await processSolicitationLink({
-      link: link,
-      userId: userId
+    // Get the auth token
+    const authToken = await getAuthToken();
+
+    // Call the Cloud Function to process the link
+    const response = await fetch('https://us-central1-bidiq-8a697.cloudfunctions.net/processSolicitationLink', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        link: link,
+        userId: userId
+      })
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Server error:', error);
+      throw new Error(error.error || 'Failed to process solicitation link');
+    }
+
+    const result = await response.json();
+    console.log('Server response:', result);
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
-      ...result.data.projectData,
+      ...result.projectData,
       userId,
-      solicitationId: result.data.solicitationId,
+      solicitationId: result.solicitationId,
       status: 'Draft',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -85,9 +130,9 @@ export const processSolicitationLink = async (link, userId) => {
     });
 
     return {
-      ...result.data.projectData,
+      ...result.projectData,
       id: proposalRef.id,
-      solicitationId: result.data.solicitationId
+      solicitationId: result.solicitationId
     };
   } catch (error) {
     console.error('Error processing solicitation link:', error);
