@@ -53,14 +53,6 @@ const Dashboard = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Box sx={{ textAlign: 'center', mb: 6 }}>
-        <img 
-          src="/logo.png" 
-          alt="BidIQ Logo" 
-          style={{ 
-            height: '64px',
-            marginBottom: '24px'
-          }} 
-        />
         <Typography 
           variant="h3" 
           component="h1" 

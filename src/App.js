@@ -19,9 +19,11 @@ import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 import TopNav from './components/TopNav';
+import MobileNav from './components/MobileNav';
 import ProposalDetails from './components/ProposalDetails';
 import ProposalsList from './components/ProposalsList';
 import ProtectedRoute from './components/ProtectedRoute';
+import SelectProject from './components/SelectProject';
 
 // Create a wrapper component to use hooks
 function AppContent() {
@@ -82,130 +84,141 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {showNavbar && <TopNav />}
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/upload-solicitation"
-          element={
-            <ProtectedRoute>
-              <SolicitationUploadScreen />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/proposals"
-          element={
-            <ProtectedRoute>
-              <ProposalsList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/rfp-responses"
-          element={
-            <ProtectedRoute>
-              <RFPProposalsList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/rfp-responses/:responseId"
-          element={
-            <ProtectedRoute>
-              <ViewRFPProposal />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/proposals/:proposalId/details"
-          element={
-            <ProtectedRoute>
-              <ProposalDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/create-project"
-          element={
-            <ProtectedRoute>
-              <ProjectForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects"
-          element={
-            <ProtectedRoute>
-              <ProjectList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId"
-          element={
-            <ProtectedRoute>
-              <ViewProject />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/edit"
-          element={
-            <ProtectedRoute>
-              <EditProject />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/bids"
-          element={
-            <ProtectedRoute>
-              <BidsList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/bids/new"
-          element={
-            <ProtectedRoute>
-              <CreateBid />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bids/:bidId"
-          element={
-            <ProtectedRoute>
-              <ViewBid />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bids"
-          element={
-            <ProtectedRoute>
-              <BidsList />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+      <div className="pt-16">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/upload-solicitation"
+            element={
+              <ProtectedRoute>
+                <SolicitationUploadScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/proposals"
+            element={
+              <ProtectedRoute>
+                <ProposalsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rfp-responses"
+            element={
+              <ProtectedRoute>
+                <RFPProposalsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rfp-responses/:responseId"
+            element={
+              <ProtectedRoute>
+                <ViewRFPProposal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/proposals/:proposalId/details"
+            element={
+              <ProtectedRoute>
+                <ProposalDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-project"
+            element={
+              <ProtectedRoute>
+                <ProjectForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <ProjectList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId"
+            element={
+              <ProtectedRoute>
+                <ViewProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/edit"
+            element={
+              <ProtectedRoute>
+                <EditProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/bids"
+            element={
+              <ProtectedRoute>
+                <BidsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/bids/new"
+            element={
+              <ProtectedRoute>
+                <CreateBid />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bids/:bidId"
+            element={
+              <ProtectedRoute>
+                <ViewBid />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/select-project"
+            element={
+              <ProtectedRoute>
+                <SelectProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bids"
+            element={
+              <ProtectedRoute>
+                <BidsList />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+      {currentUser && <MobileNav />}
     </div>
   );
 }

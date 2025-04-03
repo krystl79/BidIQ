@@ -12,19 +12,13 @@ const MobileNav = () => {
   }
 
   return (
-    <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-      <BottomNavigation>
+    <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100 }} elevation={3}>
+      <BottomNavigation showLabels>
         <BottomNavigationAction
           component={RouterLink}
-          to="/"
+          to="/dashboard"
           label="Dashboard"
           icon={<DashboardIcon />}
-        />
-        <BottomNavigationAction
-          component={RouterLink}
-          to="/rfp-responses"
-          label="RFPs and Solicitations"
-          icon={<Description />}
         />
         <BottomNavigationAction
           component={RouterLink}
@@ -37,6 +31,12 @@ const MobileNav = () => {
           to="/bids"
           label="Bids"
           icon={<Assignment />}
+        />
+        <BottomNavigationAction
+          component={RouterLink}
+          to="/rfp-responses"
+          label="Proposals"
+          icon={<Description />}
         />
         <BottomNavigationAction
           component={RouterLink}

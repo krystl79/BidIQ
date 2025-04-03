@@ -40,6 +40,7 @@ const TopNav = () => {
     { text: 'Dashboard', path: '/dashboard' },
     { text: 'Projects', path: '/projects' },
     { text: 'Bids', path: '/bids' },
+    { text: 'Proposals', path: '/rfp-responses' },
     { text: 'Profile', path: '/profile' }
   ];
 
