@@ -131,14 +131,24 @@ export const extractProposalInfo = async (file, userId) => {
     }
 
     try {
+      // Ensure all fields are strings or valid Firestore types
+      const sanitizedProposalInfo = {
+        ...proposalInfo,
+        metadata: {
+          ...proposalInfo.metadata,
+          fileSize: String(proposalInfo.metadata.fileSize),
+          pageCount: Number(proposalInfo.metadata.pageCount)
+        }
+      };
+
       // Store in Firestore with proper error handling
       const proposalsRef = collection(db, 'users', userId, 'proposals');
-      const docRef = await addDoc(proposalsRef, proposalInfo);
+      const docRef = await addDoc(proposalsRef, sanitizedProposalInfo);
       console.log('Document stored in Firestore with ID:', docRef.id);
 
       return {
         id: docRef.id,
-        ...proposalInfo
+        ...sanitizedProposalInfo
       };
     } catch (firestoreError) {
       console.error('Error storing document in Firestore:', firestoreError);
@@ -146,7 +156,8 @@ export const extractProposalInfo = async (file, userId) => {
       return {
         id: null,
         ...proposalInfo,
-        error: 'Failed to store in database'
+        error: 'Failed to store in database',
+        errorDetails: firestoreError.message
       };
     }
   } catch (error) {
