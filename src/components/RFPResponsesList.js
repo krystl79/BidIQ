@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllRFPResponses, deleteRFPResponse } from '../services/db';
+import { useAuth } from '../contexts/AuthContext';
+import { extractProposalInfo } from '../services/pdfService';
+import { Box, Button, Paper, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
+import { CloudUpload } from '@mui/icons-material';
 
 const RFPProposalsList = () => {
   const navigate = useNavigate();
@@ -8,6 +12,10 @@ const RFPProposalsList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     loadResponses();
@@ -23,6 +31,45 @@ const RFPProposalsList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileChange = async (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile && selectedFile.type === 'application/pdf') {
+      setFile(selectedFile);
+      setError(null);
+    } else {
+      setError('Please select a valid PDF file');
+      setFile(null);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!file || !currentUser) return;
+
+    try {
+      setUploading(true);
+      setError(null);
+      const result = await extractProposalInfo(file, currentUser.uid);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      setUploadSuccess(true);
+      setFile(null);
+      // Reload the responses list
+      loadResponses();
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      setError('Error processing PDF. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setUploadSuccess(false);
   };
 
   const handleViewResponse = (response) => {
@@ -72,7 +119,7 @@ const RFPProposalsList = () => {
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">All Proposals</h1>
+          <h1 className="text-4xl font-bold text-gray-900">RFPs and Solicitations</h1>
           <button
             onClick={handleBackToDashboard}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -81,10 +128,55 @@ const RFPProposalsList = () => {
           </button>
         </div>
 
+        {/* Upload Area */}
+        <Paper className="mb-8 p-6" elevation={1}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex-1">
+              <Typography variant="h6" gutterBottom>
+                Upload New Solicitation
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Upload a PDF file to process a new solicitation document
+              </Typography>
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                accept="application/pdf"
+                style={{ display: 'none' }}
+                id="raised-button-file"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="raised-button-file">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUpload />}
+                >
+                  Select PDF
+                </Button>
+              </label>
+              {file && (
+                <Typography variant="body2" color="textSecondary">
+                  {file.name}
+                </Typography>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleFileUpload}
+                disabled={!file || uploading}
+              >
+                {uploading ? <CircularProgress size={24} /> : 'Process'}
+              </Button>
+            </div>
+          </div>
+        </Paper>
+
         <div className="mb-8">
           <input
             type="text"
-            placeholder="Search proposals by title or company..."
+            placeholder="Search by title or company..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -134,6 +226,21 @@ const RFPProposalsList = () => {
             ))}
           </div>
         )}
+
+        <Snackbar
+          open={uploadSuccess}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleCloseSnackbar} 
+            severity="success"
+            sx={{ width: '100%' }}
+          >
+            Document processed successfully!
+          </Alert>
+        </Snackbar>
       </div>
     </div>
   );
