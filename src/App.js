@@ -26,6 +26,8 @@ import ProjectDetails from './components/ProjectDetails';
 import BidDetails from './components/BidDetails';
 import BidView from './components/BidView';
 import ProposalDetails from './components/ProposalDetails';
+import ProposalsList from './components/ProposalsList';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Add ProtectedRoute component at the top level, before AppContent
 const ProtectedRoute = ({ children }) => {
@@ -156,6 +158,17 @@ function AppContent() {
             <ProtectedRoute>
               <div className="pb-16 md:pb-0">
                 <Dashboard />
+                <MobileNav />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/proposals"
+          element={
+            <ProtectedRoute>
+              <div className="pb-16 md:pb-0">
+                <ProposalsList />
                 <MobileNav />
               </div>
             </ProtectedRoute>
