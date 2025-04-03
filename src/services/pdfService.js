@@ -2,8 +2,10 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/fire
 import { app } from '../config.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Initialize Firestore using the existing Firebase app
-const db = getFirestore(app);
+// Initialize Firestore using the existing Firebase app with specific collection
+const db = getFirestore(app, 'my_collection');
+// Explicitly reference the database to ensure proper initialization
+const database = db._databaseId;
 
 // Set up PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -131,9 +133,25 @@ export const extractProposalInfo = async (file, userId) => {
     }
 
     try {
-      // Store in Firestore with proper error handling
+      // Create a clean copy of the data for Firestore
+      const firestoreData = {
+        ...proposalInfo,
+        // Ensure timestamps are properly handled
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        // Ensure metadata is properly structured
+        metadata: {
+          fileName: proposalInfo.metadata.fileName,
+          fileSize: String(proposalInfo.metadata.fileSize),
+          pageCount: Number(proposalInfo.metadata.pageCount),
+          mimeType: proposalInfo.metadata.mimeType
+        }
+      };
+
+      // Store in Firestore with proper error handling and explicit database reference
+      console.log('Using database:', database);
       const proposalsRef = collection(db, 'users', userId, 'proposals');
-      const docRef = await addDoc(proposalsRef, proposalInfo);
+      const docRef = await addDoc(proposalsRef, firestoreData);
       console.log('Document stored in Firestore with ID:', docRef.id);
 
       return {
