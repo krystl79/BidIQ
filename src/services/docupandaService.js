@@ -63,35 +63,72 @@ const extractContentRequirements = (text) => {
 
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // First, process the file with Docupanda
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('options', JSON.stringify({
-      extractText: true,
-      extractMetadata: true,
-      extractTables: true,
-      extractForms: true
-    }));
+    // Convert file to base64
+    const fileBuffer = await file.arrayBuffer();
+    const base64File = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
 
-    // Call Docupanda API
-    const response = await fetch('https://api.docupanda.ai/v1/process', {
+    // First, post the document to Docupanda
+    const postResponse = await fetch('https://app.docupanda.io/document', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.REACT_APP_DOCUPANDA_API_KEY}`,
-        'Accept': 'application/json'
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'X-API-Key': process.env.REACT_APP_DOCUPANDA_API_KEY
       },
-      body: formData
+      body: JSON.stringify({
+        document: {
+          file: {
+            contents: base64File,
+            filename: file.name
+          }
+        }
+      })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (!postResponse.ok) {
+      const errorData = await postResponse.json();
       console.error('Docupanda API error:', errorData);
-      throw new Error(errorData.message || 'Failed to process document with Docupanda');
+      throw new Error(errorData.message || 'Failed to post document to Docupanda');
     }
 
-    const docupandaResult = await response.json();
-    console.log('Docupanda API response:', docupandaResult);
-    const fullText = docupandaResult.text || '';
+    const { documentId } = await postResponse.json();
+    console.log('Document posted, ID:', documentId);
+
+    // Wait for processing and get results
+    let docupandaResult;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      const getResponse = await fetch(`https://app.docupanda.io/document/${documentId}`, {
+        headers: {
+          'accept': 'application/json',
+          'X-API-Key': process.env.REACT_APP_DOCUPANDA_API_KEY
+        }
+      });
+
+      if (!getResponse.ok) {
+        throw new Error('Failed to get document results from Docupanda');
+      }
+
+      const result = await getResponse.json();
+      console.log('Docupanda status:', result.status);
+
+      if (result.status === 'completed') {
+        docupandaResult = result;
+        break;
+      }
+
+      // Wait 2 seconds before next attempt
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+    }
+
+    if (!docupandaResult) {
+      throw new Error('Document processing timed out');
+    }
+
+    const fullText = docupandaResult.result.pagesText.join('\n');
 
     // Extract information using helper functions
     const proposalInfo = {
@@ -106,9 +143,8 @@ export const extractProposalInfo = async (file, userId) => {
       contentRequirements: extractContentRequirements(fullText),
       userId,
       createdAt: new Date().toISOString(),
-      metadata: docupandaResult.metadata || {},
-      tables: docupandaResult.tables || [],
-      forms: docupandaResult.forms || []
+      metadata: docupandaResult.result.metadata || {},
+      pagesText: docupandaResult.result.pagesText || []
     };
 
     // Store the processed document in Firebase Storage

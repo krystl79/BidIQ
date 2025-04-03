@@ -146,7 +146,7 @@ exports.processDocument = functions.https.onRequest((request, response) => {
             extractForms: true
           }));
 
-          const docupandaResponse = await fetch('https://api.docupanda.com/v1/process', {
+          const docupandaResponse = await fetch('https://api.docupanda.ai/v1/process', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${functions.config().docupanda.api_key}`,
