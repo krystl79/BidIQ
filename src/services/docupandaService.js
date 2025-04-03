@@ -1,9 +1,7 @@
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { app } from '../config.js';
 
-// Initialize services using the existing Firebase app
-const storage = getStorage(app);
+// Initialize Firestore using the existing Firebase app
 const db = getFirestore(app);
 
 // Get the API key from environment variables or use a fallback
@@ -170,14 +168,9 @@ export const extractProposalInfo = async (file, userId) => {
       userId,
       createdAt: new Date().toISOString(),
       metadata: docupandaResult.result.metadata || {},
-      pagesText: docupandaResult.result.pagesText || []
+      pagesText: docupandaResult.result.pagesText || [],
+      docupandaId: documentId
     };
-
-    // Store the processed document in Firebase Storage
-    const storageRef = ref(storage, `solicitations/${userId}/${file.name}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    proposalInfo.fileUrl = downloadURL;
 
     // Store in Firestore
     const docRef = await addDoc(collection(db, 'proposals'), proposalInfo);
