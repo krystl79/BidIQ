@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAllRFPResponses, deleteRFPResponse } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import { extractProposalInfo } from '../services/pdfService';
-import { Box, Button, Paper, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
+import { Button, Paper, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 
 const RFPProposalsList = () => {

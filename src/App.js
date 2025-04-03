@@ -25,7 +25,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Create a wrapper component to use hooks
 function AppContent() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +81,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showNavbar && <TopNav />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -198,7 +196,16 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/bids"
+          element={
+            <ProtectedRoute>
+              <BidsList />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+      {showNavbar && <TopNav />}
     </div>
   );
 }
