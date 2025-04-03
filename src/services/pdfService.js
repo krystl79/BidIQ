@@ -122,24 +122,39 @@ export const uploadFile = async (file, userId) => {
     const fileName = `${timestamp}-${file.name}`;
     const storageRef = ref(storage, `solicitations/${userId}/${fileName}`);
     
-    // Set custom metadata including CORS headers
+    // Set metadata without custom CORS headers (these are handled by bucket configuration)
     const metadata = {
-      contentType: file.type,
-      customMetadata: {
-        'Access-Control-Allow-Origin': '*'
-      }
+      contentType: file.type
     };
 
-    const snapshot = await uploadBytes(storageRef, file, metadata);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    // Upload with retry logic
+    let retries = 3;
+    let lastError;
     
-    return {
-      fileName,
-      downloadURL,
-      timestamp
-    };
+    while (retries > 0) {
+      try {
+        const snapshot = await uploadBytes(storageRef, file, metadata);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        return {
+          fileName,
+          downloadURL,
+          timestamp
+        };
+      } catch (error) {
+        lastError = error;
+        console.warn(`Upload attempt ${4 - retries} failed:`, error);
+        retries--;
+        if (retries > 0) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    throw lastError;
   } catch (error) {
     console.error('Error uploading file:', error);
-    throw error;
+    throw new Error(`Failed to upload file after multiple attempts: ${error.message}`);
   }
 }; 
