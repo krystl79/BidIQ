@@ -139,11 +139,23 @@ export const extractProposalInfo = async (file, userId) => {
         updatedAt: serverTimestamp(),
         // Ensure metadata is properly structured
         metadata: {
-          fileName: proposalInfo.metadata.fileName,
-          fileSize: String(proposalInfo.metadata.fileSize),
-          pageCount: Number(proposalInfo.metadata.pageCount),
-          mimeType: proposalInfo.metadata.mimeType
-        }
+          fileName: proposalInfo.metadata.fileName || '',
+          fileSize: String(proposalInfo.metadata.fileSize || 0),
+          pageCount: Number(proposalInfo.metadata.pageCount || 0),
+          mimeType: proposalInfo.metadata.mimeType || 'application/pdf'
+        },
+        // Ensure all text fields are strings
+        dueDate: proposalInfo.dueDate || '',
+        dueTime: proposalInfo.dueTime || '',
+        solicitationNumber: proposalInfo.solicitationNumber || '',
+        projectNumber: proposalInfo.projectNumber || '',
+        projectName: proposalInfo.projectName || '',
+        projectDescription: proposalInfo.projectDescription || '',
+        projectSchedule: proposalInfo.projectSchedule || '',
+        soqRequirements: proposalInfo.soqRequirements || '',
+        contentRequirements: proposalInfo.contentRequirements || '',
+        // Ensure status is a string
+        status: proposalInfo.status || 'processed'
       };
 
       // Store in Firestore with proper error handling
