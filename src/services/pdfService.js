@@ -130,9 +130,32 @@ export const uploadFile = async (file, userId) => {
       }
     };
 
-    // Upload the file using the Firebase SDK
-    const snapshot = await uploadBytes(storageRef, file, metadata);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    // Get the upload URL
+    const uploadUrl = await getDownloadURL(storageRef);
+    
+    // Create a new FormData object
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Upload using fetch with specific headers
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: formData,
+      headers: {
+        'Content-Type': file.type,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'PUT, POST, GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed with status ${response.status}`);
+    }
+
+    const downloadURL = await getDownloadURL(storageRef);
     
     return {
       fileName,
