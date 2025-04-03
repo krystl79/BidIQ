@@ -6,6 +6,9 @@ import { app } from '../config.js';
 const storage = getStorage(app);
 const db = getFirestore(app);
 
+// Get the API key from environment variables
+const DOCUPANDA_API_KEY = process.env.REACT_APP_DOCUPANDA_API_KEY;
+
 // Helper functions to extract information using regex
 const extractDueDate = (text) => {
   const datePattern = /(?:due date|submission deadline|proposal due):\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
@@ -77,6 +80,13 @@ const fileToBase64 = (file) => {
 
 export const extractProposalInfo = async (file, userId) => {
   try {
+    // Check if API key is available
+    if (!DOCUPANDA_API_KEY) {
+      throw new Error('Docupanda API key is not configured');
+    }
+
+    console.log('Using Docupanda API key:', DOCUPANDA_API_KEY);
+    
     // Convert file to base64 using FileReader
     const base64File = await fileToBase64(file);
 
@@ -86,7 +96,7 @@ export const extractProposalInfo = async (file, userId) => {
       headers: {
         'accept': 'application/json',
         'content-type': 'application/json',
-        'X-API-Key': process.env.REACT_APP_DOCUPANDA_API_KEY
+        'X-API-Key': DOCUPANDA_API_KEY
       },
       body: JSON.stringify({
         document: {
@@ -116,7 +126,7 @@ export const extractProposalInfo = async (file, userId) => {
       const getResponse = await fetch(`https://app.docupanda.io/document/${documentId}`, {
         headers: {
           'accept': 'application/json',
-          'X-API-Key': process.env.REACT_APP_DOCUPANDA_API_KEY
+          'X-API-Key': DOCUPANDA_API_KEY
         }
       });
 
