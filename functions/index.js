@@ -9,9 +9,10 @@
 
 const functions = require("firebase-functions");
 const cors = require("cors")({ 
-  origin: ['https://67ee000573287e0008357415--bidiq.netlify.app', 'http://localhost:3000'],
-  methods: ['POST', 'OPTIONS'],
-  credentials: true
+  origin: ['https://67eefc16b0b7f30008e67ca9--bidiq.netlify.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
 });
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");

@@ -7,8 +7,7 @@ service firebase.storage {
       allow write: if request.auth != null 
                    && request.auth.uid == userId
                    && request.resource.size < 10 * 1024 * 1024 // 10MB
-                   && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|text/plain')
-                   && request.headers.origin.matches('https://.*\\.netlify\\.app|http://localhost:3000');
+                   && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|text/plain');
     }
   }
 } 
