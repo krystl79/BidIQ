@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, Grid, Chip, Divider } from '@mui/material';
+import { Box, Typography, Paper, Grid, Chip } from '@mui/material';
 import { format } from 'date-fns';
 
 const ProposalChecklist = ({ proposalInfo }) => {
@@ -15,8 +15,7 @@ const ProposalChecklist = ({ proposalInfo }) => {
     projectSchedule,
     soqRequirements,
     contentRequirements,
-    metadata,
-    pagesText
+    metadata
   } = proposalInfo;
 
   return (
