@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Source path (node_modules)
-const sourcePath = path.join(__dirname, '../node_modules/pdfjs-dist/build/pdf.worker.min.js');
+// Source path (node_modules/react-pdf)
+const sourcePath = path.join(__dirname, '../node_modules/react-pdf/dist/pdf.worker.min.js');
 
 // Destination path (public directory)
 const destPath = path.join(__dirname, '../public/pdf.worker.min.js');
