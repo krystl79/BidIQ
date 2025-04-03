@@ -131,9 +131,27 @@ export const uploadFile = async (file, userId) => {
       }
     };
 
-    // Upload the file using Firebase SDK with metadata
-    const snapshot = await uploadBytes(storageRef, file, metadata);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    // Get a signed URL for upload
+    const uploadUrl = await getDownloadURL(storageRef);
+    
+    // Create a blob from the file
+    const blob = new Blob([file], { type: file.type });
+    
+    // Upload using the signed URL
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: {
+        'Content-Type': file.type
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed with status ${response.status}`);
+    }
+
+    // Get the download URL after successful upload
+    const downloadURL = await getDownloadURL(storageRef);
     
     return {
       fileName,
