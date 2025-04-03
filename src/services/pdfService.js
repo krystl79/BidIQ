@@ -19,7 +19,10 @@ const storage = getStorage(app);
 const db = getFirestore(app);
 
 // Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+if (typeof window !== 'undefined') {
+  const pdfjsWorker = require('pdfjs-dist/build/pdf.worker.entry');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+}
 
 export const extractProposalInfo = async (file, userId) => {
   try {
