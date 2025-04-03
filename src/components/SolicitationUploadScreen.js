@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { extractProposalInfo } from '../services/docupandaService';
 import { Box, Button, Container, Typography, Paper, CircularProgress, Alert } from '@mui/material';
+import ProposalChecklist from './ProposalChecklist';
 
 const SolicitationUploadScreen = () => {
   const [file, setFile] = useState(null);
@@ -32,7 +33,7 @@ const SolicitationUploadScreen = () => {
       setError(null);
       const result = await extractProposalInfo(file, currentUser.uid);
       setExtractedInfo(result);
-      navigate(`/proposals/${result.id}`);
+      // Don't navigate away immediately, let user review the extracted information
     } catch (error) {
       console.error('Error processing PDF:', error);
       setError('Error processing PDF. Please try again.');
@@ -41,78 +42,70 @@ const SolicitationUploadScreen = () => {
     }
   };
 
-  return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Upload Solicitation
-        </Typography>
+  const handleContinue = () => {
+    if (extractedInfo) {
+      navigate(`/proposals/${extractedInfo.id}`);
+    }
+  };
 
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Select PDF File
-          </Typography>
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Upload Solicitation Document
+        </Typography>
+        
+        <Box sx={{ mb: 3 }}>
           <input
             accept="application/pdf"
             style={{ display: 'none' }}
-            id="pdf-file"
+            id="raised-button-file"
             type="file"
             onChange={handleFileChange}
           />
-          <label htmlFor="pdf-file">
+          <label htmlFor="raised-button-file">
             <Button variant="contained" component="span">
-              Choose PDF
+              Select PDF File
             </Button>
-            {file && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Selected file: {file.name}
-              </Typography>
-            )}
           </label>
-        </Paper>
+          {file && (
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              Selected file: {file.name}
+            </Typography>
+          )}
+        </Box>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleFileUpload}
+          disabled={!file || loading}
+          sx={{ mr: 2 }}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Process Document'}
+        </Button>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mt: 2 }}>
             {error}
           </Alert>
         )}
+      </Paper>
 
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-            <CircularProgress />
+      {extractedInfo && (
+        <>
+          <ProposalChecklist proposalInfo={extractedInfo} />
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleContinue}
+            >
+              Continue to Proposal
+            </Button>
           </Box>
-        )}
-
-        {extractedInfo && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Extracted Information
-            </Typography>
-            <Box sx={{ display: 'grid', gap: 2 }}>
-              <Typography><strong>Due Date:</strong> {extractedInfo.dueDate || 'Not found'}</Typography>
-              <Typography><strong>Due Time:</strong> {extractedInfo.dueTime || 'Not found'}</Typography>
-              <Typography><strong>Solicitation Number:</strong> {extractedInfo.solicitationNumber || 'Not found'}</Typography>
-              <Typography><strong>Project Number:</strong> {extractedInfo.projectNumber || 'Not found'}</Typography>
-              <Typography><strong>Project Name:</strong> {extractedInfo.projectName || 'Not found'}</Typography>
-              <Typography><strong>Project Description:</strong> {extractedInfo.projectDescription || 'Not found'}</Typography>
-              <Typography><strong>Project Schedule:</strong> {extractedInfo.projectSchedule || 'Not found'}</Typography>
-              <Typography><strong>SOQ Requirements:</strong> {extractedInfo.soqRequirements || 'Not found'}</Typography>
-              <Typography><strong>Content Requirements:</strong> {extractedInfo.contentRequirements || 'Not found'}</Typography>
-            </Box>
-          </Paper>
-        )}
-
-        <Box sx={{ mt: 3 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleFileUpload}
-            disabled={!file || loading}
-          >
-            Process PDF
-          </Button>
-        </Box>
-      </Box>
+        </>
+      )}
     </Container>
   );
 };
