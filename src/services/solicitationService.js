@@ -55,8 +55,6 @@ export const uploadSolicitation = async (file, userId) => {
       throw new Error(error.error || 'Failed to process solicitation');
     }
 
-    const result = await response.json();
-
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
       userId,
@@ -102,8 +100,6 @@ export const processSolicitationLink = async (link, userId) => {
       const error = await response.json();
       throw new Error(error.error || 'Failed to process solicitation link');
     }
-
-    const result = await response.json();
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
