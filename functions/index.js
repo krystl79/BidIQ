@@ -36,84 +36,78 @@ const textract = new TextractClient({
 // https://firebase.google.com/docs/functions/get-started
 
 // Initialize Cloud Functions
-exports.processSolicitation = functions.https.onCall(async (data, context) => {
-  // Check if user is authenticated
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-  }
+exports.processSolicitation = functions.https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    try {
+      const { fileUrl, filename, fileType, userId } = request.body;
 
-  try {
-    const { fileUrl, filename, fileType, userId } = data;
+      // Download the file from Firebase Storage
+      const bucket = storage.bucket("bidiq-8a697.appspot.com");
+      const file = bucket.file(`solicitations/${userId}/${filename}`);
+      const [buffer] = await file.download();
 
-    // Download the file from Firebase Storage
-    const bucket = storage.bucket("bidiq-8a697.appspot.com");
-    const file = bucket.file(`solicitations/${userId}/${filename}`);
-    const [buffer] = await file.download();
-
-    let text;
-    if (fileType === "application/pdf") {
-      // Process PDF
-      const pdfDoc = await PDFDocument.load(buffer);
-      text = "";
-      for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-        const page = pdfDoc.getPage(i);
-        const { width, height } = page.getSize();
-        const textContent = await page.getTextContent();
-        text += textContent + "\n";
+      let text;
+      if (fileType === "application/pdf") {
+        // Process PDF
+        const pdfDoc = await PDFDocument.load(buffer);
+        text = "";
+        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+          const page = pdfDoc.getPage(i);
+          const { width, height } = page.getSize();
+          const textContent = await page.getTextContent();
+          text += textContent + "\n";
+        }
+      } else {
+        // Process other document types using AWS Textract
+        const command = new AnalyzeDocumentCommand({
+          Document: {
+            Bytes: buffer,
+          },
+        });
+        const result = await textract.send(command);
+        text = result.Blocks
+          .filter(block => block.BlockType === "LINE")
+          .map(block => block.Text)
+          .join("\n");
       }
-    } else {
-      // Process other document types using AWS Textract
-      const command = new AnalyzeDocumentCommand({
-        Document: {
-          Bytes: buffer,
-        },
+
+      // Store the processed text in Firestore
+      await admin.firestore().collection("solicitations").add({
+        userId,
+        filename,
+        fileType,
+        text,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "processed",
       });
-      const result = await textract.send(command);
-      text = result.Blocks
-        .filter(block => block.BlockType === "LINE")
-        .map(block => block.Text)
-        .join("\n");
+
+      response.json({ success: true, text });
+    } catch (error) {
+      console.error("Error processing solicitation:", error);
+      response.status(500).json({ error: "Failed to process solicitation" });
     }
-
-    // Store the processed text in Firestore
-    await admin.firestore().collection("solicitations").add({
-      userId,
-      filename,
-      fileType,
-      text,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      status: "processed",
-    });
-
-    return { success: true, text };
-  } catch (error) {
-    console.error("Error processing solicitation:", error);
-    throw new functions.https.HttpsError('internal', 'Failed to process solicitation');
-  }
+  });
 });
 
-exports.processSolicitationLink = functions.https.onCall(async (data, context) => {
-  // Check if user is authenticated
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-  }
+exports.processSolicitationLink = functions.https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    try {
+      const { link, userId } = request.body;
 
-  try {
-    const { link, userId } = data;
+      // Process the link and store in Firestore
+      await admin.firestore().collection("solicitations").add({
+        userId,
+        link,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "processed",
+      });
 
-    // Process the link and store in Firestore
-    await admin.firestore().collection("solicitations").add({
-      userId,
-      link,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      status: "processed",
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error processing solicitation link:", error);
-    throw new functions.https.HttpsError('internal', 'Failed to process solicitation link');
-  }
+      response.json({ success: true });
+    } catch (error) {
+      console.error("Error processing solicitation link:", error);
+      response.status(500).json({ error: "Failed to process solicitation link" });
+    }
+  });
 });
 
 exports.processDocument = functions.https.onRequest((request, response) => {

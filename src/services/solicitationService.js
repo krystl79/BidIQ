@@ -28,12 +28,16 @@ export const uploadSolicitation = async (file, userId) => {
 
     // Call the Cloud Function to process the document
     const processSolicitation = httpsCallable(functions, 'processSolicitation');
-    await processSolicitation({
+    const result = await processSolicitation({
       fileUrl: downloadURL,
       filename: filename,
       fileType: file.type,
       userId: userId
     });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Failed to process solicitation');
+    }
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
@@ -43,17 +47,22 @@ export const uploadSolicitation = async (file, userId) => {
       fileUrl: downloadURL,
       status: 'Draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      solicitationId: result.data.solicitationId
     });
 
     return {
       id: proposalRef.id,
       filename,
       fileType: file.type,
-      fileUrl: downloadURL
+      fileUrl: downloadURL,
+      solicitationId: result.data.solicitationId
     };
   } catch (error) {
     console.error('Error uploading solicitation:', error);
+    if (error.code === 'functions/internal') {
+      throw new Error(error.message || 'Failed to process solicitation. Please try again.');
+    }
     throw new Error('Failed to upload solicitation. Please try again.');
   }
 };
@@ -62,10 +71,14 @@ export const processSolicitationLink = async (link, userId) => {
   try {
     // Call the Cloud Function to process the link
     const processSolicitationLink = httpsCallable(functions, 'processSolicitationLink');
-    await processSolicitationLink({
+    const result = await processSolicitationLink({
       link: link,
       userId: userId
     });
+
+    if (!result.data.success) {
+      throw new Error(result.data.error || 'Failed to process solicitation link');
+    }
 
     // Create a proposal entry in Firestore
     const proposalRef = await addDoc(collection(db, 'proposals'), {
@@ -73,15 +86,20 @@ export const processSolicitationLink = async (link, userId) => {
       link,
       status: 'Draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      solicitationId: result.data.solicitationId
     });
 
     return {
       id: proposalRef.id,
-      link
+      link,
+      solicitationId: result.data.solicitationId
     };
   } catch (error) {
     console.error('Error processing solicitation link:', error);
+    if (error.code === 'functions/internal') {
+      throw new Error(error.message || 'Failed to process solicitation link. Please try again.');
+    }
     throw new Error('Failed to process solicitation link. Please try again.');
   }
 }; 
