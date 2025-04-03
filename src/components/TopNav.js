@@ -16,15 +16,15 @@ const TopNav = ({ onLogout }) => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-2xl font-bold text-[#4263EB]">
+              <Link to="/dashboard" className="text-2xl font-bold text-[#4263EB]">
                 Bidiq
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
-                to="/"
+                to="/dashboard"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/')
+                  isActive('/dashboard')
                     ? 'border-[#4263EB] text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}

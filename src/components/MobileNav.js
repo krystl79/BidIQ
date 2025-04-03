@@ -14,9 +14,9 @@ const MobileNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden">
       <div className="flex justify-around items-center h-16">
         <Link
-          to="/"
+          to="/dashboard"
           className={`flex flex-col items-center justify-center flex-1 h-full ${
-            isActive('/') ? 'text-blue-600' : 'text-gray-500'
+            isActive('/dashboard') ? 'text-blue-600' : 'text-gray-500'
           }`}
         >
           <img

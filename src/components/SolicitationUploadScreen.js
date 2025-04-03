@@ -86,9 +86,11 @@ const SolicitationUploadScreen = () => {
                 <div className="flex text-sm text-gray-600">
                   <label
                     htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                    className={`relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 ${
+                      isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
-                    <span>Upload a file</span>
+                    <span>{isUploading ? 'Uploading...' : 'Upload a file'}</span>
                     <input
                       id="file-upload"
                       name="file-upload"
@@ -96,6 +98,7 @@ const SolicitationUploadScreen = () => {
                       className="sr-only"
                       onChange={handleFileUpload}
                       accept=".pdf,.doc,.docx,.txt"
+                      disabled={isUploading}
                     />
                   </label>
                   <p className="pl-1">or drag and drop</p>
