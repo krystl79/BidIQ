@@ -1,10 +1,12 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app } from '../config.js';
 
 // Initialize services using the existing Firebase app
 const storage = getStorage(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 // Helper functions to extract information using regex
 const extractDueDate = (text) => {
@@ -63,32 +65,12 @@ const extractContentRequirements = (text) => {
 
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // First, process the file with Docupanda
+    // First, process the file with Docupanda through Cloud Function
+    const processDocument = httpsCallable(functions, 'processDocument');
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('options', JSON.stringify({
-      extractText: true,
-      extractMetadata: true,
-      extractTables: true,
-      extractForms: true
-    }));
-
-    // Call Docupanda API
-    const response = await fetch('https://api.docupanda.com/v1/process', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.REACT_APP_DOCUPANDA_API_KEY}`,
-        'Accept': 'application/json'
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to process document with Docupanda');
-    }
-
-    const docupandaResult = await response.json();
+    
+    const { data: docupandaResult } = await processDocument(formData);
     const fullText = docupandaResult.text || '';
 
     // Extract information using helper functions

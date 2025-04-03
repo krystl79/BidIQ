@@ -13,6 +13,7 @@ const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
 const { PDFDocument } = require("pdf-lib");
 const { TextractClient, AnalyzeDocumentCommand } = require("@aws-sdk/client-textract");
+const fetch = require('node-fetch');
 
 admin.initializeApp();
 
@@ -99,6 +100,52 @@ exports.processSolicitationLink = functions.https.onRequest((request, response) 
     } catch (error) {
       console.error("Error processing solicitation link:", error);
       response.status(500).json({ error: "Failed to process solicitation link" });
+    }
+  });
+});
+
+exports.processDocument = functions.https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    try {
+      if (request.method !== 'POST') {
+        response.status(405).send('Method Not Allowed');
+        return;
+      }
+
+      const file = request.files.file;
+      if (!file) {
+        response.status(400).send('No file provided');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('options', JSON.stringify({
+        extractText: true,
+        extractMetadata: true,
+        extractTables: true,
+        extractForms: true
+      }));
+
+      const docupandaResponse = await fetch('https://api.docupanda.com/v1/process', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${functions.config().docupanda.api_key}`,
+          'Accept': 'application/json'
+        },
+        body: formData
+      });
+
+      if (!docupandaResponse.ok) {
+        const errorData = await docupandaResponse.json();
+        throw new Error(errorData.message || 'Failed to process document with Docupanda');
+      }
+
+      const result = await docupandaResponse.json();
+      response.status(200).json(result);
+    } catch (error) {
+      console.error('Error processing document:', error);
+      response.status(500).json({ error: error.message });
     }
   });
 });
