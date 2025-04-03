@@ -1,4 +1,4 @@
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { app } from '../config.js';
 
 // Initialize Firestore using the existing Firebase app
@@ -81,6 +81,10 @@ export const extractProposalInfo = async (file, userId) => {
     // Check if API key is available
     if (!DOCUPANDA_API_KEY) {
       throw new Error('Docupanda API key is not configured');
+    }
+
+    if (!userId) {
+      throw new Error('User ID is required');
     }
 
     console.log('Using Docupanda API key:', DOCUPANDA_API_KEY);
@@ -166,19 +170,32 @@ export const extractProposalInfo = async (file, userId) => {
       soqRequirements: extractSOQRequirements(fullText),
       contentRequirements: extractContentRequirements(fullText),
       userId,
-      createdAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       metadata: docupandaResult.result.metadata || {},
       pagesText: docupandaResult.result.pagesText || [],
-      docupandaId: documentId
+      docupandaId: documentId,
+      status: 'processed'
     };
 
-    // Store in Firestore
-    const docRef = await addDoc(collection(db, 'proposals'), proposalInfo);
+    try {
+      // Store in Firestore
+      const proposalsRef = collection(db, 'users', userId, 'proposals');
+      const docRef = await addDoc(proposalsRef, proposalInfo);
+      console.log('Document stored in Firestore with ID:', docRef.id);
 
-    return {
-      id: docRef.id,
-      ...proposalInfo
-    };
+      return {
+        id: docRef.id,
+        ...proposalInfo
+      };
+    } catch (firestoreError) {
+      console.error('Error storing document in Firestore:', firestoreError);
+      // Return the extracted info even if Firestore storage fails
+      return {
+        id: null,
+        ...proposalInfo
+      };
+    }
   } catch (error) {
     console.error('Error processing document:', error);
     throw error;
