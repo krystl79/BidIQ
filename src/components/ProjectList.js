@@ -45,7 +45,7 @@ const ProjectList = () => {
   };
 
   const handleViewProject = (project) => {
-    navigate(`/project/${project.id}`);
+    navigate(`/projects/${project.id}`);
   };
 
   const handleCreateBid = (project) => {
