@@ -78,9 +78,21 @@ const RFPProposalsList = () => {
         throw new Error(result.error);
       }
       
+      // Add the new response to the list
+      const newResponse = {
+        id: result.rfpResponseId,
+        title: result.projectData.name || 'Untitled Solicitation',
+        companyName: '',
+        createdAt: new Date().toISOString(),
+        status: 'Draft'
+      };
+      
+      setResponses(prevResponses => [newResponse, ...prevResponses]);
       setUploadSuccess(true);
+      setFile(null);
+      
       setTimeout(() => {
-        navigate('/proposals');
+        navigate(`/proposals/${result.rfpResponseId}`);
       }, 2000);
     } catch (error) {
       console.error('Error processing file:', error);
