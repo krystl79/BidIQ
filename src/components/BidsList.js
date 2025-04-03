@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllBids, deleteBid, getProject } from '../services/db';
 import AddItemsToBid from './AddItemsToBid';
+import { Container, Box, Typography, Button, TextField, CircularProgress, Alert } from '@mui/material';
 
 const BidsList = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const BidsList = () => {
   const [bids, setBids] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedBidId, setSelectedBidId] = useState(null);
   const [showAddItems, setShowAddItems] = useState(false);
   const projectId = searchParams.get('projectId');
@@ -19,44 +21,61 @@ const BidsList = () => {
 
   const loadBids = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const allBids = await getAllBids();
+      
       // Get project details for each bid
       const bidsWithProjects = await Promise.all(
         allBids.map(async (bid) => {
-          const project = await getProject(bid.projectId);
-          return {
-            ...bid,
-            projectName: project.projectName,
-            projectType: project.projectType,
-            timeline: project.timeline,
-            equipmentMarkup: project.equipmentMarkup
-          };
+          try {
+            const project = await getProject(bid.projectId);
+            return {
+              ...bid,
+              projectName: project?.projectName || 'Unknown Project',
+              projectType: project?.projectType || 'Unknown Type',
+              timeline: project?.timeline || { startDate: null, endDate: null },
+              equipmentMarkup: project?.equipmentMarkup || 0
+            };
+          } catch (err) {
+            console.error('Error loading project for bid:', err);
+            return {
+              ...bid,
+              projectName: 'Unknown Project',
+              projectType: 'Unknown Type',
+              timeline: { startDate: null, endDate: null },
+              equipmentMarkup: 0
+            };
+          }
         })
       );
+
       // Sort bids by createdAt in descending order (most recent first)
       const sortedBids = bidsWithProjects.sort((a, b) => 
         new Date(b.createdAt) - new Date(a.createdAt)
       );
+      
       setBids(sortedBids);
-    } catch (error) {
-      console.error('Error loading bids:', error);
+    } catch (err) {
+      console.error('Error loading bids:', err);
+      setError('Failed to load bids. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleViewBid = (bid) => {
-    navigate(`/view-bid/${bid.id}`);
+    navigate(`/bids/${bid.id}`);
   };
 
   const handleDeleteBid = async (bidId) => {
     if (window.confirm('Are you sure you want to delete this bid?')) {
       try {
         await deleteBid(bidId);
-        // Refresh the bids list
-        loadBids();
-      } catch (error) {
-        console.error('Error deleting bid:', error);
+        await loadBids(); // Refresh the bids list
+      } catch (err) {
+        console.error('Error deleting bid:', err);
+        setError('Failed to delete bid. Please try again later.');
       }
     }
   };
@@ -71,7 +90,7 @@ const BidsList = () => {
     setSelectedBidId(null);
   };
 
-  const handleSaveItems = async (updatedBid) => {
+  const handleSaveItems = async () => {
     await loadBids(); // Refresh the bids list
   };
 
@@ -88,94 +107,113 @@ const BidsList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            {projectId ? 'Project Bids' : 'All Bids'}
-          </h1>
-          <button
-            onClick={() => navigate('/select-project')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Create New Bid
-          </button>
-        </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          {projectId ? 'Project Bids' : 'All Bids'}
+        </Typography>
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-        <div className="mb-6">
-          <input
-            type="text"
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <TextField
             placeholder="Search bids by project or company..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            variant="outlined"
+            size="small"
+            sx={{ width: 300 }}
           />
-        </div>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate('/select-project')}
+          >
+            Create New Bid
+          </Button>
+        </Box>
 
-        <div className="grid grid-cols-1 gap-6">
-          {filteredBids.map((bid) => (
-            <div
-              key={bid.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
-            >
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{bid.projectName}</h2>
-                <p className="text-gray-600 mb-1">{bid.projectType}</p>
-                <p className="text-gray-600 mb-1">
-                  {bid.companyName} - {bid.contactName}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
+        {filteredBids.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography color="text.secondary">
+              {searchQuery ? 'No bids match your search.' : 'No bids found.'}
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'grid', gap: 3 }}>
+            {filteredBids.map((bid) => (
+              <Box
+                key={bid.id}
+                sx={{
+                  p: 3,
+                  bgcolor: 'background.paper',
+                  borderRadius: 2,
+                  boxShadow: 1,
+                  '&:hover': {
+                    boxShadow: 2,
+                  },
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  {bid.projectName}
+                </Typography>
+                <Typography color="text.secondary" gutterBottom>
+                  {bid.projectType}
+                </Typography>
+                {bid.companyName && (
+                  <Typography color="text.secondary" gutterBottom>
+                    {bid.companyName} {bid.contactName && `- ${bid.contactName}`}
+                  </Typography>
+                )}
+                {bid.timeline.startDate && (
+                  <Typography color="text.secondary" gutterBottom>
+                    {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
+                  </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary" gutterBottom>
                   Created: {new Date(bid.createdAt).toLocaleDateString()}
-                </p>
-                <div className="flex space-x-3">
-                  <button
+                </Typography>
+                
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
                     onClick={() => handleViewBid(bid)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     View Bid
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="success"
                     onClick={() => handleAddItems(bid)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
                     Add Ons
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
                     onClick={() => handleDeleteBid(bid.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    Delete Bid
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {filteredBids.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No bids found.</p>
-            </div>
-          )}
-        </div>
-      </div>
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
 
       {showAddItems && selectedBidId && (
         <AddItemsToBid
@@ -184,7 +222,7 @@ const BidsList = () => {
           onSave={handleSaveItems}
         />
       )}
-    </div>
+    </Container>
   );
 };
 
