@@ -1,51 +1,50 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, Button, Box } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { Dashboard as DashboardIcon, Description, Business, Assignment } from '@mui/icons-material';
 
 // Top navigation bar component for desktop view
-const TopNav = ({ onLogout }) => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
+const TopNav = () => {
   return (
     <AppBar position="static" color="default" elevation={1}>
       <Toolbar>
-        <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          BidIQ
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            component={Link}
-            to="/dashboard"
-            color={isActive('/dashboard') ? 'primary' : 'inherit'}
+            component={RouterLink}
+            to="/"
+            color="inherit"
+            startIcon={<DashboardIcon />}
           >
             Dashboard
           </Button>
           <Button
-            component={Link}
-            to="/proposals"
-            color={isActive('/proposals') ? 'primary' : 'inherit'}
-          >
-            Proposals
-          </Button>
-          <Button
-            component={Link}
+            component={RouterLink}
             to="/rfp-responses"
-            color={isActive('/rfp-responses') ? 'primary' : 'inherit'}
+            color="inherit"
+            startIcon={<Description />}
           >
             RFP Responses
           </Button>
           <Button
-            component={Link}
+            component={RouterLink}
             to="/projects"
-            color={isActive('/projects') ? 'primary' : 'inherit'}
+            color="inherit"
+            startIcon={<Business />}
           >
             Projects
           </Button>
+          <Button
+            component={RouterLink}
+            to="/bids"
+            color="inherit"
+            startIcon={<Assignment />}
+          >
+            Bids
+          </Button>
         </Box>
-        <Button color="inherit" onClick={onLogout}>
-          Logout
-        </Button>
       </Toolbar>
     </AppBar>
   );
