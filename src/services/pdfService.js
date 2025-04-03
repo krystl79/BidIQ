@@ -122,40 +122,18 @@ export const uploadFile = async (file, userId) => {
     const fileName = `${timestamp}-${file.name}`;
     const storageRef = ref(storage, `solicitations/${userId}/${fileName}`);
     
-    // Create a resumable upload session
+    // Create metadata for the upload
     const metadata = {
       contentType: file.type,
       customMetadata: {
-        'userId': userId
+        'userId': userId,
+        'timestamp': timestamp.toString()
       }
     };
 
-    // Get the upload URL
-    const uploadUrl = await getDownloadURL(storageRef);
-    
-    // Create a new FormData object
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    // Upload using fetch with specific headers
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: formData,
-      headers: {
-        'Content-Type': file.type,
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'PUT, POST, GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
-      mode: 'cors',
-      credentials: 'omit'
-    });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed with status ${response.status}`);
-    }
-
-    const downloadURL = await getDownloadURL(storageRef);
+    // Upload the file using Firebase SDK with metadata
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    const downloadURL = await getDownloadURL(snapshot.ref);
     
     return {
       fileName,
