@@ -117,22 +117,30 @@ export const extractProposalInfo = async (file, userId) => {
       status: 'processed'
     };
 
+    // Clean the data before storing in Firestore
+    const cleanProposalInfo = Object.fromEntries(
+      Object.entries(proposalInfo).map(([key, value]) => [
+        key,
+        value === null ? '' : value // Convert null values to empty strings
+      ])
+    );
+
     try {
       // Store in Firestore
       const proposalsRef = collection(db, 'users', userId, 'proposals');
-      const docRef = await addDoc(proposalsRef, proposalInfo);
+      const docRef = await addDoc(proposalsRef, cleanProposalInfo);
       console.log('Document stored in Firestore with ID:', docRef.id);
 
       return {
         id: docRef.id,
-        ...proposalInfo
+        ...cleanProposalInfo
       };
     } catch (firestoreError) {
       console.error('Error storing document in Firestore:', firestoreError);
       // Return the extracted info even if Firestore storage fails
       return {
         id: null,
-        ...proposalInfo
+        ...cleanProposalInfo
       };
     }
   } catch (error) {
