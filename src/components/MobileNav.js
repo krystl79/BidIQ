@@ -34,7 +34,7 @@ const MobileNav = () => {
         />
         <BottomNavigationAction
           component={RouterLink}
-          to="/rfp-responses"
+          to="/proposals"
           label="Proposals"
           icon={<Description />}
         />
