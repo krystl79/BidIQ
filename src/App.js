@@ -108,20 +108,12 @@ function AppContent() {
             path="/proposals"
             element={
               <ProtectedRoute>
-                <ProposalsList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/rfp-responses"
-            element={
-              <ProtectedRoute>
                 <RFPProposalsList />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/rfp-responses/:responseId"
+            path="/proposals/:responseId"
             element={
               <ProtectedRoute>
                 <ViewRFPProposal />

@@ -80,7 +80,7 @@ const RFPProposalsList = () => {
       
       setUploadSuccess(true);
       setTimeout(() => {
-        navigate('/rfp-responses');
+        navigate('/proposals');
       }, 2000);
     } catch (error) {
       console.error('Error processing file:', error);
@@ -207,7 +207,7 @@ const RFPProposalsList = () => {
                 <Button
                   size="small"
                   startIcon={<Description />}
-                  onClick={() => navigate(`/rfp-responses/${response.id}`)}
+                  onClick={() => navigate(`/proposals/${response.id}`)}
                 >
                   View
                 </Button>
