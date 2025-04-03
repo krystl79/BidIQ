@@ -29,7 +29,7 @@ const SolicitationUploadScreen = () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await extractProposalInfo(file, currentUser.uid);
+      await extractProposalInfo(file, currentUser.uid);
       setSuccess(true);
       // Navigate to proposals list after a short delay to show the success message
       setTimeout(() => {
