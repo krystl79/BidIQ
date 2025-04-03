@@ -21,7 +21,6 @@ import './styles/print.css';
 import TopNav from './components/TopNav';
 import MobileNav from './components/MobileNav';
 import ProposalDetails from './components/ProposalDetails';
-import ProposalsList from './components/ProposalsList';
 import ProtectedRoute from './components/ProtectedRoute';
 import SelectProject from './components/SelectProject';
 
