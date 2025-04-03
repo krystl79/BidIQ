@@ -19,8 +19,11 @@ const ProposalsList = () => {
       }
 
       try {
-        const proposalsRef = collection(db, 'users', currentUser.uid, 'proposals');
-        const q = query(proposalsRef, orderBy('createdAt', 'desc'));
+        const proposalsRef = collection(db, 'proposals');
+        const q = query(
+          proposalsRef,
+          orderBy('createdAt', 'desc')
+        );
         const querySnapshot = await getDocs(q);
         
         const loadedProposals = querySnapshot.docs.map(doc => ({

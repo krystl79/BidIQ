@@ -9,21 +9,9 @@
 
 const functions = require("firebase-functions");
 const cors = require("cors")({ 
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow any Netlify domain or localhost
-    if (origin.match(/^https:\/\/.*\.netlify\.app$/) || origin === 'http://localhost:3000') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
-  maxAge: 86400 // 24 hours
+  origin: ['https://67ee000573287e0008357415--bidiq.netlify.app', 'http://localhost:3000'],
+  methods: ['POST', 'OPTIONS'],
+  credentials: true
 });
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
@@ -48,90 +36,91 @@ const textract = new TextractClient({
 // https://firebase.google.com/docs/functions/get-started
 
 // Initialize Cloud Functions
-exports.processSolicitation = functions.https.onRequest((request, response) => {
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    cors(request, response, () => {
-      response.status(204).send('');
-    });
-    return;
+exports.processSolicitation = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  cors(request, response, async () => {
-    try {
-      const { fileUrl, filename, fileType, userId } = request.body;
+  try {
+    const { fileUrl, filename, fileType, userId } = data;
 
-      if (!fileUrl || !filename || !fileType || !userId) {
-        throw new Error('Missing required parameters');
-      }
-
-      // Download the file from Firebase Storage
-      const bucket = storage.bucket("bidiq-8a697.appspot.com");
-      const file = bucket.file(`solicitations/${userId}/${filename}`);
-      const [buffer] = await file.download();
-
-      let text;
-      if (fileType === "application/pdf") {
-        // Process PDF
-        const pdfDoc = await PDFDocument.load(buffer);
-        text = "";
-        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-          const page = pdfDoc.getPage(i);
-          const { width, height } = page.getSize();
-          const textContent = await page.getTextContent();
-          text += textContent + "\n";
-        }
-      } else {
-        // Process other document types using AWS Textract
-        const command = new AnalyzeDocumentCommand({
-          Document: {
-            Bytes: buffer,
-          },
-        });
-        const result = await textract.send(command);
-        text = result.Blocks
-          .filter(block => block.BlockType === "LINE")
-          .map(block => block.Text)
-          .join("\n");
-      }
-
-      // Store the processed text in Firestore
-      await admin.firestore().collection("solicitations").add({
-        userId,
-        filename,
-        fileType,
-        text,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: "processed",
-      });
-
-      response.json({ success: true, text });
-    } catch (error) {
-      console.error("Error processing solicitation:", error);
-      response.status(500).json({ 
-        error: "Failed to process solicitation",
-        details: error.message 
-      });
+    if (!fileUrl || !filename || !fileType || !userId) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required parameters');
     }
-  });
+
+    // Download the file from Firebase Storage
+    const bucket = storage.bucket("bidiq-8a697.appspot.com");
+    const file = bucket.file(`solicitations/${userId}/${filename}`);
+    const [buffer] = await file.download();
+
+    let text;
+    if (fileType === "application/pdf") {
+      // Process PDF
+      const pdfDoc = await PDFDocument.load(buffer);
+      text = "";
+      for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+        const page = pdfDoc.getPage(i);
+        const { width, height } = page.getSize();
+        const textContent = await page.getTextContent();
+        text += textContent + "\n";
+      }
+    } else {
+      // Process other document types using AWS Textract
+      const command = new AnalyzeDocumentCommand({
+        Document: {
+          Bytes: buffer,
+        },
+      });
+      const result = await textract.send(command);
+      text = result.Blocks
+        .filter(block => block.BlockType === "LINE")
+        .map(block => block.Text)
+        .join("\n");
+    }
+
+    // Extract structured data from the text
+    const projectData = {
+      projectName: extractProjectName(text),
+      solicitationNumber: extractSolicitationNumber(text),
+      projectNumber: extractProjectNumber(text),
+      dueDate: extractDueDate(text),
+      dueTime: extractDueTime(text),
+      projectDescription: extractProjectDescription(text),
+      projectSchedule: extractProjectSchedule(text),
+      soqRequirements: extractSOQRequirements(text),
+      contentRequirements: extractContentRequirements(text),
+      metadata: {
+        fileName: filename,
+        fileType: fileType,
+        fileUrl: fileUrl,
+        pageCount: fileType === "application/pdf" ? pdfDoc.getPageCount() : null
+      }
+    };
+
+    // Store the processed data in Firestore
+    const docRef = await admin.firestore().collection("solicitations").add({
+      userId,
+      ...projectData,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: "processed"
+    });
+
+    return { 
+      success: true, 
+      solicitationId: docRef.id,
+      projectData 
+    };
+  } catch (error) {
+    console.error("Error processing solicitation:", error);
+    throw new functions.https.HttpsError('internal', 'Failed to process solicitation');
+  }
 });
 
 exports.processSolicitationLink = functions.https.onRequest((request, response) => {
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    cors(request, response, () => {
-      response.status(204).send('');
-    });
-    return;
-  }
-
   cors(request, response, async () => {
     try {
       const { link, userId } = request.body;
-
-      if (!link || !userId) {
-        throw new Error('Missing required parameters');
-      }
 
       // Process the link and store in Firestore
       await admin.firestore().collection("solicitations").add({
@@ -144,10 +133,7 @@ exports.processSolicitationLink = functions.https.onRequest((request, response) 
       response.json({ success: true });
     } catch (error) {
       console.error("Error processing solicitation link:", error);
-      response.status(500).json({ 
-        error: "Failed to process solicitation link",
-        details: error.message 
-      });
+      response.status(500).json({ error: "Failed to process solicitation link" });
     }
   });
 });
@@ -215,3 +201,53 @@ exports.processDocument = functions.https.onRequest((request, response) => {
     }
   });
 });
+
+// Helper functions to extract data from text
+function extractProjectName(text) {
+  const match = text.match(/Project Name:\s*([^\n]+)/i) || text.split("\n")[0];
+  return match ? match[1] || match : null;
+}
+
+function extractSolicitationNumber(text) {
+  const pattern = /(?:solicitation|RFP|RFQ)\s*(?:number|no\.?|#)?:\s*([A-Z0-9-]+)/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+}
+
+function extractProjectNumber(text) {
+  const pattern = /Project\s*(?:number|no\.?|#)?:\s*([A-Z0-9-]+)/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+}
+
+function extractDueDate(text) {
+  const pattern = /(?:due date|deadline|submission date):\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+}
+
+function extractDueTime(text) {
+  const pattern = /(?:due time|submission time):\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)/i;
+  const match = text.match(pattern);
+  return match ? match[1] : null;
+}
+
+function extractProjectDescription(text) {
+  const paragraphs = text.split("\n\n");
+  return paragraphs[0] || null;
+}
+
+function extractProjectSchedule(text) {
+  const scheduleSection = text.match(/Project Schedule:([\s\S]*?)(?=\n\n|$)/i);
+  return scheduleSection ? scheduleSection[1].trim() : null;
+}
+
+function extractSOQRequirements(text) {
+  const soqSection = text.match(/SOQ Requirements:([\s\S]*?)(?=\n\n|$)/i);
+  return soqSection ? soqSection[1].trim() : null;
+}
+
+function extractContentRequirements(text) {
+  const contentSection = text.match(/Content Requirements:([\s\S]*?)(?=\n\n|$)/i);
+  return contentSection ? contentSection[1].trim() : null;
+}

@@ -35,27 +35,26 @@ export const uploadSolicitation = async (file, userId) => {
       userId: userId
     });
 
-    // Create an RFP response entry
-    const rfpResponse = await addDoc(collection(db, 'rfpResponses'), {
-      title: result.data.projectData.name || 'Untitled Solicitation',
-      company: '',
+    // Create a proposal entry in Firestore
+    const proposalRef = await addDoc(collection(db, 'proposals'), {
+      ...result.data.projectData,
+      userId,
+      solicitationId: result.data.solicitationId,
       status: 'Draft',
-      solicitationId: result.data.projectId,
-      solicitationFile: {
-        name: filename,
-        url: downloadURL,
-        uploadedAt: new Date().toISOString()
-      },
-      dueDate: result.data.projectData.dueDate || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      userId: userId,
-      notes: result.data.projectData.description || ''
+      file: {
+        name: filename,
+        url: downloadURL,
+        type: file.type,
+        uploadedAt: new Date().toISOString()
+      }
     });
 
     return {
-      ...result.data,
-      rfpResponseId: rfpResponse.id
+      ...result.data.projectData,
+      id: proposalRef.id,
+      solicitationId: result.data.solicitationId
     };
   } catch (error) {
     console.error('Error uploading solicitation:', error);
@@ -71,23 +70,24 @@ export const processSolicitationLink = async (link, userId) => {
       userId: userId
     });
 
-    // Create an RFP response entry
-    const rfpResponse = await addDoc(collection(db, 'rfpResponses'), {
-      title: result.data.projectData.name || 'Untitled Solicitation',
-      company: '',
+    // Create a proposal entry in Firestore
+    const proposalRef = await addDoc(collection(db, 'proposals'), {
+      ...result.data.projectData,
+      userId,
+      solicitationId: result.data.solicitationId,
       status: 'Draft',
-      solicitationId: result.data.projectId,
-      solicitationLink: link,
-      dueDate: result.data.projectData.dueDate || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      userId: userId,
-      notes: result.data.projectData.description || ''
+      link: {
+        url: link,
+        processedAt: new Date().toISOString()
+      }
     });
 
     return {
-      ...result.data,
-      rfpResponseId: rfpResponse.id
+      ...result.data.projectData,
+      id: proposalRef.id,
+      solicitationId: result.data.solicitationId
     };
   } catch (error) {
     console.error('Error processing solicitation link:', error);
