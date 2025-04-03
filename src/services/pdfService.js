@@ -1,5 +1,5 @@
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { app } from '../config/firebase';
+import { app } from '../config.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Initialize Firestore with the existing Firebase app
