@@ -8,61 +8,6 @@ const db = getFirestore(app);
 const DOCUPANDA_API_KEY = process.env.REACT_APP_DOCUPANDA_API_KEY || 'l45nUglczgYCBT3rF0fHs5Cerkt2';
 const DOCUPANDA_SCHEMA_ID = '4ad88272';
 
-// Helper functions to extract information using regex
-const extractDueDate = (text) => {
-  const datePattern = /(?:due date|submission deadline|proposal due):\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
-  const match = text.match(datePattern);
-  return match ? match[1] : null;
-};
-
-const extractDueTime = (text) => {
-  const timePattern = /(?:due time|submission time):\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i;
-  const match = text.match(timePattern);
-  return match ? match[1] : null;
-};
-
-const extractSolicitationNumber = (text) => {
-  const pattern = /(?:solicitation|RFP|RFQ)\s*(?:number|no\.?|#)?:\s*([A-Z0-9-]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1] : null;
-};
-
-const extractProjectNumber = (text) => {
-  const pattern = /(?:project|job)\s*(?:number|no\.?|#)?:\s*([A-Z0-9-]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1] : null;
-};
-
-const extractProjectName = (text) => {
-  const pattern = /(?:project|job)\s*(?:name|title)?:\s*([^\n]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1].trim() : null;
-};
-
-const extractProjectDescription = (text) => {
-  const pattern = /(?:project|job)\s*(?:description|scope)?:\s*([^\n]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1].trim() : null;
-};
-
-const extractProjectSchedule = (text) => {
-  const pattern = /(?:project|job)\s*(?:schedule|timeline)?:\s*([^\n]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1].trim() : null;
-};
-
-const extractSOQRequirements = (text) => {
-  const pattern = /(?:SOQ|statement of qualifications)\s*(?:requirements)?:\s*([^\n]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1].trim() : null;
-};
-
-const extractContentRequirements = (text) => {
-  const pattern = /(?:content|submission)\s*(?:requirements)?:\s*([^\n]+)/i;
-  const match = text.match(pattern);
-  return match ? match[1].trim() : null;
-};
-
 // Helper function to convert file to base64 in chunks
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
