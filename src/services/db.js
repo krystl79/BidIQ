@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import { collection, query, orderBy, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { getAuth } from 'firebase/auth';
 
 const DB_NAME = 'buildiqDB';
 const DB_VERSION = 1;
@@ -250,8 +251,17 @@ export async function initializeDB(sampleData) {
 // RFP Response Functions
 export const getAllRFPResponses = async () => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to access RFP responses');
+    }
+
     const responsesRef = collection(db, 'rfpResponses');
-    const q = query(responsesRef, orderBy('createdAt', 'desc'));
+    const q = query(
+      responsesRef,
+      where('userId', '==', auth.currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.docs.map(doc => ({
@@ -266,13 +276,23 @@ export const getAllRFPResponses = async () => {
 
 export const getRFPResponse = async (responseId) => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to access RFP response');
+    }
+
     const docRef = doc(db, 'rfpResponses', responseId);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Verify the response belongs to the current user
+      if (data.userId !== auth.currentUser.uid) {
+        throw new Error('Access denied: This response belongs to another user');
+      }
       return {
         id: docSnap.id,
-        ...docSnap.data()
+        ...data
       };
     } else {
       return null;
@@ -285,6 +305,11 @@ export const getRFPResponse = async (responseId) => {
 
 export const createRFPResponseFromSolicitation = async (solicitationData) => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to create RFP response');
+    }
+
     const responsesRef = collection(db, 'rfpResponses');
     const newResponse = {
       title: solicitationData.fileName || 'Untitled Solicitation',
@@ -296,6 +321,7 @@ export const createRFPResponseFromSolicitation = async (solicitationData) => {
       },
       status: 'New',
       company: '',
+      userId: auth.currentUser.uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       notes: ''
@@ -311,9 +337,27 @@ export const createRFPResponseFromSolicitation = async (solicitationData) => {
 
 export const updateRFPResponse = async (responseId, responseData) => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to update RFP response');
+    }
+
+    // Verify ownership before update
     const docRef = doc(db, 'rfpResponses', responseId);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error('RFP response not found');
+    }
+    
+    const data = docSnap.data();
+    if (data.userId !== auth.currentUser.uid) {
+      throw new Error('Access denied: This response belongs to another user');
+    }
+
     const updatedResponse = {
       ...responseData,
+      userId: auth.currentUser.uid, // Ensure userId remains unchanged
       updatedAt: serverTimestamp()
     };
     
@@ -326,7 +370,24 @@ export const updateRFPResponse = async (responseId, responseData) => {
 
 export const deleteRFPResponse = async (responseId) => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to delete RFP response');
+    }
+
+    // Verify ownership before delete
     const docRef = doc(db, 'rfpResponses', responseId);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error('RFP response not found');
+    }
+    
+    const data = docSnap.data();
+    if (data.userId !== auth.currentUser.uid) {
+      throw new Error('Access denied: This response belongs to another user');
+    }
+
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Error deleting RFP response:', error);
@@ -336,9 +397,15 @@ export const deleteRFPResponse = async (responseId) => {
 
 export const getRFPResponsesBySolicitation = async (solicitationId) => {
   try {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      throw new Error('User must be authenticated to access RFP responses');
+    }
+
     const responsesRef = collection(db, 'rfpResponses');
     const q = query(
       responsesRef, 
+      where('userId', '==', auth.currentUser.uid),
       where('solicitationId', '==', solicitationId),
       orderBy('createdAt', 'desc')
     );

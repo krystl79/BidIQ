@@ -2,6 +2,26 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own RFP responses
+    match /rfpResponses/{responseId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write their own user profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read and write their own projects
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write their own bids
+    match /bids/{bidId} {
+      allow read, write: if request.auth != null;
+    }
+    
     // Allow users to read and write their own proposals
     match /users/{userId}/proposals/{proposalId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
