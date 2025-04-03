@@ -118,8 +118,8 @@ export const extractProposalInfo = async (file, userId) => {
       updatedAt: serverTimestamp(),
       metadata: {
         fileName: file.name,
-        fileSize: file.size,
-        pageCount: pdf.numPages,
+        fileSize: String(file.size),
+        pageCount: Number(pdf.numPages),
         mimeType: file.type || 'application/pdf'
       },
       status: 'processed'
@@ -131,24 +131,15 @@ export const extractProposalInfo = async (file, userId) => {
     }
 
     try {
-      // Ensure all fields are strings or valid Firestore types
-      const sanitizedProposalInfo = {
-        ...proposalInfo,
-        metadata: {
-          ...proposalInfo.metadata,
-          fileSize: String(proposalInfo.metadata.fileSize),
-          pageCount: Number(proposalInfo.metadata.pageCount)
-        }
-      };
-
       // Store in Firestore with proper error handling
       const proposalsRef = collection(db, 'users', userId, 'proposals');
-      const docRef = await addDoc(proposalsRef, sanitizedProposalInfo);
+      const docRef = await addDoc(proposalsRef, proposalInfo);
       console.log('Document stored in Firestore with ID:', docRef.id);
 
       return {
         id: docRef.id,
-        ...sanitizedProposalInfo
+        ...proposalInfo,
+        error: null
       };
     } catch (firestoreError) {
       console.error('Error storing document in Firestore:', firestoreError);
