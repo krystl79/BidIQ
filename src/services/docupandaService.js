@@ -74,7 +74,7 @@ export const extractProposalInfo = async (file, userId) => {
     }));
 
     // Call Docupanda API
-    const response = await fetch('https://api.docupanda.com/v1/process', {
+    const response = await fetch('https://api.docupanda.ai/v1/process', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.REACT_APP_DOCUPANDA_API_KEY}`,
@@ -85,10 +85,12 @@ export const extractProposalInfo = async (file, userId) => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('Docupanda API error:', errorData);
       throw new Error(errorData.message || 'Failed to process document with Docupanda');
     }
 
     const docupandaResult = await response.json();
+    console.log('Docupanda API response:', docupandaResult);
     const fullText = docupandaResult.text || '';
 
     // Extract information using helper functions
