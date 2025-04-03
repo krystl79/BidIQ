@@ -136,6 +136,7 @@ export const extractProposalInfo = async (file, userId) => {
 
       const result = await getResponse.json();
       console.log('Docupanda status:', result.status);
+      console.log('Docupanda result structure:', JSON.stringify(result, null, 2));
 
       if (result.status === 'completed') {
         docupandaResult = result;
@@ -151,7 +152,20 @@ export const extractProposalInfo = async (file, userId) => {
       throw new Error('Document processing timed out');
     }
 
-    const fullText = docupandaResult.result.pagesText.join('\n');
+    // Extract text from the result, handling different possible structures
+    let fullText = '';
+    if (docupandaResult.result && docupandaResult.result.pagesText) {
+      fullText = docupandaResult.result.pagesText.join('\n');
+    } else if (docupandaResult.result && docupandaResult.result.text) {
+      fullText = docupandaResult.result.text;
+    } else if (docupandaResult.text) {
+      fullText = docupandaResult.text;
+    } else {
+      console.error('Unexpected Docupanda result structure:', docupandaResult);
+      throw new Error('Unexpected Docupanda result structure');
+    }
+
+    console.log('Extracted text length:', fullText.length);
 
     // Extract information using helper functions
     const proposalInfo = {
@@ -166,8 +180,9 @@ export const extractProposalInfo = async (file, userId) => {
       contentRequirements: extractContentRequirements(fullText),
       userId,
       createdAt: new Date().toISOString(),
-      metadata: docupandaResult.result.metadata || {},
-      pagesText: docupandaResult.result.pagesText || []
+      metadata: docupandaResult.result?.metadata || {},
+      pagesText: docupandaResult.result?.pagesText || [],
+      rawResult: docupandaResult // Store the raw result for debugging
     };
 
     // Store the processed document in Firebase Storage
