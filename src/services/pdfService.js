@@ -122,9 +122,10 @@ export const uploadFile = async (file, userId) => {
     const fileName = `${timestamp}-${file.name}`;
     const storageRef = ref(storage, `solicitations/${userId}/${fileName}`);
     
-    // Set metadata without custom CORS headers (these are handled by bucket configuration)
+    // Set metadata with cache control
     const metadata = {
-      contentType: file.type
+      contentType: file.type,
+      cacheControl: 'public, max-age=3600'
     };
 
     // Upload with retry logic
@@ -146,8 +147,9 @@ export const uploadFile = async (file, userId) => {
         console.warn(`Upload attempt ${4 - retries} failed:`, error);
         retries--;
         if (retries > 0) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Exponential backoff
+          const delay = Math.pow(2, 3 - retries) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
