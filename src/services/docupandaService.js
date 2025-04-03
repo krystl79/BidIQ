@@ -63,12 +63,7 @@ const extractContentRequirements = (text) => {
 
 export const extractProposalInfo = async (file, userId) => {
   try {
-    // Upload file to Firebase Storage
-    const storageRef = ref(storage, `solicitations/${userId}/${file.name}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-
-    // Create FormData for Docupanda API
+    // First, process the file with Docupanda
     const formData = new FormData();
     formData.append('file', file);
     formData.append('options', JSON.stringify({
@@ -107,13 +102,18 @@ export const extractProposalInfo = async (file, userId) => {
       projectSchedule: extractProjectSchedule(fullText),
       soqRequirements: extractSOQRequirements(fullText),
       contentRequirements: extractContentRequirements(fullText),
-      fileUrl: downloadURL,
       userId,
       createdAt: new Date().toISOString(),
       metadata: docupandaResult.metadata || {},
       tables: docupandaResult.tables || [],
       forms: docupandaResult.forms || []
     };
+
+    // Store the processed document in Firebase Storage
+    const storageRef = ref(storage, `solicitations/${userId}/${file.name}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    proposalInfo.fileUrl = downloadURL;
 
     // Store in Firestore
     const docRef = await addDoc(collection(db, 'proposals'), proposalInfo);
