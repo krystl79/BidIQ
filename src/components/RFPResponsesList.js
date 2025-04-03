@@ -3,8 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { getAllRFPResponses, deleteRFPResponse } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 import { extractProposalInfo } from '../services/pdfService';
-import { Button, Paper, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
-import { CloudUpload } from '@mui/icons-material';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Paper,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  IconButton,
+  InputAdornment
+} from '@mui/material';
+import {
+  CloudUpload,
+  Search,
+  Delete,
+  Description
+} from '@mui/icons-material';
 
 const RFPProposalsList = () => {
   const navigate = useNavigate();
@@ -45,204 +66,171 @@ const RFPProposalsList = () => {
   };
 
   const handleFileUpload = async () => {
-    if (!file || !currentUser) return;
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
 
     try {
-      setUploading(true);
-      setError(null);
-      const result = await extractProposalInfo(file, currentUser.uid);
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
+      const proposalInfo = await extractProposalInfo(file);
+      // Handle the proposal info as needed
       setUploadSuccess(true);
-      setFile(null);
-      // Reload the responses list
-      loadResponses();
+      setTimeout(() => {
+        navigate('/rfp-responses');
+      }, 2000);
     } catch (error) {
-      console.error('Error processing PDF:', error);
-      setError('Error processing PDF. Please try again.');
+      console.error('Error processing file:', error);
+      setError('Error processing file. Please try again.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setUploadSuccess(false);
-  };
-
-  const handleViewResponse = (response) => {
-    navigate(`/rfp-responses/${response.id}`);
-  };
-
-  const handleDeleteResponse = async (responseId) => {
+  const handleDelete = async (responseId) => {
     if (window.confirm('Are you sure you want to delete this proposal?')) {
       try {
         await deleteRFPResponse(responseId);
-        // Refresh the responses list
-        loadResponses();
+        setResponses(responses.filter(response => response.id !== responseId));
       } catch (error) {
         console.error('Error deleting proposal:', error);
-        setError('Error deleting proposal. Please try again later.');
+        setError('Error deleting proposal. Please try again.');
       }
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
-
   const filteredResponses = responses.filter(response =>
-    response.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    response.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    response.status?.toLowerCase().includes(searchQuery.toLowerCase())
+    response.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    response.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">RFPs and Solicitations</h1>
-          <button
-            onClick={handleBackToDashboard}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-
-        {/* Upload Area */}
-        <Paper className="mb-8 p-6" elevation={1}>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex-1">
-              <Typography variant="h6" gutterBottom>
-                Upload New Solicitation
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Upload a PDF file to process a new solicitation document
-              </Typography>
-            </div>
-            <div className="flex items-center gap-4">
-              <input
-                accept="application/pdf"
-                style={{ display: 'none' }}
-                id="raised-button-file"
-                type="file"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="raised-button-file">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUpload />}
-                >
-                  Select PDF
-                </Button>
-              </label>
-              {file && (
-                <Typography variant="body2" color="textSecondary">
-                  {file.name}
-                </Typography>
-              )}
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" gutterBottom>
+              Upload New Solicitation or RFP
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Upload a PDF file to process a new solicitation document
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <input
+              accept="application/pdf"
+              style={{ display: 'none' }}
+              id="raised-button-file"
+              type="file"
+              onChange={handleFileChange}
+            />
+            <label htmlFor="raised-button-file">
               <Button
-                variant="contained"
-                color="primary"
-                onClick={handleFileUpload}
-                disabled={!file || uploading}
+                variant="outlined"
+                component="span"
+                startIcon={<CloudUpload />}
               >
-                {uploading ? <CircularProgress size={24} /> : 'Process'}
+                Select PDF
               </Button>
-            </div>
-          </div>
-        </Paper>
+            </label>
+            {file && (
+              <Typography variant="body2" color="text.secondary">
+                {file.name}
+              </Typography>
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleFileUpload}
+              disabled={!file || uploading}
+            >
+              {uploading ? <CircularProgress size={24} /> : 'Process'}
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
 
-        <div className="mb-8">
-          <input
-            type="text"
-            placeholder="Search by title or company..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Proposals
+        </Typography>
+        <TextField
+          fullWidth
+          placeholder="Search by title or company..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {filteredResponses.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-2xl text-gray-500">No proposals found.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredResponses.map((response) => (
-              <div key={response.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-                <div className="p-4 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{response.title}</h3>
-                  <div className="text-sm text-gray-600 space-y-2">
-                    <p>Company: {response.company}</p>
-                    <p>Status: {response.status}</p>
-                    <p>Created: {new Date(response.createdAt).toLocaleDateString()}</p>
-                    {response.dueDate && (
-                      <p>Due Date: {new Date(response.dueDate).toLocaleDateString()}</p>
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2 justify-end">
-                    <button
-                      onClick={() => handleViewResponse(response)}
-                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleDeleteResponse(response.id)}
-                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <Grid container spacing={3}>
+        {filteredResponses.map((response) => (
+          <Grid item xs={12} sm={6} md={4} key={response.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {response.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {response.companyName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(response.createdAt).toLocaleDateString()}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button
+                  size="small"
+                  startIcon={<Description />}
+                  onClick={() => navigate(`/rfp-responses/${response.id}`)}
+                >
+                  View
+                </Button>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDelete(response.id)}
+                >
+                  <Delete />
+                </IconButton>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-        <Snackbar
-          open={uploadSuccess}
-          autoHideDuration={3000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={handleCloseSnackbar} 
-            severity="success"
-            sx={{ width: '100%' }}
-          >
-            Document processed successfully!
-          </Alert>
-        </Snackbar>
-      </div>
-    </div>
+      <Snackbar
+        open={uploadSuccess}
+        autoHideDuration={3000}
+        onClose={() => setUploadSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          Document processed successfully!
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 };
 

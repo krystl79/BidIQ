@@ -1,39 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveProject } from '../services/db';
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  CircularProgress
+} from '@mui/material';
 
 const ProjectForm = ({ initialData }) => {
-  const [projectName, setProjectName] = useState('');
-  const [projectType, setProjectType] = useState('');
-  const [otherProjectType, setOtherProjectType] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [equipmentMarkup, setEquipmentMarkup] = useState('');
-  const [error, setError] = useState(null);
-
   const navigate = useNavigate();
-
-  // Get today's date in YYYY-MM-DD format for date input min attribute
-  const today = new Date().toISOString().split('T')[0];
+  const [projectName, setProjectName] = useState(initialData?.projectName || '');
+  const [projectType, setProjectType] = useState(initialData?.projectType || '');
+  const [otherProjectType, setOtherProjectType] = useState(initialData?.otherProjectType || '');
+  const [city, setCity] = useState(initialData?.location?.city || '');
+  const [state, setState] = useState(initialData?.location?.state || '');
+  const [zipCode, setZipCode] = useState(initialData?.location?.zipCode || '');
+  const [startDate, setStartDate] = useState(initialData?.timeline?.startDate?.split('T')[0] || '');
+  const [endDate, setEndDate] = useState(initialData?.timeline?.endDate?.split('T')[0] || '');
+  const [equipmentMarkup, setEquipmentMarkup] = useState(initialData?.equipmentMarkup || 0);
+  const [notes, setNotes] = useState(initialData?.notes || '');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const projectTypes = [
-    'Residential - Single Family',
-    'Residential - Multi Family',
-    'Commercial - Office',
-    'Commercial - Retail',
-    'Commercial - Mixed Use',
+    'Commercial',
+    'Residential',
     'Industrial',
-    'Healthcare',
-    'Educational',
-    'Hospitality',
     'Infrastructure',
-    'Renovation/Remodel',
     'Other'
   ];
 
@@ -45,326 +48,223 @@ const ProjectForm = ({ initialData }) => {
     'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
   ];
 
-  // Load initial data when editing
-  useEffect(() => {
-    if (initialData) {
-      setProjectName(initialData.projectName || '');
-      setProjectType(initialData.projectType || '');
-      setOtherProjectType(initialData.projectType === 'Other' ? initialData.projectType : '');
-      setCity(initialData.location?.city || '');
-      setState(initialData.location?.state || '');
-      setZipCode(initialData.location?.zipCode || '');
-      setStartDate(initialData.timeline?.startDate || '');
-      setEndDate(initialData.timeline?.endDate || '');
-      setNotes(initialData.notes || '');
-      setEquipmentMarkup(initialData.equipmentMarkup || '');
-    }
-  }, [initialData]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate required fields - removed location fields from required validation
-    if (!projectName || !projectType || !startDate || !endDate) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    // Validate dates
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
-    if (startDateObj > endDateObj) {
-      setError('End date must be after start date');
-      return;
-    }
-
-    const location = {
-      city: city || '',
-      state: state || '',
-      zipCode: zipCode || ''
-    };
-
-    const timeline = {
-      startDate,
-      startTime,
-      endDate,
-      endTime
-    };
-
-    const projectDetails = {
-      id: initialData?.id || Date.now().toString(),
-      projectName,
-      projectType: projectType === 'Other' ? otherProjectType : projectType,
-      location,
-      timeline,
-      notes,
-      equipmentMarkup: parseFloat(equipmentMarkup) || 0,
-      createdAt: new Date().toISOString(),
-      bids: initialData?.bids || []
-    };
+    setError('');
+    setLoading(true);
 
     try {
-      // Save project to database
-      await saveProject(projectDetails);
-      
-      // Clear form
-      setProjectName('');
-      setProjectType('');
-      setOtherProjectType('');
-      setCity('');
-      setState('');
-      setZipCode('');
-      setStartDate('');
-      setStartTime('');
-      setEndDate('');
-      setEndTime('');
-      setNotes('');
-      setEquipmentMarkup('');
-      setError(null);
-      
-      // Navigate to projects list
+      const projectData = {
+        projectName,
+        projectType: projectType === 'Other' ? otherProjectType : projectType,
+        location: {
+          city,
+          state,
+          zipCode
+        },
+        timeline: {
+          startDate,
+          endDate
+        },
+        equipmentMarkup: parseFloat(equipmentMarkup),
+        notes
+      };
+
+      await saveProject(projectData, initialData?.id);
       navigate('/projects');
     } catch (error) {
       console.error('Error saving project:', error);
       setError('Failed to save project. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    // Clear all form fields
-    setProjectName('');
-    setProjectType('');
-    setOtherProjectType('');
-    setCity('');
-    setState('');
-    setZipCode('');
-    setStartDate('');
-    setStartTime('');
-    setEndDate('');
-    setEndTime('');
-    setNotes('');
-    setEquipmentMarkup('');
-    
-    // Navigate back to dashboard
-    navigate('/dashboard');
+    navigate('/projects');
   };
 
-  const inputClassName = "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none hover:border-blue-200 bg-white shadow-sm";
-  const buttonClassName = "w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md hover:shadow-lg active:transform active:scale-[0.99]";
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white rounded-xl shadow-xl p-8 space-y-6 border border-gray-100">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
           {initialData ? 'Edit Project' : 'Create New Project'}
-        </h2>
-        
+        </Typography>
+
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <Alert severity="error" sx={{ mb: 3 }}>
             {error}
-          </div>
+          </Alert>
         )}
-        
-        <div className="space-y-6">
-          <div className="space-y-1">
-            <label htmlFor="projectName" className="block text-sm font-medium text-gray-700">
-              Project Name <span className="text-red-500">*</span>
-            </label>
-            <input 
-              id="projectName"
-              type="text" 
-              value={projectName} 
-              onChange={(e) => setProjectName(e.target.value)} 
-              placeholder="Enter project name"
-              required
-              className={inputClassName}
-            />
-          </div>
 
-          <div className="space-y-1">
-            <label htmlFor="projectType" className="block text-sm font-medium text-gray-700">
-              Project Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="projectType"
-              value={projectType} 
-              onChange={(e) => setProjectType(e.target.value)} 
-              required
-              className={inputClassName}
-            >
-              <option value="">Select a project type</option>
-              {projectTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {projectType === 'Other' && (
-            <div className="space-y-1">
-              <label htmlFor="otherProjectType" className="block text-sm font-medium text-gray-700">
-                Specify Project Type <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="otherProjectType"
-                type="text"
-                value={otherProjectType}
-                onChange={(e) => setOtherProjectType(e.target.value)}
-                placeholder="Enter project type"
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Project Name"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
                 required
-                className={inputClassName}
               />
-            </div>
-          )}
+            </Grid>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Project Location</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                  City
-                </label>
-                <input 
-                  id="city"
-                  type="text" 
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="Enter city"
-                  className={inputClassName}
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Project Type</InputLabel>
+                <Select
+                  value={projectType}
+                  onChange={(e) => setProjectType(e.target.value)}
+                  label="Project Type"
+                  required
+                >
+                  {projectTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {projectType === 'Other' && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Specify Project Type"
+                  value={otherProjectType}
+                  onChange={(e) => setOtherProjectType(e.target.value)}
+                  required
                 />
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                  State
-                </label>
-                <select
-                  id="state"
+              </Grid>
+            )}
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Project Location
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="City"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>State</InputLabel>
+                <Select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className={inputClassName}
+                  label="State"
                 >
-                  <option value="">Select state</option>
                   {states.map((st) => (
-                    <option key={st} value={st}>
+                    <MenuItem key={st} value={st}>
                       {st}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                  ZIP Code
-                </label>
-                <input 
-                  id="zipCode"
-                  type="text" 
-                  value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value)}
-                  placeholder="Enter ZIP code"
-                  pattern="[0-9]{5}"
-                  maxLength="5"
-                  className={inputClassName}
-                />
-              </div>
-            </div>
-          </div>
+                </Select>
+              </FormControl>
+            </Grid>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Project Timeline</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
-                  Start <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  min={today}
-                  required
-                  className={inputClassName}
-                />
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
-                  End <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  min={startDate || today}
-                  required
-                  className={inputClassName}
-                />
-              </div>
-            </div>
-          </div>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="ZIP Code"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+              />
+            </Grid>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Project Notes</h3>
-            <textarea 
-              id="notes"
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)} 
-              placeholder="Enter additional notes" 
-              rows="4"
-              maxLength={250}
-              className={inputClassName}
-            />
-            {notes.length > 0 && (
-              <div className="mt-1 text-[10px] text-gray-500 text-right italic">
-                {notes.length}/250 characters
-              </div>
-            )}
-          </div>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Project Timeline
+              </Typography>
+            </Grid>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Internal Project Details</h3>
-            <div className="space-y-1">
-              <label htmlFor="equipmentMarkup" className="block text-sm font-medium text-gray-700">
-                Equipment Markup % <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="equipmentMarkup"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={equipmentMarkup}
-                  onChange={(e) => setEquipmentMarkup(e.target.value)}
-                  placeholder="Enter markup percentage"
-                  required
-                  className={inputClassName + " pr-8"}
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">Enter the markup percentage for equipment (0-100)</p>
-            </div>
-          </div>
-        </div>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-20 mb-8">
-          <button 
-            type="button"
-            onClick={handleCancel}
-            className={`${buttonClassName} bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500`}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className={`${buttonClassName} bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500`}
-          >
-            Save Project
-          </button>
-        </div>
-      </form>
-    </div>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="date"
+                label="End Date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Project Notes
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Enter additional notes"
+                inputProps={{ maxLength: 250 }}
+              />
+              {notes.length > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'right', mt: 1 }}>
+                  {notes.length}/250 characters
+                </Typography>
+              )}
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Internal Project Details
+              </Typography>
+              <TextField
+                fullWidth
+                type="number"
+                label="Equipment Markup %"
+                value={equipmentMarkup}
+                onChange={(e) => setEquipmentMarkup(e.target.value)}
+                required
+                inputProps={{ min: 0, max: 100, step: 0.1 }}
+                helperText="Enter the markup percentage for equipment (0-100)"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'Save Project'}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 

@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadSolicitation } from '../services/solicitationService';
 import { useAuth } from '../contexts/AuthContext';
-import { extractProposalInfo } from '../services/pdfService';
-import { Box, Button, Container, Typography, Paper, CircularProgress, Alert, Snackbar } from '@mui/material';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Paper,
+  CircularProgress,
+  Alert,
+  Snackbar
+} from '@mui/material';
+import { CloudUpload } from '@mui/icons-material';
 
 const SolicitationUploadScreen = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
 
-  const handleFileChange = async (event) => {
+  const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       setFile(selectedFile);
@@ -26,21 +36,24 @@ const SolicitationUploadScreen = () => {
   const handleFileUpload = async () => {
     if (!file || !currentUser) return;
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      const result = await extractProposalInfo(file, currentUser.uid);
+      // Upload the file and create RFP response
+      const result = await uploadSolicitation(file, currentUser.uid);
       
       if (result.error) {
         throw new Error(result.error);
       }
       
       setSuccess(true);
-      // Navigate immediately to proposals list
-      navigate('/proposals');
+      setTimeout(() => {
+        navigate('/rfp-responses');
+      }, 2000);
     } catch (error) {
-      console.error('Error processing PDF:', error);
-      setError('Error processing PDF. Please try again.');
+      console.error('Error processing file:', error);
+      setError('Error processing file. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,7 +65,7 @@ const SolicitationUploadScreen = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>
           Upload Solicitation Document
         </Typography>
@@ -66,7 +79,11 @@ const SolicitationUploadScreen = () => {
             onChange={handleFileChange}
           />
           <label htmlFor="raised-button-file">
-            <Button variant="contained" component="span">
+            <Button
+              variant="contained"
+              component="span"
+              startIcon={<CloudUpload />}
+            >
               Select PDF File
             </Button>
           </label>

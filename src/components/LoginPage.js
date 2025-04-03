@@ -5,6 +5,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { isValidZipCode } from '../utils/validation';
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress
+} from '@mui/material';
 
 const LoginPage = () => {
   const { login, signup, resetPassword, loading: authLoading, error: authError, message: authMessage } = useAuth();
@@ -187,242 +201,186 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isForgotPassword ? 'Reset your password' : (isSignup ? 'Create your account' : 'Sign in to your account')}
-        </h2>
-      </div>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            {isSignup ? 'Create Account' : isForgotPassword ? 'Reset Password' : 'Sign In'}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {isSignup 
+              ? 'Create your account to get started' 
+              : isForgotPassword 
+                ? 'Enter your email to reset your password'
+                : 'Sign in to your account'}
+          </Typography>
+        </Box>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {(error || authError) && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error || authError}</p>
-            </div>
+        {(error || authError) && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error || authError}
+          </Alert>
+        )}
+
+        {authMessage && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {authMessage}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} sx={{ mt: 3 }}>
+          <TextField
+            fullWidth
+            label="Email address"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={formData.email}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+
+          {!isForgotPassword && (
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={formData.password}
+              onChange={handleInputChange}
+              sx={{ mb: 2 }}
+            />
           )}
-          {authMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{authMessage}</p>
-            </div>
-          )}
-          <form className="space-y-6" onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
+
+          {isSignup && !isForgotPassword && (
+            <>
+              <TextField
+                fullWidth
+                label="Company Name"
+                name="companyName"
+                required
+                value={formData.companyName}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Contact Name"
+                name="contactName"
+                required
+                value={formData.contactName}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Phone"
+                name="phone"
+                required
+                value={formData.phone}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Address"
+                name="address"
+                required
+                value={formData.address}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+
+              <TextField
+                fullWidth
+                label="City"
+                name="city"
+                required
+                value={formData.city}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>State</InputLabel>
+                <Select
+                  name="state"
+                  value={formData.state}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            {!isForgotPassword && (
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            )}
-
-            {isSignup && !isForgotPassword && (
-              <>
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                    Company Name
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="companyName"
-                      name="companyName"
-                      type="text"
-                      required
-                      value={formData.companyName}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
-                    Contact Name
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="contactName"
-                      name="contactName"
-                      type="text"
-                      required
-                      value={formData.contactName}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                    Address
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      required
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="city"
-                      name="city"
-                      type="text"
-                      required
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                    State
-                  </label>
-                  <div className="mt-1">
-                    <select
-                      id="state"
-                      name="state"
-                      required
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="">Select a state</option>
-                      {states.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                    ZIP Code
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="zipCode"
-                      name="zipCode"
-                      type="text"
-                      required
-                      maxLength="10"
-                      pattern="\d{5}(-\d{4})?"
-                      placeholder="12345 or 12345-6789"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Enter 5-digit ZIP code or 9-digit ZIP+4 code
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading || authLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  (loading || authLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {loading || authLoading ? 'Processing...' : (isForgotPassword ? 'Send Reset Link' : (isSignup ? 'Sign up' : 'Sign in'))}
-              </button>
-            </div>
-
-            <div className="text-sm text-center space-y-2">
-              {!isForgotPassword && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setIsSignup(!isSignup)}
-                    className="font-medium text-blue-600 hover:text-blue-500 block w-full"
-                  >
-                    {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsForgotPassword(true)}
-                    className="font-medium text-blue-600 hover:text-blue-500 block w-full"
-                  >
-                    Forgot your password?
-                  </button>
-                </>
-              )}
-              {isForgotPassword && (
-                <button
-                  type="button"
-                  onClick={() => setIsForgotPassword(false)}
-                  className="font-medium text-blue-600 hover:text-blue-500 block w-full"
+                  label="State"
+                  required
                 >
-                  Back to sign in
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+                  {states.map(state => (
+                    <MenuItem key={state} value={state}>
+                      {state}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="ZIP Code"
+                name="zipCode"
+                required
+                value={formData.zipCode}
+                onChange={handleInputChange}
+                sx={{ mb: 2 }}
+              />
+            </>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={loading || authLoading}
+            sx={{ mt: 3, mb: 2 }}
+          >
+            {loading || authLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : isSignup ? (
+              'Create Account'
+            ) : isForgotPassword ? (
+              'Reset Password'
+            ) : (
+              'Sign In'
+            )}
+          </Button>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            {!isForgotPassword ? (
+              <>
+                <Button
+                  onClick={() => setIsSignup(!isSignup)}
+                  sx={{ mr: 1 }}
+                >
+                  {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                </Button>
+                <Button
+                  onClick={() => setIsForgotPassword(true)}
+                >
+                  Forgot password?
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => setIsForgotPassword(false)}
+              >
+                Back to sign in
+              </Button>
+            )}
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 
