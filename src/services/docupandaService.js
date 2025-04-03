@@ -82,13 +82,15 @@ export const extractProposalInfo = async (file, userId) => {
     const response = await fetch('https://api.docupanda.com/v1/process', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.REACT_APP_DOCUPANDA_API_KEY}`
+        'Authorization': `Bearer ${process.env.REACT_APP_DOCUPANDA_API_KEY}`,
+        'Accept': 'application/json'
       },
       body: formData
     });
 
     if (!response.ok) {
-      throw new Error('Failed to process document with Docupanda');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to process document with Docupanda');
     }
 
     const docupandaResult = await response.json();
