@@ -6,8 +6,8 @@ import { app } from '../config.js';
 const storage = getStorage(app);
 const db = getFirestore(app);
 
-// Get the API key from environment variables
-const DOCUPANDA_API_KEY = process.env.REACT_APP_DOCUPANDA_API_KEY;
+// Get the API key from environment variables or use a fallback
+const DOCUPANDA_API_KEY = process.env.REACT_APP_DOCUPANDA_API_KEY || 'l45nUglczgYCBT3rF0fHs5Cerkt2';
 
 // Helper functions to extract information using regex
 const extractDueDate = (text) => {
