@@ -9,7 +9,17 @@
 
 const functions = require("firebase-functions");
 const cors = require("cors")({ 
-  origin: ['https://67eeff8a659a320008513c8f--bidiq.netlify.app', 'http://localhost:3000'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow any Netlify domain or localhost
+    if (origin.match(/^https:\/\/.*\.netlify\.app$/) || origin === 'http://localhost:3000') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
