@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllRFPResponses, deleteRFPResponse } from '../services/db';
+import { uploadSolicitation } from '../services/solicitationService';
 import { useAuth } from '../contexts/AuthContext';
-import { extractProposalInfo } from '../services/pdfService';
 import {
   Container,
   Box,
@@ -29,6 +29,7 @@ import {
 
 const RFPProposalsList = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [responses, setResponses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,6 @@ const RFPProposalsList = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const { currentUser } = useAuth();
 
   useEffect(() => {
     loadResponses();
@@ -66,14 +66,18 @@ const RFPProposalsList = () => {
   };
 
   const handleFileUpload = async () => {
-    if (!file) return;
+    if (!file || !currentUser) return;
 
     setUploading(true);
     setError(null);
 
     try {
-      const proposalInfo = await extractProposalInfo(file);
-      // Handle the proposal info as needed
+      const result = await uploadSolicitation(file, currentUser.uid);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
       setUploadSuccess(true);
       setTimeout(() => {
         navigate('/rfp-responses');
