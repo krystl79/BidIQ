@@ -39,6 +39,16 @@ const textract = new TextractClient({
 
 // Initialize Cloud Functions
 exports.processSolicitation = functions.https.onRequest((request, response) => {
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Accept, X-Requested-With');
+    response.set('Access-Control-Max-Age', '86400');
+    response.status(204).send('');
+    return;
+  }
+
   cors(request, response, async () => {
     try {
       const { fileUrl, filename, fileType, userId } = request.body;
@@ -92,6 +102,16 @@ exports.processSolicitation = functions.https.onRequest((request, response) => {
 });
 
 exports.processSolicitationLink = functions.https.onRequest((request, response) => {
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Accept, X-Requested-With');
+    response.set('Access-Control-Max-Age', '86400');
+    response.status(204).send('');
+    return;
+  }
+
   cors(request, response, async () => {
     try {
       const { link, userId } = request.body;
