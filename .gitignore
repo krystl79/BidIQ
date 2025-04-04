@@ -1,5 +1,5 @@
 # Dependencies
-node_modules/
+/node_modules
 /.pnp
 .pnp.js
 
@@ -17,6 +17,8 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
 
 # Logs
 npm-debug.log*
@@ -30,4 +32,27 @@ yarn-error.log*
 *.swo
 
 # MongoDB
-data/ 
+data/
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firebase-debug.*.log*
+
+# Netlify
+.netlify/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity

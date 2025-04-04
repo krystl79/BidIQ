@@ -18,6 +18,8 @@ Build IQ is a modern web application that helps General Contractors, subcontract
 - Material-UI (MUI) for components
 - React Router for navigation
 - Web Vitals for performance monitoring
+- Firebase for backend services
+- Capacitor for mobile app support
 
 ## Getting Started
 
@@ -50,6 +52,23 @@ yarn start
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Available Scripts
+
+In the project directory, you can run:
+
+### `npm start`
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+### `npm test`
+Launches the test runner in the interactive watch mode.
+
+### `npm run build`
+Builds the app for production to the `build` folder.
+
+### `npm run eject`
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+
 ## Project Structure
 
 ```
@@ -61,6 +80,13 @@ build-iq/
 │   │   ├── EquipmentSelection.tsx
 │   │   ├── BidReview.tsx
 │   │   └── Dashboard.tsx
+│   ├── components/
+│   │   ├── ProjectForm.tsx
+│   │   ├── EquipmentList.tsx
+│   │   └── BidPreview.tsx
+│   ├── services/
+│   │   ├── api.ts
+│   │   └── firebase.ts
 │   ├── App.tsx
 │   ├── index.tsx
 │   └── reportWebVitals.ts
@@ -86,4 +112,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Material-UI for the component library
 - React Router for navigation
-- Web Vitals for performance monitoring 
+- Web Vitals for performance monitoring
+- Firebase for backend services
+- Capacitor for mobile app support

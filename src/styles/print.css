@@ -1,0 +1,22 @@
+@media print {
+  nav {
+    display: none !important;
+  }
+  
+  .print-hide {
+    display: none !important;
+  }
+  
+  body {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .min-h-screen {
+    min-height: auto !important;
+  }
+  
+  @page {
+    margin: 0.5in;
+  }
+} 
