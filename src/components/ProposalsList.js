@@ -1,40 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Container, Typography, Grid, CircularProgress, Alert, Button } from '@mui/material';
+import { getProposals } from '../services/solicitationService';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Grid,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import ProposalCard from './ProposalCard';
 
 const ProposalsList = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
 
   useEffect(() => {
     const loadProposals = async () => {
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
-
+      if (!currentUser) return;
+      
       try {
-        const proposalsRef = collection(db, 'proposals');
-        const q = query(
-          proposalsRef,
-          orderBy('createdAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        
-        const loadedProposals = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        setProposals(loadedProposals);
+        const userProposals = await getProposals(currentUser.uid);
+        setProposals(userProposals);
       } catch (error) {
         console.error('Error loading proposals:', error);
-        setError('Error loading proposals. Please try again later.');
+        setError('Failed to load proposals. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -43,51 +39,54 @@ const ProposalsList = () => {
     loadProposals();
   }, [currentUser]);
 
+  const handleCreateNew = () => {
+    navigate('/create-proposal');
+  };
+
   if (loading) {
     return (
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress size={40} />
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            Loading proposals...
-          </Typography>
-        </Box>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-          <Button variant="contained" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </Box>
-      </Container>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Proposals
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Typography variant="h4" component="h1">
+            My Proposals
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleCreateNew}
+          >
+            Create New Proposal
+          </Button>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
         {proposals.length === 0 ? (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            <Typography variant="body1">
-              No proposals found. Upload a solicitation document to get started.
+          <Box textAlign="center" py={4}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No proposals yet
             </Typography>
-          </Alert>
+            <Typography variant="body1" color="text.secondary">
+              Click the button above to create your first proposal
+            </Typography>
+          </Box>
         ) : (
           <Grid container spacing={3}>
             {proposals.map((proposal) => (
-              <Grid item xs={12} key={proposal.id}>
+              <Grid item xs={12} sm={6} md={4} key={proposal.id}>
                 <ProposalCard proposal={proposal} />
               </Grid>
             ))}
