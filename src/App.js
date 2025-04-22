@@ -113,6 +113,14 @@ function AppContent() {
             }
           />
           <Route
+            path="/create-proposal"
+            element={
+              <ProtectedRoute>
+                <CreateProposalForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/proposals/:responseId"
             element={
               <ProtectedRoute>
@@ -197,14 +205,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SelectProject />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/create-proposal"
-            element={
-              <ProtectedRoute>
-                <CreateProposalForm />
               </ProtectedRoute>
             }
           />
