@@ -23,6 +23,7 @@ import MobileNav from './components/MobileNav';
 import ProposalDetails from './components/ProposalDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import SelectProject from './components/SelectProject';
+import CreateProposalForm from './components/CreateProposalForm';
 
 // Create a wrapper component to use hooks
 function AppContent() {
@@ -196,6 +197,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SelectProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-proposal"
+            element={
+              <ProtectedRoute>
+                <CreateProposalForm />
               </ProtectedRoute>
             }
           />
