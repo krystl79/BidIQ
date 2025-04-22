@@ -56,7 +56,7 @@ const ProposalsList = () => {
       <Box sx={{ py: 4 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
           <Typography variant="h4" component="h1">
-            My Proposals
+            RFP or Solicitation Responses
           </Typography>
           <Button
             variant="contained"
@@ -64,7 +64,7 @@ const ProposalsList = () => {
             startIcon={<AddIcon />}
             onClick={handleCreateNew}
           >
-            Create New Proposal
+            Create New Response
           </Button>
         </Box>
 
@@ -77,10 +77,10 @@ const ProposalsList = () => {
         {proposals.length === 0 ? (
           <Box textAlign="center" py={4}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              No proposals yet
+              No responses yet
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Click the button above to create your first proposal
+              Click the button above to create your first response
             </Typography>
           </Box>
         ) : (
