@@ -102,4 +102,19 @@ export const processSolicitationLink = async (link, userId) => {
     }
     throw new Error('Failed to process solicitation link. Please try again.');
   }
+};
+
+export const createProposal = async (proposalData) => {
+  try {
+    const proposalsRef = collection(db, 'proposals');
+    const newProposalRef = await addDoc(proposalsRef, proposalData);
+    
+    return {
+      id: newProposalRef.id,
+      ...proposalData
+    };
+  } catch (error) {
+    console.error('Error creating proposal:', error);
+    throw new Error('Failed to create proposal');
+  }
 }; 
