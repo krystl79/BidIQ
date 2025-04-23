@@ -20,7 +20,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   CircularProgress,
-  TextField
+  TextField,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent
 } from '@mui/material';
 import { 
   Visibility, 
@@ -28,7 +32,8 @@ import {
   Upload as UploadIcon,
   Description as FileIcon,
   Close as CloseIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  PlayArrow as ProcessIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { deleteProposal, addAttachmentToProposal, removeAttachmentFromProposal, saveProposal } from '../services/db';
@@ -38,8 +43,14 @@ const ProposalCard = ({ proposal, onDelete }) => {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [processDialogOpen, setProcessDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [promptResponses, setPromptResponses] = useState({});
+  const [currentPrompt, setCurrentPrompt] = useState('');
+  const [generatedDocument, setGeneratedDocument] = useState('');
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
@@ -67,6 +78,59 @@ const ProposalCard = ({ proposal, onDelete }) => {
   const handleDeleteClick = () => setDeleteDialogOpen(true);
   const handleDeleteCancel = () => setDeleteDialogOpen(false);
 
+  const handleProcessClick = () => {
+    setProcessDialogOpen(true);
+    setActiveStep(0);
+    setPromptResponses({});
+    setCurrentPrompt('');
+    setGeneratedDocument('');
+    processDocument(); // Start processing when dialog opens
+  };
+
+  const handleProcessClose = () => {
+    setProcessDialogOpen(false);
+    setActiveStep(0);
+    setPromptResponses({});
+    setCurrentPrompt('');
+    setGeneratedDocument('');
+  };
+
+  const handleNext = () => {
+    const allPrompts = promptResponses._allPrompts || [];
+    const currentIndex = allPrompts.indexOf(currentPrompt);
+    
+    if (currentIndex < allPrompts.length - 1) {
+      // Move to next prompt
+      const nextPrompt = allPrompts[currentIndex + 1];
+      setCurrentPrompt(nextPrompt);
+      setActiveStep(currentIndex + 1);
+    } else {
+      // Generate document when all prompts are answered
+      const document = generateDocument(promptResponses);
+      setGeneratedDocument(document);
+      setActiveStep(allPrompts.length); // Move to the final step
+    }
+  };
+
+  const handleBack = () => {
+    const allPrompts = promptResponses._allPrompts || [];
+    const currentIndex = allPrompts.indexOf(currentPrompt);
+    
+    if (currentIndex > 0) {
+      // Move to previous prompt
+      const prevPrompt = allPrompts[currentIndex - 1];
+      setCurrentPrompt(prevPrompt);
+      setActiveStep(currentIndex - 1);
+    }
+  };
+
+  const handlePromptResponse = (response) => {
+    setPromptResponses(prev => ({
+      ...prev,
+      [currentPrompt]: response
+    }));
+  };
+
   const handleDelete = async () => {
     try {
       await deleteProposal(proposal.id);
@@ -86,6 +150,15 @@ const ProposalCard = ({ proposal, onDelete }) => {
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Check if there's already an attachment
+    if (proposal.attachments?.length > 0) {
+      setError('Only one attachment is allowed per proposal. Please remove the existing attachment first.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
 
     setUploading(true);
     setError(null);
@@ -156,6 +229,60 @@ const ProposalCard = ({ proposal, onDelete }) => {
     URL.revokeObjectURL(url);
   };
 
+  const processDocument = async () => {
+    if (!proposal.attachments?.length) {
+      setError('No attachments found to process');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      // Example prompts - in a real implementation, these would be generated based on the document content
+      const prompts = [
+        'What is the project scope?',
+        'What are the key deliverables?',
+        'What is the timeline for completion?',
+        'What are the technical requirements?',
+        'What is the budget range?',
+        'What are the evaluation criteria?'
+      ];
+
+      // Set the first prompt
+      setCurrentPrompt(prompts[0]);
+      setActiveStep(0);
+
+      // Store all prompts for later use
+      setPromptResponses(prev => ({
+        ...prev,
+        _allPrompts: prompts // Store all prompts for reference
+      }));
+    } catch (error) {
+      console.error('Error processing document:', error);
+      setError('Failed to process document. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const generateDocument = (responses) => {
+    // This is a placeholder for the actual document generation logic
+    return Object.entries(responses)
+      .map(([prompt, response]) => `${prompt}\n${response}\n\n`)
+      .join('---\n\n');
+  };
+
+  const handleDownloadGenerated = () => {
+    const blob = new Blob([generatedDocument], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${proposal.title || 'proposal'}-generated.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
@@ -212,14 +339,6 @@ const ProposalCard = ({ proposal, onDelete }) => {
               color="primary" 
               variant="outlined" 
             />
-            {proposal.attachments?.length > 0 && (
-              <Chip 
-                label={`${proposal.attachments.length} attachment${proposal.attachments.length === 1 ? '' : 's'}`}
-                size="small"
-                color="info"
-                variant="outlined"
-              />
-            )}
           </Box>
           
           <Typography 
@@ -283,6 +402,21 @@ const ProposalCard = ({ proposal, onDelete }) => {
               }}
             >
               <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Process Document">
+            <IconButton 
+              size="small" 
+              onClick={handleProcessClick}
+              disabled={!proposal.attachments?.length}
+              sx={{ 
+                color: '#4F46E5',
+                '&:hover': {
+                  backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                },
+              }}
+            >
+              <ProcessIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Proposal">
@@ -520,9 +654,9 @@ const ProposalCard = ({ proposal, onDelete }) => {
                   <Button
                     startIcon={<UploadIcon />}
                     onClick={handleUploadClick}
-                    disabled={uploading}
+                    disabled={uploading || proposal.attachments?.length > 0}
                   >
-                    {uploading ? 'Uploading...' : 'Upload File'}
+                    {uploading ? 'Uploading...' : proposal.attachments?.length > 0 ? 'Remove existing attachment first' : 'Upload File'}
                   </Button>
                 </Box>
                 <List>
@@ -569,6 +703,93 @@ const ProposalCard = ({ proposal, onDelete }) => {
           >
             Save Changes
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Process Dialog */}
+      <Dialog
+        open={processDialogOpen}
+        onClose={handleProcessClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Process Document
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stepper activeStep={activeStep} orientation="vertical">
+            {proposal.attachments?.map((attachment, index) => (
+              <Step key={index}>
+                <StepLabel>Process {attachment.name}</StepLabel>
+                <StepContent>
+                  {processing ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                      <CircularProgress size={24} />
+                      <Typography>Processing document...</Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <Typography variant="subtitle1" gutterBottom>
+                        {currentPrompt || 'No prompt available'}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={promptResponses[currentPrompt] || ''}
+                        onChange={(e) => handlePromptResponse(e.target.value)}
+                        placeholder="Enter your response here..."
+                        sx={{ mt: 2 }}
+                      />
+                      <Box sx={{ mb: 2, mt: 2 }}>
+                        <div>
+                          <Button
+                            variant="contained"
+                            onClick={handleNext}
+                            sx={{ mt: 1, mr: 1 }}
+                          >
+                            {activeStep === (promptResponses._allPrompts?.length || 0) - 1 ? 'Finish' : 'Continue'}
+                          </Button>
+                          <Button
+                            disabled={activeStep === 0}
+                            onClick={handleBack}
+                            sx={{ mt: 1, mr: 1 }}
+                          >
+                            Back
+                          </Button>
+                        </div>
+                      </Box>
+                    </>
+                  )}
+                </StepContent>
+              </Step>
+            ))}
+            <Step>
+              <StepLabel>Generated Document</StepLabel>
+              <StepContent>
+                <Typography variant="subtitle1" gutterBottom>
+                  Your document has been generated based on your responses.
+                </Typography>
+                <Paper sx={{ p: 2, my: 2, maxHeight: 300, overflow: 'auto' }}>
+                  <Typography component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {generatedDocument}
+                  </Typography>
+                </Paper>
+                <Box sx={{ mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleDownloadGenerated}
+                    sx={{ mt: 1, mr: 1 }}
+                  >
+                    Download Document
+                  </Button>
+                </Box>
+              </StepContent>
+            </Step>
+          </Stepper>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleProcessClose}>Close</Button>
         </DialogActions>
       </Dialog>
     </>
