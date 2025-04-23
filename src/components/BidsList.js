@@ -2,7 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllBids, deleteBid, getProject } from '../services/db';
 import AddItemsToBid from './AddItemsToBid';
-import { Container, Box, Typography, Button, TextField, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Alert,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  IconButton,
+  InputAdornment,
+  Chip
+} from '@mui/material';
+import {
+  Search,
+  Delete,
+  Add,
+  Visibility,
+  Description
+} from '@mui/icons-material';
 
 const BidsList = () => {
   const navigate = useNavigate();
@@ -72,7 +93,7 @@ const BidsList = () => {
     if (window.confirm('Are you sure you want to delete this bid?')) {
       try {
         await deleteBid(bidId);
-        await loadBids(); // Refresh the bids list
+        await loadBids();
       } catch (err) {
         console.error('Error deleting bid:', err);
         setError('Failed to delete bid. Please try again later.');
@@ -91,7 +112,7 @@ const BidsList = () => {
   };
 
   const handleSaveItems = async () => {
-    await loadBids(); // Refresh the bids list
+    await loadBids();
   };
 
   const filteredBids = bids.filter(bid => {
@@ -107,122 +128,214 @@ const BidsList = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ p: 4 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <CircularProgress />
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {projectId ? 'Project Bids' : 'All Bids'}
+    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 4
+      }}>
+        <Typography 
+          variant="h3" 
+          component="h1"
+          sx={{ 
+            fontWeight: 400,
+            color: '#111827'
+          }}
+        >
+          {projectId ? 'Project Bids' : 'Bids'}
         </Typography>
         
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <TextField
-            placeholder="Search bids by project or company..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            variant="outlined"
-            size="small"
-            sx={{ width: 300 }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/select-project')}
-          >
-            Create New Bid
-          </Button>
-        </Box>
-
-        {filteredBids.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography color="text.secondary">
-              {searchQuery ? 'No bids match your search.' : 'No bids found.'}
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ display: 'grid', gap: 3 }}>
-            {filteredBids.map((bid) => (
-              <Box
-                key={bid.id}
-                sx={{
-                  p: 3,
-                  bgcolor: 'background.paper',
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  '&:hover': {
-                    boxShadow: 2,
-                  },
-                }}
-              >
-                <Typography variant="h6" gutterBottom>
-                  {bid.projectName}
-                </Typography>
-                <Typography color="text.secondary" gutterBottom>
-                  {bid.projectType}
-                </Typography>
-                {bid.companyName && (
-                  <Typography color="text.secondary" gutterBottom>
-                    {bid.companyName} {bid.contactName && `- ${bid.contactName}`}
-                  </Typography>
-                )}
-                {bid.timeline.startDate && (
-                  <Typography color="text.secondary" gutterBottom>
-                    {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
-                  </Typography>
-                )}
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Created: {new Date(bid.createdAt).toLocaleDateString()}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleViewBid(bid)}
-                  >
-                    View Bid
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleAddItems(bid)}
-                  >
-                    Add Ons
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={() => handleDeleteBid(bid.id)}
-                  >
-                    Delete
-                  </Button>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        )}
+        <Button
+          variant="contained"
+          onClick={() => navigate('/select-project')}
+          sx={{ 
+            bgcolor: '#3B82F6',
+            borderRadius: '9999px',
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontSize: '1.125rem',
+            '&:hover': {
+              bgcolor: '#2563EB',
+            },
+          }}
+        >
+          Create New Bid
+        </Button>
       </Box>
+        
+      {error && (
+        <Alert severity="error" sx={{ mb: 4 }}>
+          {error}
+        </Alert>
+      )}
 
-      {showAddItems && selectedBidId && (
+      <TextField
+        fullWidth
+        placeholder="Search bids by project or company..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        variant="outlined"
+        sx={{ 
+          mb: 4,
+          '& .MuiOutlinedInput-root': {
+            bgcolor: '#fff',
+            borderRadius: 2,
+            '& fieldset': {
+              borderColor: '#E5E7EB',
+            },
+            '&:hover fieldset': {
+              borderColor: '#D1D5DB',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#3B82F6',
+            },
+          },
+          '& .MuiOutlinedInput-input': {
+            padding: '16px',
+            fontSize: '1rem',
+            '&::placeholder': {
+              color: '#9CA3AF',
+              opacity: 1,
+            },
+          },
+        }}
+      />
+
+      {filteredBids.length === 0 ? (
+        <Box sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 8
+        }}>
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#6B7280',
+              fontWeight: 400
+            }}
+          >
+            {searchQuery ? 'No bids match your search.' : 'No bids found.'}
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredBids.map((bid) => (
+            <Grid item xs={12} sm={6} md={4} key={bid.id}>
+              <Card sx={{ 
+                boxShadow: 2,
+                transition: '0.3s',
+                '&:hover': { 
+                  boxShadow: 4,
+                  transform: 'translateY(-2px)'
+                }
+              }}>
+                <CardContent>
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                      color: '#111827',
+                      fontWeight: 600
+                    }}
+                  >
+                    {bid.projectName}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    <Chip 
+                      label={bid.projectType} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                    />
+                    <Chip 
+                      label={bid.status || 'Draft'} 
+                      size="small" 
+                      color={bid.status === 'Submitted' ? 'success' : 'default'} 
+                      variant="outlined" 
+                    />
+                  </Box>
+                  {bid.companyName && (
+                    <Typography color="text.secondary" gutterBottom>
+                      {bid.companyName} {bid.contactName && `- ${bid.contactName}`}
+                    </Typography>
+                  )}
+                  {bid.timeline?.startDate && (
+                    <Typography color="text.secondary" gutterBottom>
+                      Timeline: {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
+                    </Typography>
+                  )}
+                  <Typography color="text.secondary" gutterBottom>
+                    Created: {new Date(bid.createdAt).toLocaleDateString()}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleViewBid(bid)}
+                    title="View Bid"
+                    sx={{ 
+                      color: '#4F46E5',
+                      '&:hover': {
+                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                      },
+                    }}
+                  >
+                    <Visibility />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleAddItems(bid)}
+                    title="Add Items"
+                    sx={{ 
+                      color: '#4F46E5',
+                      '&:hover': {
+                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                      },
+                    }}
+                  >
+                    <Description />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteBid(bid.id)}
+                    title="Delete Bid"
+                    sx={{ 
+                      color: '#EF4444',
+                      '&:hover': {
+                        backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                      },
+                    }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {showAddItems && (
         <AddItemsToBid
           bidId={selectedBidId}
           onClose={handleCloseAddItems}
           onSave={handleSaveItems}
         />
       )}
-    </Container>
+    </Box>
   );
 };
 
