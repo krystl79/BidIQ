@@ -60,6 +60,7 @@ const dbPromise = isTestEnvironment
           proposalStore.createIndex('userId', 'userId');
           proposalStore.createIndex('createdAt', 'createdAt');
           proposalStore.createIndex('attachments', 'attachments', { multiEntry: true });
+          proposalStore.createIndex('responseDocument', 'responseDocument');
           console.log('Proposals store created successfully');
         }
       },
@@ -291,6 +292,38 @@ export async function saveProposal(proposal) {
   await store.put(proposal);
   await tx.done;
   return proposal;
+}
+
+// Generate a response document for a proposal
+export async function generateProposalResponse(proposal) {
+  // This is a placeholder implementation
+  // In a real application, this would call an AI service or use a template
+  console.log('Generating response document for proposal:', proposal);
+  
+  // Create a simple response document based on the proposal details
+  const responseDocument = `
+# Response to ${proposal.title || 'Proposal'}
+
+## Introduction
+Thank you for the opportunity to respond to your proposal. We have carefully reviewed the requirements and are pleased to submit our response.
+
+## Project Overview
+${proposal.description || 'No description provided.'}
+
+## Timeline
+${proposal.dueDate ? `We understand the project is due by ${new Date(proposal.dueDate).toLocaleDateString()}.` : 'No specific due date was provided.'}
+
+## Additional Notes
+${proposal.notes || 'No additional notes were provided.'}
+
+## Conclusion
+We look forward to the opportunity to work with you on this project. If you have any questions or need clarification on any aspect of our response, please don't hesitate to contact us.
+
+Sincerely,
+Your Company Name
+  `;
+  
+  return responseDocument;
 }
 
 export async function getProposal(id) {
