@@ -259,12 +259,7 @@ const BidsList = () => {
                       size="small" 
                       color="primary" 
                       variant="outlined" 
-                    />
-                    <Chip 
-                      label={bid.status || 'Draft'} 
-                      size="small" 
-                      color={bid.status === 'Submitted' ? 'success' : 'default'} 
-                      variant="outlined" 
+                      sx={{ mr: 'auto' }}
                     />
                   </Box>
                   {bid.companyName && (
