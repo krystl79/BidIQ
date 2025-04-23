@@ -54,6 +54,22 @@ const ProposalsList = () => {
     navigate('/create-proposal');
   };
 
+  const handleDelete = (proposalId, isUpdate = false, updatedProposal = null) => {
+    if (isUpdate && updatedProposal) {
+      // Update the proposal in place
+      setProposals(prevProposals => 
+        prevProposals.map(proposal => 
+          proposal.id === proposalId ? updatedProposal : proposal
+        )
+      );
+    } else {
+      // Remove the proposal
+      setProposals(prevProposals => 
+        prevProposals.filter(proposal => proposal.id !== proposalId)
+      );
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -112,7 +128,10 @@ const ProposalsList = () => {
           <Grid container spacing={3}>
             {proposals.map((proposal) => (
               <Grid item xs={12} sm={6} md={4} key={proposal.id}>
-                <ProposalCard proposal={proposal} />
+                <ProposalCard 
+                  proposal={proposal} 
+                  onDelete={handleDelete}
+                />
               </Grid>
             ))}
           </Grid>

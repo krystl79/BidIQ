@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getAllBids, deleteBid, getProject } from '../services/db';
 import AddItemsToBid from './AddItemsToBid';
 import {
@@ -15,7 +16,12 @@ import {
   CardActions,
   IconButton,
   InputAdornment,
-  Chip
+  Chip,
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Search,
@@ -27,6 +33,7 @@ import {
 
 const BidsList = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [bids, setBids] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +41,8 @@ const BidsList = () => {
   const [error, setError] = useState(null);
   const [selectedBidId, setSelectedBidId] = useState(null);
   const [showAddItems, setShowAddItems] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bidToDelete, setBidToDelete] = useState(null);
   const projectId = searchParams.get('projectId');
 
   useEffect(() => {
@@ -90,15 +99,25 @@ const BidsList = () => {
   };
 
   const handleDeleteBid = async (bidId) => {
-    if (window.confirm('Are you sure you want to delete this bid?')) {
-      try {
-        await deleteBid(bidId);
-        await loadBids();
-      } catch (err) {
-        console.error('Error deleting bid:', err);
-        setError('Failed to delete bid. Please try again later.');
-      }
+    setBidToDelete(bidId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteBid(bidToDelete);
+      await loadBids();
+      setDeleteDialogOpen(false);
+      setBidToDelete(null);
+    } catch (err) {
+      console.error('Error deleting bid:', err);
+      setError('Failed to delete bid. Please try again later.');
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setBidToDelete(null);
   };
 
   const handleAddItems = (bid) => {
@@ -137,200 +156,227 @@ const BidsList = () => {
   }
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: 4
-      }}>
-        <Typography 
-          variant="h3" 
-          component="h1"
-          sx={{ 
-            fontWeight: 400,
-            color: '#111827'
-          }}
-        >
-          {projectId ? 'Project Bids' : 'Bids'}
-        </Typography>
-        
-        <Button
-          variant="contained"
-          onClick={() => navigate('/select-project')}
-          sx={{ 
-            bgcolor: '#3B82F6',
-            borderRadius: '9999px',
-            px: 4,
-            py: 1.5,
-            textTransform: 'none',
-            fontSize: '1.125rem',
-            '&:hover': {
-              bgcolor: '#2563EB',
-            },
-          }}
-        >
-          Create New Bid
-        </Button>
-      </Box>
-        
-      {error && (
-        <Alert severity="error" sx={{ mb: 4 }}>
-          {error}
-        </Alert>
-      )}
-
-      <TextField
-        fullWidth
-        placeholder="Search bids by project or company..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        variant="outlined"
-        sx={{ 
-          mb: 4,
-          '& .MuiOutlinedInput-root': {
-            bgcolor: '#fff',
-            borderRadius: 2,
-            '& fieldset': {
-              borderColor: '#E5E7EB',
-            },
-            '&:hover fieldset': {
-              borderColor: '#D1D5DB',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#3B82F6',
-            },
-          },
-          '& .MuiOutlinedInput-input': {
-            padding: '16px',
-            fontSize: '1rem',
-            '&::placeholder': {
-              color: '#9CA3AF',
-              opacity: 1,
-            },
-          },
-        }}
-      />
-
-      {filteredBids.length === 0 ? (
+    <Container maxWidth="lg">
+      <Box sx={{ py: 4 }}>
         <Box sx={{ 
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'flex', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
-          justifyContent: 'center',
-          py: 8
+          mb: 4
         }}>
-          <Typography
-            variant="h5"
-            sx={{
-              color: '#6B7280',
-              fontWeight: 400
+          <Typography 
+            variant="h3" 
+            component="h1"
+            sx={{ 
+              fontWeight: 400,
+              color: '#111827'
             }}
           >
-            {searchQuery ? 'No bids match your search.' : 'No bids found.'}
+            {projectId ? 'Project Bids' : 'Bids'}
           </Typography>
+          
+          <Button
+            variant="contained"
+            onClick={() => navigate('/select-project')}
+            sx={{ 
+              bgcolor: '#3B82F6',
+              borderRadius: '9999px',
+              px: 4,
+              py: 1.5,
+              textTransform: 'none',
+              fontSize: '1.125rem',
+              '&:hover': {
+                bgcolor: '#2563EB',
+              },
+            }}
+          >
+            Create New Bid
+          </Button>
         </Box>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredBids.map((bid) => (
-            <Grid item xs={12} sm={6} md={4} key={bid.id}>
-              <Card sx={{ 
-                boxShadow: 2,
-                transition: '0.3s',
-                '&:hover': { 
-                  boxShadow: 4,
-                  transform: 'translateY(-2px)'
-                }
-              }}>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      color: '#111827',
-                      fontWeight: 600
-                    }}
-                  >
-                    {bid.projectName}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    <Chip 
-                      label={bid.projectType} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                      sx={{ mr: 'auto' }}
-                    />
-                  </Box>
-                  {bid.companyName && (
-                    <Typography color="text.secondary" gutterBottom>
-                      {bid.companyName} {bid.contactName && `- ${bid.contactName}`}
-                    </Typography>
-                  )}
-                  {bid.timeline?.startDate && (
-                    <Typography color="text.secondary" gutterBottom>
-                      Timeline: {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
-                    </Typography>
-                  )}
-                  <Typography color="text.secondary" gutterBottom>
-                    Created: {new Date(bid.createdAt).toLocaleDateString()}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleViewBid(bid)}
-                    title="View Bid"
-                    sx={{ 
-                      color: '#4F46E5',
-                      '&:hover': {
-                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                      },
-                    }}
-                  >
-                    <Visibility />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleAddItems(bid)}
-                    title="Add Items"
-                    sx={{ 
-                      color: '#4F46E5',
-                      '&:hover': {
-                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                      },
-                    }}
-                  >
-                    <Description />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteBid(bid.id)}
-                    title="Delete Bid"
-                    sx={{ 
-                      color: '#EF4444',
-                      '&:hover': {
-                        backgroundColor: 'rgba(239, 68, 68, 0.04)',
-                      },
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        )}
 
-      {showAddItems && (
-        <AddItemsToBid
-          bidId={selectedBidId}
-          onClose={handleCloseAddItems}
-          onSave={handleSaveItems}
+        <TextField
+          fullWidth
+          placeholder="Search bids by project or company..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          sx={{ 
+            mb: 4,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#fff',
+              borderRadius: 2,
+              '& fieldset': {
+                borderColor: '#E5E7EB',
+              },
+              '&:hover fieldset': {
+                borderColor: '#D1D5DB',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#3B82F6',
+              },
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '16px',
+              fontSize: '1rem',
+              '&::placeholder': {
+                color: '#9CA3AF',
+                opacity: 1,
+              },
+            },
+          }}
         />
-      )}
-    </Box>
+
+        {filteredBids.length === 0 ? (
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 8
+          }}>
+            <Typography
+              variant="h5"
+              sx={{
+                color: '#6B7280',
+                fontWeight: 400
+              }}
+            >
+              {searchQuery ? 'No bids match your search.' : 'No bids found.'}
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {filteredBids.map((bid) => (
+              <Grid item xs={12} sm={6} md={4} key={bid.id}>
+                <Card sx={{ 
+                  boxShadow: 2,
+                  transition: '0.3s',
+                  '&:hover': { 
+                    boxShadow: 4,
+                    transform: 'translateY(-2px)'
+                  }
+                }}>
+                  <CardContent>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom
+                      sx={{ 
+                        color: '#111827',
+                        fontWeight: 600
+                      }}
+                    >
+                      {bid.projectName}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                      <Chip 
+                        label={bid.projectType} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined" 
+                        sx={{ mr: 'auto' }}
+                      />
+                    </Box>
+                    {bid.companyName && (
+                      <Typography color="text.secondary" gutterBottom>
+                        {bid.companyName} {bid.contactName && `- ${bid.contactName}`}
+                      </Typography>
+                    )}
+                    {bid.timeline?.startDate && (
+                      <Typography color="text.secondary" gutterBottom>
+                        Timeline: {new Date(bid.timeline.startDate).toLocaleDateString()} - {new Date(bid.timeline.endDate).toLocaleDateString()}
+                      </Typography>
+                    )}
+                    <Typography color="text.secondary" gutterBottom>
+                      Created: {new Date(bid.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleViewBid(bid)}
+                      title="View Bid"
+                      sx={{ 
+                        color: '#4F46E5',
+                        '&:hover': {
+                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                        },
+                      }}
+                    >
+                      <Visibility />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleAddItems(bid)}
+                      title="Add Items"
+                      sx={{ 
+                        color: '#4F46E5',
+                        '&:hover': {
+                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                        },
+                      }}
+                    >
+                      <Description />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteBid(bid.id)}
+                      title="Delete Bid"
+                      sx={{ 
+                        color: '#EF4444',
+                        '&:hover': {
+                          backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                        },
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {showAddItems && (
+          <AddItemsToBid
+            bidId={selectedBidId}
+            onClose={handleCloseAddItems}
+            onSave={handleSaveItems}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Delete Bid</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete this bid? This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Cancel</Button>
+            <Button 
+              onClick={handleDeleteConfirm} 
+              color="error"
+              variant="contained"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Container>
   );
 };
 

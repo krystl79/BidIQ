@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getAllProjects, deleteProject, getBidsByProject } from '../services/db';
 import {
   Box,
@@ -14,7 +15,12 @@ import {
   CardActions,
   IconButton,
   InputAdornment,
-  Chip
+  Chip,
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Search,
@@ -26,11 +32,14 @@ import {
 
 const ProjectList = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [projectBidCounts, setProjectBidCounts] = useState({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   useEffect(() => {
     loadProjects();
@@ -94,15 +103,25 @@ const ProjectList = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project? This will also delete all associated bids.')) {
-      try {
-        await deleteProject(projectId);
-        loadProjects();
-      } catch (error) {
-        console.error('Error deleting project:', error);
-        setError('Error deleting project. Please try again later.');
-      }
+    setProjectToDelete(projectId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteProject(projectToDelete);
+      loadProjects();
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      setError('Error deleting project. Please try again later.');
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setProjectToDelete(null);
   };
 
   const handleEditProject = (projectId) => {
@@ -127,208 +146,235 @@ const ProjectList = () => {
   );
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: 4
-      }}>
-        <Typography 
-          variant="h3" 
-          component="h1"
-          sx={{ 
-            fontWeight: 400,
-            color: '#111827'
-          }}
-        >
-          Projects
-        </Typography>
-        
-        <Button
-          variant="contained"
-          onClick={handleCreateProject}
-          sx={{ 
-            bgcolor: '#3B82F6',
-            borderRadius: '9999px',
-            px: 4,
-            py: 1.5,
-            textTransform: 'none',
-            fontSize: '1.125rem',
-            '&:hover': {
-              bgcolor: '#2563EB',
-            },
-          }}
-        >
-          Create Project
-        </Button>
-      </Box>
-        
-      {error && (
-        <Alert severity="error" sx={{ mb: 4 }}>
-          {error}
-        </Alert>
-      )}
-
-      <TextField
-        fullWidth
-        placeholder="Search projects by project or company..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        variant="outlined"
-        sx={{ 
-          mb: 4,
-          '& .MuiOutlinedInput-root': {
-            bgcolor: '#fff',
-            borderRadius: 2,
-            '& fieldset': {
-              borderColor: '#E5E7EB',
-            },
-            '&:hover fieldset': {
-              borderColor: '#D1D5DB',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#3B82F6',
-            },
-          },
-          '& .MuiOutlinedInput-input': {
-            padding: '16px',
-            fontSize: '1rem',
-            '&::placeholder': {
-              color: '#9CA3AF',
-              opacity: 1,
-            },
-          },
-        }}
-      />
-
-      {filteredProjects.length === 0 && (
+    <Container maxWidth="lg">
+      <Box sx={{ py: 4 }}>
         <Box sx={{ 
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'flex', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
-          justifyContent: 'center',
-          py: 8
+          mb: 4
         }}>
-          <Typography
-            variant="h5"
-            sx={{
-              color: '#6B7280',
-              fontWeight: 400
+          <Typography 
+            variant="h3" 
+            component="h1"
+            sx={{ 
+              fontWeight: 400,
+              color: '#111827'
             }}
           >
-            No projects found.
+            Projects
           </Typography>
+          
+          <Button
+            variant="contained"
+            onClick={handleCreateProject}
+            sx={{ 
+              bgcolor: '#3B82F6',
+              borderRadius: '9999px',
+              px: 4,
+              py: 1.5,
+              textTransform: 'none',
+              fontSize: '1.125rem',
+              '&:hover': {
+                bgcolor: '#2563EB',
+              },
+            }}
+          >
+            Create Project
+          </Button>
         </Box>
-      )}
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        )}
 
-      {filteredProjects.length > 0 && (
-        <Grid container spacing={3}>
-          {filteredProjects.map((project) => (
-            <Grid item xs={12} sm={6} md={4} key={project.id}>
-              <Card sx={{ 
-                boxShadow: 2,
-                transition: '0.3s',
-                '&:hover': { 
-                  boxShadow: 4,
-                  transform: 'translateY(-2px)'
-                }
-              }}>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      color: '#111827',
-                      fontWeight: 600
-                    }}
-                  >
-                    {project.projectName}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    <Chip 
-                      label={project.projectType} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                    />
-                    <Chip 
-                      label={`${projectBidCounts[project.id] || 0} Bids`} 
-                      size="small" 
-                      color="secondary" 
-                      variant="outlined" 
-                    />
-                  </Box>
-                  <Typography color="text.secondary" gutterBottom>
-                    Location: {project.location.city}, {project.location.state}
-                  </Typography>
-                  <Typography color="text.secondary" gutterBottom>
-                    Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
-                  </Typography>
-                  <Typography color="text.secondary" gutterBottom>
-                    Equipment Markup: {project.equipmentMarkup}%
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleViewProject(project)}
-                    title="View Project"
-                    sx={{ 
-                      color: '#4F46E5',
-                      '&:hover': {
-                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                      },
-                    }}
-                  >
-                    <Visibility />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEditProject(project.id)}
-                    title="Edit Project"
-                    sx={{ 
-                      color: '#4F46E5',
-                      '&:hover': {
-                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                      },
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleCreateBid(project)}
-                    title="Create Bid"
-                    sx={{ 
-                      color: '#4F46E5',
-                      '&:hover': {
-                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                      },
-                    }}
-                  >
-                    <Add />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteProject(project.id)}
-                    title="Delete Project"
-                    sx={{ 
-                      color: '#EF4444',
-                      '&:hover': {
-                        backgroundColor: 'rgba(239, 68, 68, 0.04)',
-                      },
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-    </Box>
+        <TextField
+          fullWidth
+          placeholder="Search projects by project or company..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          sx={{ 
+            mb: 4,
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#fff',
+              borderRadius: 2,
+              '& fieldset': {
+                borderColor: '#E5E7EB',
+              },
+              '&:hover fieldset': {
+                borderColor: '#D1D5DB',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#3B82F6',
+              },
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '16px',
+              fontSize: '1rem',
+              '&::placeholder': {
+                color: '#9CA3AF',
+                opacity: 1,
+              },
+            },
+          }}
+        />
+
+        {filteredProjects.length === 0 && (
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 8
+          }}>
+            <Typography
+              variant="h5"
+              sx={{
+                color: '#6B7280',
+                fontWeight: 400
+              }}
+            >
+              No projects found.
+            </Typography>
+          </Box>
+        )}
+
+        {filteredProjects.length > 0 && (
+          <Grid container spacing={3}>
+            {filteredProjects.map((project) => (
+              <Grid item xs={12} sm={6} md={4} key={project.id}>
+                <Card sx={{ 
+                  boxShadow: 2,
+                  transition: '0.3s',
+                  '&:hover': { 
+                    boxShadow: 4,
+                    transform: 'translateY(-2px)'
+                  }
+                }}>
+                  <CardContent>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom
+                      sx={{ 
+                        color: '#111827',
+                        fontWeight: 600
+                      }}
+                    >
+                      {project.projectName}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                      <Chip 
+                        label={project.projectType} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined" 
+                      />
+                      <Chip 
+                        label={`${projectBidCounts[project.id] || 0} Bids`} 
+                        size="small" 
+                        color="secondary" 
+                        variant="outlined" 
+                      />
+                    </Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      Location: {project.location.city}, {project.location.state}
+                    </Typography>
+                    <Typography color="text.secondary" gutterBottom>
+                      Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
+                    </Typography>
+                    <Typography color="text.secondary" gutterBottom>
+                      Equipment Markup: {project.equipmentMarkup}%
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleViewProject(project)}
+                      title="View Project"
+                      sx={{ 
+                        color: '#4F46E5',
+                        '&:hover': {
+                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                        },
+                      }}
+                    >
+                      <Visibility />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEditProject(project.id)}
+                      title="Edit Project"
+                      sx={{ 
+                        color: '#4F46E5',
+                        '&:hover': {
+                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                        },
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleCreateBid(project)}
+                      title="Create Bid"
+                      sx={{ 
+                        color: '#4F46E5',
+                        '&:hover': {
+                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                        },
+                      }}
+                    >
+                      <Add />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteProject(project.id)}
+                      title="Delete Project"
+                      sx={{ 
+                        color: '#EF4444',
+                        '&:hover': {
+                          backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                        },
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Delete Project</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete this project? This will also delete all associated bids. This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Cancel</Button>
+            <Button 
+              onClick={handleDeleteConfirm} 
+              color="error"
+              variant="contained"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Container>
   );
 };
 

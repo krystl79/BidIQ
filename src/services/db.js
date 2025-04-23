@@ -59,6 +59,7 @@ const dbPromise = isTestEnvironment
           const proposalStore = db.createObjectStore('proposals', { keyPath: 'id' });
           proposalStore.createIndex('userId', 'userId');
           proposalStore.createIndex('createdAt', 'createdAt');
+          proposalStore.createIndex('attachments', 'attachments', { multiEntry: true });
           console.log('Proposals store created successfully');
         }
       },
@@ -275,6 +276,11 @@ export async function saveProposal(proposal) {
     proposal.id = Date.now().toString();
   }
   
+  // Initialize attachments array if it doesn't exist
+  if (!proposal.attachments) {
+    proposal.attachments = [];
+  }
+  
   const db = await dbPromise;
   if (isTestEnvironment) {
     mockDB.proposals.set(proposal.id, proposal);
@@ -320,4 +326,67 @@ export async function deleteProposal(id) {
     return;
   }
   await db.delete('proposals', id);
+}
+
+export async function addAttachmentToProposal(proposalId, file) {
+  const db = await dbPromise;
+  const proposal = await getProposal(proposalId);
+  
+  if (!proposal) {
+    throw new Error('Proposal not found');
+  }
+
+  const attachment = {
+    id: Date.now().toString(),
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    data: await file.arrayBuffer(),
+    uploadedAt: new Date().toISOString()
+  };
+
+  if (!proposal.attachments) {
+    proposal.attachments = [];
+  }
+  
+  proposal.attachments.push(attachment);
+  proposal.updatedAt = new Date().toISOString();
+
+  if (isTestEnvironment) {
+    mockDB.proposals.set(proposal.id, proposal);
+    return proposal;
+  }
+
+  const tx = db.transaction('proposals', 'readwrite');
+  const store = tx.objectStore('proposals');
+  await store.put(proposal);
+  await tx.done;
+  return proposal;
+}
+
+export async function removeAttachmentFromProposal(proposalId, attachmentId) {
+  const db = await dbPromise;
+  const proposal = await getProposal(proposalId);
+  
+  if (!proposal) {
+    throw new Error('Proposal not found');
+  }
+
+  if (!proposal.attachments) {
+    return proposal;
+  }
+
+  proposal.attachments = proposal.attachments.filter(att => att.id !== attachmentId);
+  proposal.updatedAt = new Date().toISOString();
+
+  if (isTestEnvironment) {
+    mockDB.proposals.set(proposal.id, proposal);
+    return proposal;
+  }
+
+  const tx = db.transaction('proposals', 'readwrite');
+  const store = tx.objectStore('proposals');
+  await store.put(proposal);
+  await tx.done;
+  return proposal;
 }

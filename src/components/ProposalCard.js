@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -14,16 +14,100 @@ import {
   Grid,
   Paper,
   IconButton,
-  Tooltip
+  Tooltip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  CircularProgress
 } from '@mui/material';
-import { Visibility } from '@mui/icons-material';
+import { 
+  Visibility, 
+  Delete, 
+  Upload as UploadIcon,
+  Description as FileIcon,
+  Close as CloseIcon 
+} from '@mui/icons-material';
 import { format } from 'date-fns';
+import { deleteProposal, addAttachmentToProposal, removeAttachmentFromProposal } from '../services/db';
 
-const ProposalCard = ({ proposal }) => {
+const ProposalCard = ({ proposal, onDelete }) => {
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  const handleDeleteClick = () => setDeleteDialogOpen(true);
+  const handleDeleteCancel = () => setDeleteDialogOpen(false);
+
+  const handleDelete = async () => {
+    try {
+      await deleteProposal(proposal.id);
+      if (onDelete) {
+        onDelete(proposal.id);
+      }
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting proposal:', error);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const updatedProposal = await addAttachmentToProposal(proposal.id, file);
+      // Update the proposal in place instead of forcing a full refresh
+      if (onDelete) {
+        onDelete(proposal.id, true, updatedProposal);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setError('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAttachment = async (attachmentId) => {
+    try {
+      const updatedProposal = await removeAttachmentFromProposal(proposal.id, attachmentId);
+      // Update the proposal in place instead of forcing a full refresh
+      if (onDelete) {
+        onDelete(proposal.id, true, updatedProposal);
+      }
+    } catch (error) {
+      console.error('Error removing attachment:', error);
+      setError('Failed to remove attachment. Please try again.');
+    }
+  };
+
+  const downloadAttachment = (attachment) => {
+    const blob = new Blob([attachment.data], { type: attachment.type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = attachment.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -33,6 +117,15 @@ const ProposalCard = ({ proposal }) => {
     } catch (error) {
       return dateString;
     }
+  };
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -72,6 +165,14 @@ const ProposalCard = ({ proposal }) => {
               color="primary" 
               variant="outlined" 
             />
+            {proposal.attachments?.length > 0 && (
+              <Chip 
+                label={`${proposal.attachments.length} attachment${proposal.attachments.length === 1 ? '' : 's'}`}
+                size="small"
+                color="info"
+                variant="outlined"
+              />
+            )}
           </Box>
           
           <Typography 
@@ -102,6 +203,13 @@ const ProposalCard = ({ proposal }) => {
         </CardContent>
         
         <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            accept=".pdf,.doc,.docx"
+          />
           <Tooltip title="View Details">
             <IconButton 
               size="small" 
@@ -116,8 +224,62 @@ const ProposalCard = ({ proposal }) => {
               <Visibility />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Upload Document">
+            <IconButton 
+              size="small" 
+              onClick={handleUploadClick}
+              disabled={uploading}
+              sx={{ 
+                color: '#4F46E5',
+                '&:hover': {
+                  backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                },
+              }}
+            >
+              {uploading ? <CircularProgress size={24} /> : <UploadIcon />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Proposal">
+            <IconButton 
+              size="small" 
+              onClick={handleDeleteClick}
+              sx={{ 
+                color: '#EF4444',
+                '&:hover': {
+                  backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                },
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </Tooltip>
         </CardActions>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Proposal</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this proposal? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button 
+            onClick={handleDelete} 
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Summary Dialog */}
       <Dialog
@@ -195,48 +357,42 @@ const ProposalCard = ({ proposal }) => {
               </Paper>
             </Grid>
 
-            {/* Metadata */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Metadata
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Created By
-                    </Typography>
-                    <Typography variant="body1">
-                      {proposal.createdBy || 'Unknown'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Created At
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(proposal.createdAt)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Last Modified By
-                    </Typography>
-                    <Typography variant="body1">
-                      {proposal.lastModifiedBy || 'Unknown'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Last Modified At
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(proposal.updatedAt)}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
+            {/* Attachments */}
+            {proposal.attachments?.length > 0 && (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Attachments
+                  </Typography>
+                  <List>
+                    {proposal.attachments.map((attachment) => (
+                      <ListItem
+                        key={attachment.id}
+                        button
+                        onClick={() => downloadAttachment(attachment)}
+                      >
+                        <FileIcon sx={{ mr: 2 }} />
+                        <ListItemText
+                          primary={attachment.name}
+                          secondary={`${formatFileSize(attachment.size)} • Uploaded ${formatDate(attachment.uploadedAt)}`}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAttachment(attachment.id);
+                            }}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>
