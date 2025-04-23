@@ -30,9 +30,9 @@
     "workbox-expiration": "^7.3.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\""
@@ -56,6 +56,7 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "concurrently": "^8.2.2"
   }
 }
