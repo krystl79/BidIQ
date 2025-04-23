@@ -26,10 +26,17 @@ const ProjectForm = ({ initialData }) => {
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   const projectTypes = [
-    'Commercial',
-    'Residential',
+    'Residential - Single Family',
+    'Residential - Multi Family',
+    'Commercial - Office',
+    'Commercial - Retail',
+    'Commercial - Mixed Use',
     'Industrial',
+    'Healthcare',
+    'Educational',
+    'Hospitality',
     'Infrastructure',
+    'Renovation/Remodel',
     'Other'
   ];
 
