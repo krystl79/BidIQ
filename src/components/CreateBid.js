@@ -61,6 +61,7 @@ const CreateBid = () => {
         }
 
         const parsedProject = JSON.parse(projectData);
+        console.log('Loaded project data:', parsedProject);
         setProjectData(parsedProject);
 
         if (isCopyingBid && copiedBid) {
@@ -155,7 +156,7 @@ const CreateBid = () => {
   const calculateTotalCost = (equipment) => {
     return equipment.reduce((total, item) => {
       const quantity = item.quantity || 1;
-      const rate = item.rates?.[item.selectedRate] || 0;
+      const rate = item.selectedRate?.rate || 0;
       return total + (quantity * rate);
     }, 0);
   };
@@ -233,17 +234,17 @@ const CreateBid = () => {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ p: 4 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <CircularProgress />
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   if (error || !projectData) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
         <Paper sx={{ p: 4 }}>
           <Typography variant="h5" component="h2" gutterBottom color="error">
             {error || 'No Project Selected'}
@@ -254,210 +255,255 @@ const CreateBid = () => {
           <Button
             variant="outlined"
             onClick={() => navigate('/projects')}
+            sx={{
+              bgcolor: '#F9FAFB'
+            }}
           >
             Go to Projects
           </Button>
         </Paper>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper sx={{ p: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Create New Bid
-          </Typography>
-          
-          {/* Project Information */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Project Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography color="text.secondary" variant="subtitle2">
-                  Project Name
-                </Typography>
-                <Typography>{projectData.projectName}</Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography color="text.secondary" variant="subtitle2">
-                  Project Type
-                </Typography>
-                <Typography>{projectData.projectType}</Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography color="text.secondary" variant="subtitle2">
-                  Location
-                </Typography>
-                <Typography>
-                  {projectData.location.city}, {projectData.location.state}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography color="text.secondary" variant="subtitle2">
-                  Timeline
-                </Typography>
-                <Typography>
-                  {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
-                </Typography>
-              </Grid>
+    <Box sx={{ maxWidth: 800, mx: 'auto', p: 4, bgcolor: '#fff' }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        Create New Bid
+      </Typography>
+
+      <Box component="form" onSubmit={handleSubmit}>
+        {/* Project Information */}
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Project Information
+        </Typography>
+        <Box sx={{ mb: 4, p: 3, bgcolor: '#F9FAFB', borderRadius: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography color="text.secondary" variant="subtitle2" sx={{ mb: 0.5 }}>
+                Project Name
+              </Typography>
+              <Typography sx={{ color: '#111827', fontWeight: 500 }}>
+                {projectData.projectName}
+              </Typography>
             </Grid>
-          </Box>
-
-          {/* Client Information */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Client Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Contact Name"
-                  name="contactName"
-                  value={formData.contactName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="City"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                  <InputLabel>State</InputLabel>
-                  <Select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    label="State"
-                  >
-                    {states.map(state => (
-                      <MenuItem key={state} value={state}>
-                        {state}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="ZIP Code"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleInputChange}
-                />
-              </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography color="text.secondary" variant="subtitle2" sx={{ mb: 0.5 }}>
+                Project Type
+              </Typography>
+              <Typography sx={{ color: '#111827', fontWeight: 500 }}>
+                {projectData.projectType}
+              </Typography>
             </Grid>
-          </Box>
+            <Grid item xs={12} md={6}>
+              <Typography color="text.secondary" variant="subtitle2" sx={{ mb: 0.5 }}>
+                Location
+              </Typography>
+              <Typography sx={{ color: '#111827', fontWeight: 500 }}>
+                {projectData.location.city}, {projectData.location.state}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography color="text.secondary" variant="subtitle2" sx={{ mb: 0.5 }}>
+                Timeline
+              </Typography>
+              <Typography sx={{ color: '#111827', fontWeight: 500 }}>
+                {new Date(projectData.timeline.startDate).toLocaleDateString()} - {new Date(projectData.timeline.endDate).toLocaleDateString()}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
 
-          {/* Equipment Selection */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Equipment
-            </Typography>
-            <EquipmentList
-              projectDetails={{
-                projectType: projectData?.projectType || '',
-                startDate: projectData?.timeline?.startDate,
-                endDate: projectData?.timeline?.endDate
-              }}
-              initialSelectedEquipment={formData.selectedEquipment}
-              onEquipmentChange={handleEquipmentChange}
-            />
-          </Box>
-
-          {/* Notes */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Notes
+        {/* Client Information */}
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Client Information
+        </Typography>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={6}>
+            <Typography sx={{ mb: 1 }}>
+              Company Name <span style={{ color: '#DC2626' }}>*</span>
             </Typography>
             <TextField
               fullWidth
-              multiline
-              rows={4}
-              name="notes"
-              value={formData.notes}
+              name="companyName"
+              placeholder="Enter company name"
+              value={formData.companyName}
               onChange={handleInputChange}
-              placeholder="Add any additional notes or special instructions..."
+              required
             />
-          </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={{ mb: 1 }}>
+              Contact Name <span style={{ color: '#DC2626' }}>*</span>
+            </Typography>
+            <TextField
+              fullWidth
+              name="contactName"
+              placeholder="Enter contact name"
+              value={formData.contactName}
+              onChange={handleInputChange}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={{ mb: 1 }}>
+              Email <span style={{ color: '#DC2626' }}>*</span>
+            </Typography>
+            <TextField
+              fullWidth
+              name="email"
+              type="email"
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={{ mb: 1 }}>
+              Phone <span style={{ color: '#DC2626' }}>*</span>
+            </Typography>
+            <TextField
+              fullWidth
+              name="phone"
+              placeholder="(XXX) XXX-XXXX"
+              value={formData.phone}
+              onChange={handleInputChange}
+              required
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Typography sx={{ mb: 1 }}>Address</Typography>
+            <TextField
+              fullWidth
+              name="address"
+              placeholder="Enter street address"
+              value={formData.address}
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography sx={{ mb: 1 }}>City</Typography>
+            <TextField
+              fullWidth
+              name="city"
+              placeholder="Enter city"
+              value={formData.city}
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography sx={{ mb: 1 }}>State</Typography>
+            <FormControl fullWidth>
+              <Select
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  Select state
+                </MenuItem>
+                {states.map(state => (
+                  <MenuItem key={state} value={state}>
+                    {state}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography sx={{ mb: 1 }}>ZIP Code</Typography>
+            <TextField
+              fullWidth
+              name="zipCode"
+              placeholder="Enter ZIP code"
+              value={formData.zipCode}
+              onChange={handleInputChange}
+            />
+          </Grid>
+        </Grid>
 
-          {/* Error Message */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Action Buttons */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={handleCancel}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-            >
-              Create Bid
-            </Button>
-          </Box>
+        {/* Notes */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Notes
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            placeholder="Add any additional notes or requirements"
+            name="notes"
+            value={formData.notes}
+            onChange={handleInputChange}
+          />
         </Box>
-      </Paper>
-    </Container>
+
+        {/* Equipment Selection Section */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Select Equipment <span style={{ color: '#DC2626' }}>*</span>
+          </Typography>
+          {projectData && (
+            <EquipmentList
+              projectDetails={projectData}
+              initialSelectedEquipment={formData.selectedEquipment}
+              onEquipmentChange={handleEquipmentChange}
+            />
+          )}
+          {formData.selectedEquipment.length > 0 && (
+            <Box sx={{ mt: 3, p: 2, bgcolor: '#F9FAFB', borderRadius: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#111827' }}>
+                Total Equipment Cost: ${calculateTotalCost(formData.selectedEquipment).toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Based on selected equipment and project duration
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Error Message */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Action Buttons */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2,
+          '& .MuiButton-root': {
+            flex: 1,
+            py: 1.5
+          }
+        }}>
+          <Button
+            variant="outlined"
+            onClick={handleCancel}
+            sx={{
+              bgcolor: '#F9FAFB'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{
+              bgcolor: '#3B82F6',
+              '&:hover': {
+                bgcolor: '#2563EB'
+              }
+            }}
+          >
+            Create Bid
+          </Button>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
