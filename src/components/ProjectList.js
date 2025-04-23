@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllProjects, deleteProject, getBidsByProject } from '../services/db';
@@ -20,7 +20,9 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Snackbar,
+  Tooltip
 } from '@mui/material';
 import {
   Search,
@@ -122,10 +124,6 @@ const ProjectList = () => {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setProjectToDelete(null);
-  };
-
-  const handleEditProject = (projectId) => {
-    navigate(`/projects/${projectId}/edit`);
   };
 
   if (loading) {
@@ -302,19 +300,6 @@ const ProjectList = () => {
                       }}
                     >
                       <Visibility />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEditProject(project.id)}
-                      title="Edit Project"
-                      sx={{ 
-                        color: '#4F46E5',
-                        '&:hover': {
-                          backgroundColor: 'rgba(79, 70, 229, 0.04)',
-                        },
-                      }}
-                    >
-                      <Edit />
                     </IconButton>
                     <IconButton
                       size="small"

@@ -19,27 +19,51 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  CircularProgress
+  CircularProgress,
+  TextField
 } from '@mui/material';
 import { 
   Visibility, 
   Delete, 
   Upload as UploadIcon,
   Description as FileIcon,
-  Close as CloseIcon 
+  Close as CloseIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { deleteProposal, addAttachmentToProposal, removeAttachmentFromProposal } from '../services/db';
+import { deleteProposal, addAttachmentToProposal, removeAttachmentFromProposal, saveProposal } from '../services/db';
+import { useNavigate } from 'react-router-dom';
 
 const ProposalCard = ({ proposal, onDelete }) => {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    notes: ''
+  });
   const fileInputRef = useRef(null);
+
+  // Initialize edit form data when edit dialog opens
+  React.useEffect(() => {
+    if (editOpen) {
+      setEditFormData({
+        title: proposal.title || '',
+        description: proposal.description || '',
+        dueDate: proposal.dueDate || '',
+        notes: proposal.notes || ''
+      });
+    }
+  }, [editOpen, proposal]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  const handleEditOpen = () => setEditOpen(true);
+  const handleEditClose = () => setEditOpen(false);
   const handleDeleteClick = () => setDeleteDialogOpen(true);
   const handleDeleteCancel = () => setDeleteDialogOpen(false);
 
@@ -68,7 +92,6 @@ const ProposalCard = ({ proposal, onDelete }) => {
 
     try {
       const updatedProposal = await addAttachmentToProposal(proposal.id, file);
-      // Update the proposal in place instead of forcing a full refresh
       if (onDelete) {
         onDelete(proposal.id, true, updatedProposal);
       }
@@ -77,7 +100,6 @@ const ProposalCard = ({ proposal, onDelete }) => {
       setError('Failed to upload file. Please try again.');
     } finally {
       setUploading(false);
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -87,13 +109,38 @@ const ProposalCard = ({ proposal, onDelete }) => {
   const handleRemoveAttachment = async (attachmentId) => {
     try {
       const updatedProposal = await removeAttachmentFromProposal(proposal.id, attachmentId);
-      // Update the proposal in place instead of forcing a full refresh
       if (onDelete) {
         onDelete(proposal.id, true, updatedProposal);
       }
     } catch (error) {
       console.error('Error removing attachment:', error);
       setError('Failed to remove attachment. Please try again.');
+    }
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditSave = async () => {
+    try {
+      const updatedProposal = {
+        ...proposal,
+        ...editFormData,
+        updatedAt: new Date().toISOString()
+      };
+      await saveProposal(updatedProposal);
+      if (onDelete) {
+        onDelete(proposal.id, true, updatedProposal);
+      }
+      handleEditClose();
+    } catch (error) {
+      console.error('Error saving proposal:', error);
+      setError('Failed to save changes. Please try again.');
     }
   };
 
@@ -224,11 +271,10 @@ const ProposalCard = ({ proposal, onDelete }) => {
               <Visibility />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Upload Document">
+          <Tooltip title="Edit Proposal">
             <IconButton 
               size="small" 
-              onClick={handleUploadClick}
-              disabled={uploading}
+              onClick={handleEditOpen}
               sx={{ 
                 color: '#4F46E5',
                 '&:hover': {
@@ -236,7 +282,7 @@ const ProposalCard = ({ proposal, onDelete }) => {
                 },
               }}
             >
-              {uploading ? <CircularProgress size={24} /> : <UploadIcon />}
+              <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Proposal">
@@ -281,7 +327,7 @@ const ProposalCard = ({ proposal, onDelete }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Summary Dialog */}
+      {/* View Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -376,17 +422,6 @@ const ProposalCard = ({ proposal, onDelete }) => {
                           primary={attachment.name}
                           secondary={`${formatFileSize(attachment.size)} • Uploaded ${formatDate(attachment.uploadedAt)}`}
                         />
-                        <ListItemSecondaryAction>
-                          <IconButton
-                            edge="end"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveAttachment(attachment.id);
-                            }}
-                          >
-                            <CloseIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
                       </ListItem>
                     ))}
                   </List>
@@ -397,6 +432,143 @@ const ProposalCard = ({ proposal, onDelete }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editOpen}
+        onClose={handleEditClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Edit Proposal
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            {/* Basic Information */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Basic Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Title"
+                      name="title"
+                      value={editFormData.title}
+                      onChange={handleEditChange}
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      name="description"
+                      value={editFormData.description}
+                      onChange={handleEditChange}
+                      multiline
+                      rows={4}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Due Date and Notes */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Details
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Due Date"
+                      name="dueDate"
+                      type="date"
+                      value={editFormData.dueDate}
+                      onChange={handleEditChange}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Additional Notes"
+                      name="notes"
+                      value={editFormData.notes}
+                      onChange={handleEditChange}
+                      multiline
+                      rows={4}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Attachments */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Attachments
+                  </Typography>
+                  <Button
+                    startIcon={<UploadIcon />}
+                    onClick={handleUploadClick}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Uploading...' : 'Upload File'}
+                  </Button>
+                </Box>
+                <List>
+                  {proposal.attachments?.map((attachment) => (
+                    <ListItem
+                      key={attachment.id}
+                      button
+                      onClick={() => downloadAttachment(attachment)}
+                    >
+                      <FileIcon sx={{ mr: 2 }} />
+                      <ListItemText
+                        primary={attachment.name}
+                        secondary={`${formatFileSize(attachment.size)} • Uploaded ${formatDate(attachment.uploadedAt)}`}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAttachment(attachment.id);
+                          }}
+                        >
+                          <CloseIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                  {(!proposal.attachments || proposal.attachments.length === 0) && (
+                    <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                      No attachments
+                    </Typography>
+                  )}
+                </List>
+              </Paper>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Cancel</Button>
+          <Button 
+            onClick={handleEditSave}
+            variant="contained"
+            color="primary"
+          >
+            Save Changes
+          </Button>
         </DialogActions>
       </Dialog>
     </>

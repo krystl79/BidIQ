@@ -7,14 +7,14 @@ import {
   Typography,
   TextField,
   Button,
-  Paper,
-  CircularProgress,
-  Alert,
   Grid,
-  MenuItem,
   Card,
   CardContent,
-  Divider
+  CircularProgress,
+  Alert,
+  MenuItem,
+  Divider,
+  Snackbar
 } from '@mui/material';
 
 const Profile = () => {
