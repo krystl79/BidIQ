@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { getProject } from '../services/db';
 
 const ProjectDetails = () => {
   const { projectId } = useParams();
@@ -11,9 +10,9 @@ const ProjectDetails = () => {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const projectDoc = await getDoc(doc(db, 'projects', projectId));
-        if (projectDoc.exists()) {
-          setProject(projectDoc.data());
+        const projectData = await getProject(projectId);
+        if (projectData) {
+          setProject(projectData);
         }
       } catch (error) {
         console.error('Error fetching project:', error);

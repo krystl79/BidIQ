@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { getBid, getProject } from '../services/db';
 
 const BidView = () => {
   const { projectId } = useParams();
@@ -49,8 +48,8 @@ const BidView = () => {
     },
     'Extension Cords': {
       daily: 8,
-      weekly: 30,
-      monthly: 90
+      weekly: 32,
+      monthly: 96
     },
     'Zip Ties': {
       daily: 3,
@@ -94,14 +93,14 @@ const BidView = () => {
         }
 
         // If no temporary data, try to fetch from database
-        const bidDoc = await getDoc(doc(db, 'bids', projectId));
-        if (bidDoc.exists()) {
-          setBid(bidDoc.data());
+        const bidData = await getBid(projectId);
+        if (bidData) {
+          setBid(bidData);
         } else {
-          const projectDoc = await getDoc(doc(db, 'projects', projectId));
-          if (projectDoc.exists()) {
+          const projectData = await getProject(projectId);
+          if (projectData) {
             setBid({
-              projectDetails: projectDoc.data(),
+              projectDetails: projectData,
               status: 'draft',
               createdAt: new Date()
             });

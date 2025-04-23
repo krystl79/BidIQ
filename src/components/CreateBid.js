@@ -267,7 +267,12 @@ const CreateBid = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 4, bgcolor: '#fff' }}>
+    <Box sx={{ 
+      p: 4,
+      pb: { xs: 10, sm: 4 }, // Add extra padding at the bottom on mobile
+      maxWidth: 800, 
+      mx: 'auto' 
+    }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
         Create New Bid
       </Typography>

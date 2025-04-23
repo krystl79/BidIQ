@@ -1,10 +1,7 @@
-import { openDB } from 'idb';
-import { collection, query, orderBy, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { getAuth } from 'firebase/auth';
+import { openDB, deleteDB } from 'idb';
 
 const DB_NAME = 'buildiqDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Mock implementation for testing
 const mockDB = {
@@ -12,14 +9,29 @@ const mockDB = {
   bids: new Map(),
   equipment: new Map(),
   userProfile: new Map(),
+  proposals: new Map(),
 };
 
 const isTestEnvironment = process.env.NODE_ENV === 'test';
 
+// Function to delete the database if needed
+export async function resetDatabase() {
+  try {
+    await deleteDB(DB_NAME);
+    console.log('Database deleted successfully');
+    // Reload the page to reinitialize the database
+    window.location.reload();
+  } catch (error) {
+    console.error('Error deleting database:', error);
+  }
+}
+
 const dbPromise = isTestEnvironment
   ? Promise.resolve(mockDB)
   : openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion, newVersion, transaction) {
+        console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
+        
         // Create object stores if they don't exist
         if (!db.objectStoreNames.contains('projects')) {
           const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
@@ -39,6 +51,15 @@ const dbPromise = isTestEnvironment
 
         if (!db.objectStoreNames.contains('userProfile')) {
           db.createObjectStore('userProfile', { keyPath: 'id' });
+        }
+
+        // Always create proposals store in version 2
+        if (oldVersion < 2) {
+          console.log('Creating proposals store...');
+          const proposalStore = db.createObjectStore('proposals', { keyPath: 'id' });
+          proposalStore.createIndex('userId', 'userId');
+          proposalStore.createIndex('createdAt', 'createdAt');
+          console.log('Proposals store created successfully');
         }
       },
     });
@@ -248,175 +269,55 @@ export async function initializeDB(sampleData) {
   }
 }
 
-// RFP Response Functions
-export const getAllRFPResponses = async () => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to access RFP responses');
-    }
-
-    const responsesRef = collection(db, 'rfpResponses');
-    const q = query(
-      responsesRef,
-      where('userId', '==', auth.currentUser.uid),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-  } catch (error) {
-    console.error('Error getting RFP responses:', error);
-    throw error;
+// Proposals
+export async function saveProposal(proposal) {
+  if (!proposal.id) {
+    proposal.id = Date.now().toString();
   }
-};
-
-export const getRFPResponse = async (responseId) => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to access RFP response');
-    }
-
-    const docRef = doc(db, 'rfpResponses', responseId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      // Verify the response belongs to the current user
-      if (data.userId !== auth.currentUser.uid) {
-        throw new Error('Access denied: This response belongs to another user');
-      }
-      return {
-        id: docSnap.id,
-        ...data
-      };
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error('Error getting RFP response:', error);
-    throw error;
+  
+  const db = await dbPromise;
+  if (isTestEnvironment) {
+    mockDB.proposals.set(proposal.id, proposal);
+    return proposal;
   }
-};
+  const tx = db.transaction('proposals', 'readwrite');
+  const store = tx.objectStore('proposals');
+  await store.put(proposal);
+  await tx.done;
+  return proposal;
+}
 
-export const createRFPResponseFromSolicitation = async (solicitationData) => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to create RFP response');
-    }
-
-    const responsesRef = collection(db, 'rfpResponses');
-    const newResponse = {
-      title: solicitationData.fileName || 'Untitled Solicitation',
-      solicitationId: solicitationData.id,
-      solicitationFile: {
-        name: solicitationData.fileName,
-        url: solicitationData.fileUrl,
-        uploadedAt: solicitationData.uploadedAt
-      },
-      status: 'New',
-      company: '',
-      userId: auth.currentUser.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      notes: ''
-    };
-    
-    const docRef = await addDoc(responsesRef, newResponse);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error creating RFP response:', error);
-    throw error;
+export async function getProposal(id) {
+  const db = await dbPromise;
+  if (isTestEnvironment) {
+    return mockDB.proposals.get(id);
   }
-};
+  return db.get('proposals', id);
+}
 
-export const updateRFPResponse = async (responseId, responseData) => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to update RFP response');
-    }
-
-    // Verify ownership before update
-    const docRef = doc(db, 'rfpResponses', responseId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error('RFP response not found');
-    }
-    
-    const data = docSnap.data();
-    if (data.userId !== auth.currentUser.uid) {
-      throw new Error('Access denied: This response belongs to another user');
-    }
-
-    const updatedResponse = {
-      ...responseData,
-      userId: auth.currentUser.uid, // Ensure userId remains unchanged
-      updatedAt: serverTimestamp()
-    };
-    
-    await updateDoc(docRef, updatedResponse);
-  } catch (error) {
-    console.error('Error updating RFP response:', error);
-    throw error;
+export async function getAllProposals() {
+  const db = await dbPromise;
+  if (isTestEnvironment) {
+    return Array.from(mockDB.proposals.values());
   }
-};
+  return db.getAllFromIndex('proposals', 'createdAt');
+}
 
-export const deleteRFPResponse = async (responseId) => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to delete RFP response');
-    }
-
-    // Verify ownership before delete
-    const docRef = doc(db, 'rfpResponses', responseId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error('RFP response not found');
-    }
-    
-    const data = docSnap.data();
-    if (data.userId !== auth.currentUser.uid) {
-      throw new Error('Access denied: This response belongs to another user');
-    }
-
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error('Error deleting RFP response:', error);
-    throw error;
+export async function getProposalsByUser(userId) {
+  const db = await dbPromise;
+  if (isTestEnvironment) {
+    return Array.from(mockDB.proposals.values())
+      .filter(proposal => proposal.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
-};
+  return db.getAllFromIndex('proposals', 'userId', userId);
+}
 
-export const getRFPResponsesBySolicitation = async (solicitationId) => {
-  try {
-    const auth = getAuth();
-    if (!auth.currentUser) {
-      throw new Error('User must be authenticated to access RFP responses');
-    }
-
-    const responsesRef = collection(db, 'rfpResponses');
-    const q = query(
-      responsesRef, 
-      where('userId', '==', auth.currentUser.uid),
-      where('solicitationId', '==', solicitationId),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-  } catch (error) {
-    console.error('Error getting RFP responses by solicitation:', error);
-    throw error;
+export async function deleteProposal(id) {
+  const db = await dbPromise;
+  if (isTestEnvironment) {
+    mockDB.proposals.delete(id);
+    return;
   }
-}; 
+  await db.delete('proposals', id);
+}

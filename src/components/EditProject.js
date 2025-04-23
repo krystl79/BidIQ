@@ -15,7 +15,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert
+  Alert,
+  Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 
 const EditProject = () => {
@@ -41,6 +44,21 @@ const EditProject = () => {
   const [showBidUpdateDialog, setShowBidUpdateDialog] = useState(false);
   const [pendingProjectUpdate, setPendingProjectUpdate] = useState(null);
   const [bids, setBids] = useState([]);
+
+  const projectTypes = [
+    'Residential - Single Family',
+    'Residential - Multi Family',
+    'Commercial - Office',
+    'Commercial - Retail',
+    'Commercial - Mixed Use',
+    'Industrial',
+    'Healthcare',
+    'Educational',
+    'Hospitality',
+    'Infrastructure',
+    'Renovation/Remodel',
+    'Other'
+  ];
 
   const states = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -189,7 +207,10 @@ const EditProject = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ 
+      py: 4,
+      pb: { xs: 10, sm: 4 }
+    }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4" component="h1">
@@ -212,131 +233,204 @@ const EditProject = () => {
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
+              <Typography sx={{ mb: 1 }}>
+                Project Name <span style={{ color: '#DC2626' }}>*</span>
+              </Typography>
               <TextField
                 fullWidth
-                label="Project Name"
+                placeholder="Enter project name"
                 name="projectName"
                 value={formData.projectName}
                 onChange={handleInputChange}
                 required
+                sx={{ mb: 3 }}
               />
             </Grid>
 
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Project Type"
-                name="projectType"
-                value={formData.projectType}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="City"
-                name="location.city"
-                value={formData.location.city}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                select
-                label="State"
-                name="location.state"
-                value={formData.location.state}
-                onChange={handleInputChange}
-                required
-              >
-                {states.map((state) => (
-                  <MenuItem key={state} value={state}>
-                    {state}
+              <Typography sx={{ mb: 1 }}>
+                Project Type <span style={{ color: '#DC2626' }}>*</span>
+              </Typography>
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <Select
+                  displayEmpty
+                  name="projectType"
+                  value={formData.projectType}
+                  onChange={handleInputChange}
+                  required
+                  sx={{ 
+                    '& .MuiSelect-select': { 
+                      py: 1.5,
+                      fontSize: '1rem'
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select a project type
                   </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="ZIP Code"
-                name="location.zipCode"
-                value={formData.location.zipCode}
-                onChange={handleInputChange}
-                required
-                inputProps={{ pattern: '[0-9]{5}' }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Start Date"
-                name="timeline.startDate"
-                value={formData.timeline.startDate}
-                onChange={handleInputChange}
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="date"
-                label="End Date"
-                name="timeline.endDate"
-                value={formData.timeline.endDate}
-                onChange={handleInputChange}
-                required
-                InputLabelProps={{ shrink: true }}
-              />
+                  {projectTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Project Location
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ mb: 1 }}>City</Typography>
+                  <TextField
+                    fullWidth
+                    placeholder="Enter city"
+                    name="location.city"
+                    value={formData.location.city}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ mb: 1 }}>State</Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      displayEmpty
+                      name="location.state"
+                      value={formData.location.state}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <MenuItem value="" disabled>
+                        Select state
+                      </MenuItem>
+                      {states.map((state) => (
+                        <MenuItem key={state} value={state}>
+                          {state}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ mb: 1 }}>ZIP Code</Typography>
+                  <TextField
+                    fullWidth
+                    placeholder="Enter ZIP code"
+                    name="location.zipCode"
+                    value={formData.location.zipCode}
+                    onChange={handleInputChange}
+                    required
+                    inputProps={{ pattern: '[0-9]{5}' }}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Project Timeline
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ mb: 1 }}>
+                    Start <span style={{ color: '#DC2626' }}>*</span>
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    name="timeline.startDate"
+                    value={formData.timeline.startDate}
+                    onChange={handleInputChange}
+                    required
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ mb: 1 }}>
+                    End <span style={{ color: '#DC2626' }}>*</span>
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    name="timeline.endDate"
+                    value={formData.timeline.endDate}
+                    onChange={handleInputChange}
+                    required
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Internal Project Details
+              </Typography>
+              <Typography sx={{ mb: 1 }}>
+                Equipment Markup % <span style={{ color: '#DC2626' }}>*</span>
+              </Typography>
               <TextField
                 fullWidth
                 type="number"
-                label="Equipment Markup (%)"
+                placeholder="Enter markup percentage"
                 name="equipmentMarkup"
                 value={formData.equipmentMarkup}
                 onChange={handleInputChange}
                 required
                 inputProps={{ min: 0, step: 0.1 }}
+                sx={{ mb: 1 }}
               />
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>
+                Enter the markup percentage for equipment (0-100)
+              </Typography>
             </Grid>
 
             <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                Project Notes
+              </Typography>
               <TextField
                 fullWidth
                 multiline
                 rows={4}
-                label="Notes"
+                placeholder="Enter additional notes"
                 name="notes"
                 value={formData.notes}
                 onChange={handleInputChange}
+                sx={{ mb: 3 }}
               />
             </Grid>
 
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 2,
+                '& .MuiButton-root': {
+                  flex: 1,
+                  py: 1.5
+                }
+              }}>
                 <Button
                   variant="outlined"
                   onClick={() => navigate('/projects')}
+                  sx={{
+                    bgcolor: '#F9FAFB'
+                  }}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   variant="contained"
-                  color="primary"
+                  sx={{
+                    bgcolor: '#3B82F6',
+                    '&:hover': {
+                      bgcolor: '#2563EB'
+                    }
+                  }}
                 >
                   Save Changes
                 </Button>

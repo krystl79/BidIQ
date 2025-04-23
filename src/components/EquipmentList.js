@@ -1,4 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Divider,
+  Paper
+} from '@mui/material';
 
 // Define allEquipment array before the component
 const allEquipment = [
@@ -189,20 +200,21 @@ const EquipmentList = ({ projectDetails, initialSelectedEquipment = [], onEquipm
   const filteredEquipment = useMemo(() => {
     if (!projectDetails?.projectType) {
       console.log('No project type selected');
-      return [];
+      return allEquipment; // Show all equipment if no project type is selected
     }
     const projectType = projectDetails.projectType.trim();
-    console.log('Filtering equipment for project type:', projectType);
+    console.log('Current project type:', projectType);
     
     const filtered = allEquipment.filter(equipment => {
       const matches = equipment.projectTypes.some(type => 
-        type.trim().toLowerCase() === projectType.toLowerCase()
+        type.toLowerCase().includes(projectType.toLowerCase()) ||
+        projectType.toLowerCase().includes(type.toLowerCase())
       );
       return matches;
     });
 
-    console.log('Filtered equipment:', filtered);
-    return filtered;
+    console.log('Number of filtered equipment:', filtered.length);
+    return filtered.length > 0 ? filtered : allEquipment; // Show all equipment if no matches found
   }, [projectDetails?.projectType]);
 
   // Handle equipment selection
@@ -243,89 +255,128 @@ const EquipmentList = ({ projectDetails, initialSelectedEquipment = [], onEquipm
   };
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {/* Selected Equipment Section */}
-      <div className="bg-white rounded-lg shadow p-6 min-h-[200px]">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Equipment</h3>
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Selected Equipment
+        </Typography>
         {selectedEquipment.length === 0 ? (
-          <p className="text-gray-500">No equipment selected</p>
+          <Typography color="text.secondary">No equipment selected</Typography>
         ) : (
-          <div className="space-y-4">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {selectedEquipment.map((equipment) => (
-              <div
+              <Paper
                 key={equipment.id}
-                className="flex items-center justify-between bg-gray-50 p-4 rounded-lg transition-all duration-200 ease-in-out"
+                sx={{
+                  p: 2,
+                  bgcolor: '#F9FAFB',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
               >
-                <div>
-                  <h4 className="font-medium text-gray-900">{equipment.name}</h4>
-                  <p className="text-sm text-gray-600">{equipment.description}</p>
-                  <p className="text-sm font-medium text-blue-600 mt-1">
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                    {equipment.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {equipment.description}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#2563EB', mt: 0.5, fontWeight: 500 }}
+                  >
                     Rate: ${equipment.selectedRate.rate} ({equipment.selectedRate.type})
-                  </p>
-                </div>
-                <button
+                  </Typography>
+                </Box>
+                <Button
+                  color="error"
                   onClick={() => handleRemoveEquipment(equipment.id)}
-                  className="text-red-600 hover:text-red-800 transition-colors"
                 >
                   Remove
-                </button>
-              </div>
+                </Button>
+              </Paper>
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Paper>
 
       {/* Available Equipment Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended Equipment</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Recommended Equipment
+        </Typography>
+        <Grid container spacing={3}>
           {filteredEquipment.map((equipment) => (
-            <div key={equipment.id} className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="aspect-w-16 aspect-h-9">
-                <img
-                  src={equipment.image}
+            <Grid item xs={12} sm={6} md={4} key={equipment.id}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={equipment.image}
                   alt={equipment.name}
-                  className="w-full h-48 object-cover"
                   onError={(e) => {
-                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.onerror = null;
                     e.target.src = 'https://images.pexels.com/photos/159358/construction-site-build-construction-work-159358.jpeg';
                   }}
                 />
-              </div>
-              <div className="p-4">
-                <h4 className="text-lg font-semibold text-gray-900">{equipment.name}</h4>
-                <p className="text-sm text-gray-600 mt-1">{equipment.description}</p>
-                
-                {/* Rates Section */}
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Daily Rate:</span>
-                    <span className="font-medium text-gray-900">${equipment.rates.daily.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Weekly Rate:</span>
-                    <span className="font-medium text-gray-900">${equipment.rates.weekly.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Monthly Rate:</span>
-                    <span className="font-medium text-gray-900">${equipment.rates.monthly.toLocaleString()}</span>
-                  </div>
-                </div>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {equipment.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    {equipment.description}
+                  </Typography>
+                  
+                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Daily Rate:
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        ${equipment.rates.daily.toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Weekly Rate:
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        ${equipment.rates.weekly.toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Monthly Rate:
+                      </Typography>
+                      <Typography variant="body2" fontWeight={500}>
+                        ${equipment.rates.monthly.toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-                <div className="mt-4">
-                  <button
+                  <Button
+                    fullWidth
+                    variant="contained"
                     onClick={() => handleEquipmentSelect(equipment)}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    sx={{
+                      mt: 2,
+                      bgcolor: '#3B82F6',
+                      '&:hover': {
+                        bgcolor: '#2563EB'
+                      }
+                    }}
                   >
                     Add Equipment
-                  </button>
-                </div>
-              </div>
-            </div>
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Paper>
+    </Box>
   );
 };
 

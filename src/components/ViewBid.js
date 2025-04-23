@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBid, getProject, getUserProfile } from '../services/db';
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Paper,
+  CircularProgress,
+  Alert,
+  Checkbox,
+  FormControlLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PrintIcon from '@mui/icons-material/Print';
+import CloseIcon from '@mui/icons-material/Close';
 
 const ViewBid = () => {
   const navigate = useNavigate();
@@ -66,285 +87,349 @@ const ViewBid = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4, px: 2 }}>
+        <Paper sx={{ maxWidth: 'lg', mx: 'auto', p: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <CircularProgress />
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
   if (error || !bidData) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+      <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4, px: 2 }}>
+        <Paper sx={{ maxWidth: 'lg', mx: 'auto', p: 4 }}>
+          <Typography variant="h5" color="error" gutterBottom>
             {error || 'Bid Not Found'}
-          </h2>
-          <p className="text-gray-600 mb-4">
+          </Typography>
+          <Typography color="text.secondary" paragraph>
             {error ? 'An error occurred while loading the bid.' : 'The bid you\'re looking for could not be found.'}
-          </p>
-          <button
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
             onClick={handleBack}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Back to Bids
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Paper>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-8 print:shadow-none print:p-0">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4, px: 2 }}>
+      <Paper sx={{ maxWidth: 'lg', mx: 'auto', p: 4 }}>
         {/* Header */}
-        <div className="flex justify-between items-start mb-8 print:mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Bid Proposal</h1>
-            <p className="text-gray-600">Created: {new Date(bidData.createdAt || Date.now()).toLocaleDateString()}</p>
-          </div>
-          <div className="flex space-x-4 print:hidden">
-            <button
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'stretch', sm: 'flex-start' }, 
+          mb: 4,
+          gap: { xs: 3, sm: 2 }
+        }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Bid Proposal
+            </Typography>
+            <Typography color="text.secondary">
+              Created: {new Date(bidData.createdAt || Date.now()).toLocaleDateString()}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' }
+          }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
               onClick={handleBack}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              fullWidth
+              sx={{ 
+                height: 48,
+                minWidth: { xs: '100%', sm: 140 }
+              }}
             >
               Back to Bids
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PrintIcon />}
               onClick={handlePrint}
-              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              fullWidth
+              sx={{ 
+                height: 48,
+                minWidth: { xs: '100%', sm: 140 },
+                bgcolor: '#3B82F6', 
+                '&:hover': { bgcolor: '#2563EB' }
+              }}
             >
               Print / Download PDF
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
         {/* Equipment Markup Toggle */}
-        <div className="mb-6 flex items-center space-x-4 print:hidden">
-          <label className="inline-flex items-center">
-            <input
-              type="checkbox"
-              checked={showMarkup}
-              onChange={(e) => setShowMarkup(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-gray-700">
-              Apply Equipment Markup ({bidData.equipmentMarkup}%)
-            </span>
-          </label>
-        </div>
+        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showMarkup}
+                onChange={(e) => setShowMarkup(e.target.checked)}
+                sx={{ color: '#3B82F6', '&.Mui-checked': { color: '#3B82F6' } }}
+              />
+            }
+            label={
+              <Typography>
+                Apply Equipment Markup ({bidData.equipmentMarkup}%)
+              </Typography>
+            }
+          />
+        </Box>
 
         {/* Proposed By Section */}
         {userProfile && (
-          <div className="mb-8 print:mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Proposed By</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Company</p>
-                <p className="font-medium">{userProfile.companyName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-medium">{userProfile.contactName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{userProfile.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-medium">{userProfile.phone}</p>
-              </div>
-            </div>
-          </div>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Proposed By
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Company
+                </Typography>
+                <Typography>{userProfile.companyName}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Name
+                </Typography>
+                <Typography>{userProfile.contactName}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Email
+                </Typography>
+                <Typography>{userProfile.email}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  Phone
+                </Typography>
+                <Typography>{userProfile.phone}</Typography>
+              </Grid>
+            </Grid>
+          </Box>
         )}
 
         {/* Project Details */}
-        <div className="mb-8 print:mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Project Details</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Project Name</p>
-              <p className="font-medium">{bidData.projectName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Project Type</p>
-              <p className="font-medium">{bidData.projectType}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-medium">
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Project Details
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Project Name
+              </Typography>
+              <Typography>{bidData.projectName}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Project Type
+              </Typography>
+              <Typography>{bidData.projectType}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Location
+              </Typography>
+              <Typography>
                 {bidData.location?.city}, {bidData.location?.state} {bidData.location?.zipCode}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Timeline</p>
-              <p className="font-medium">
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Timeline
+              </Typography>
+              <Typography>
                 {new Date(bidData.timeline?.startDate).toLocaleDateString()} - {new Date(bidData.timeline?.endDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        </div>
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
 
         {/* Client Information */}
-        <div className="mb-8 print:mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Client Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Company</p>
-              <p className="font-medium">{bidData.companyName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Contact</p>
-              <p className="font-medium">{bidData.contactName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{bidData.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{bidData.phone}</p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-sm text-gray-500">Address</p>
-              <p className="font-medium">
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Client Information
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Company
+              </Typography>
+              <Typography>{bidData.companyName}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Contact
+              </Typography>
+              <Typography>{bidData.contactName}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Email
+              </Typography>
+              <Typography>{bidData.email}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Phone
+              </Typography>
+              <Typography>{bidData.phone}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography color="text.secondary" variant="subtitle2">
+                Address
+              </Typography>
+              <Typography>
                 {bidData.address}<br />
                 {bidData.city}, {bidData.state} {bidData.zipCode}
-              </p>
-            </div>
-          </div>
-        </div>
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
 
         {/* Additional Notes */}
         {bidData.notes && (
-          <div className="mb-8 print:mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Additional Notes</h3>
-            <p className="text-gray-600 whitespace-pre-wrap">{bidData.notes}</p>
-          </div>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Additional Notes
+            </Typography>
+            <Typography sx={{ whiteSpace: 'pre-wrap' }}>
+              {bidData.notes}
+            </Typography>
+          </Box>
         )}
 
         {/* Equipment Table */}
-        <div className="mb-8 print:mb-4 overflow-x-auto">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Equipment Details</h3>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bidData.selectedEquipment?.map((item, index) => {
-                const rate = item.selectedRate?.rate || 0;
-                const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
-                const rateWithMarkup = rate + markup;
-                const displayRate = showMarkup ? rateWithMarkup : rate;
-                const total = displayRate * (item.quantity || 1);
-                
-                return (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity || 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{item.selectedRate?.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${displayRate.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${total.toFixed(2)}
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr className="bg-gray-50">
-                <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                  Equipment Total:
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                  ${(bidData.selectedEquipment?.reduce((total, item) => {
-                    const rate = item.selectedRate?.rate || 0;
-                    const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
-                    const rateWithMarkup = rate + markup;
-                    return total + (rateWithMarkup * (item.quantity || 1));
-                  }, 0) || 0).toFixed(2)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {bidData.equipment && bidData.equipment.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Equipment
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Equipment</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="right">Quantity</TableCell>
+                    <TableCell align="right">Cost</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {bidData.equipment.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell align="right">{item.quantity}</TableCell>
+                      <TableCell align="right">${item.cost.toFixed(2)}</TableCell>
+                      <TableCell align="right">${(item.quantity * item.cost).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={4} align="right" sx={{ fontWeight: 'bold' }}>
+                      Equipment Total:
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                      ${bidData.equipment.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
 
         {/* Add Ons Table */}
         {bidData.additionalItems && bidData.additionalItems.length > 0 && (
-          <div className="mb-8 print:mb-4 overflow-x-auto">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Add Ons</h3>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add On</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {bidData.additionalItems.map((item, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.description}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.cost.toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(item.quantity * item.cost).toFixed(2)}</td>
-                  </tr>
-                ))}
-                <tr className="bg-gray-50">
-                  <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                    Add Ons Total:
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    ${bidData.additionalItems.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Add Ons
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Add On</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="right">Quantity</TableCell>
+                    <TableCell align="right">Cost</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {bidData.additionalItems.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell align="right">{item.quantity}</TableCell>
+                      <TableCell align="right">${item.cost.toFixed(2)}</TableCell>
+                      <TableCell align="right">${(item.quantity * item.cost).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={4} align="right" sx={{ fontWeight: 'bold' }}>
+                      Add Ons Total:
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                      ${bidData.additionalItems.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
         )}
 
         {/* Total Cost */}
-        <div className="mb-8 print:mb-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">Total Estimated Cost:</span>
-              <span className="text-lg font-semibold text-gray-900">
-                ${((bidData.selectedEquipment?.reduce((total, item) => {
-                  const rate = item.selectedRate?.rate || 0;
-                  const markup = showMarkup ? (rate * (bidData.equipmentMarkup / 100)) : 0;
-                  const rateWithMarkup = rate + markup;
-                  return total + (rateWithMarkup * (item.quantity || 1));
-                }, 0) || 0) + (bidData.additionalItems?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0)).toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Print-only footer */}
-        <div className="hidden print:block mt-8 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 text-center">
-            This is a computer-generated document. No signature is required.
-          </p>
-        </div>
-      </div>
-    </div>
+        <Box sx={{ mt: 4, pt: 4, borderTop: 1, borderColor: 'divider' }}>
+          <Grid container justifyContent="flex-end">
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography>Equipment Total:</Typography>
+                <Typography>
+                  ${bidData.equipment?.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2) || '0.00'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography>Add Ons Total:</Typography>
+                <Typography>
+                  ${bidData.additionalItems?.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2) || '0.00'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                <Typography variant="h6">Total Cost:</Typography>
+                <Typography variant="h6">
+                  ${(
+                    (bidData.equipment?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0) +
+                    (bidData.additionalItems?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0)
+                  ).toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

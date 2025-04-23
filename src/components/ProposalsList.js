@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getProposals } from '../services/solicitationService';
+import { getProposalsByUser } from '../services/db';
 import {
   Container,
   Box,
@@ -21,23 +21,34 @@ const ProposalsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadProposals = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      const userProposals = await getProposalsByUser(currentUser.id);
+      setProposals(userProposals);
+    } catch (error) {
+      console.error('Error loading proposals:', error);
+      setError('Failed to load proposals');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
-    const loadProposals = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const userProposals = await getProposals(currentUser.uid);
-        setProposals(userProposals);
-      } catch (error) {
-        console.error('Error loading proposals:', error);
-        setError('Failed to load proposals. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    loadProposals();
+  }, [loadProposals]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      loadProposals();
     };
 
-    loadProposals();
-  }, [currentUser]);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadProposals]);
 
   const handleCreateNew = () => {
     navigate('/create-proposal');
@@ -55,16 +66,33 @@ const ProposalsList = () => {
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <Typography variant="h4" component="h1">
-            RFP or Solicitation Responses
+          <Typography 
+            variant="h3" 
+            component="h1"
+            sx={{ 
+              fontWeight: 400,
+              color: '#111827'
+            }}
+          >
+            Proposals
           </Typography>
           <Button
             variant="contained"
             color="primary"
-            startIcon={<AddIcon />}
             onClick={handleCreateNew}
+            sx={{ 
+              bgcolor: '#3B82F6',
+              borderRadius: '9999px',
+              px: 4,
+              py: 1.5,
+              textTransform: 'none',
+              fontSize: '1.125rem',
+              '&:hover': {
+                bgcolor: '#2563EB',
+              },
+            }}
           >
-            Create New Response
+            Create Proposal
           </Button>
         </Box>
 
@@ -77,10 +105,7 @@ const ProposalsList = () => {
         {proposals.length === 0 ? (
           <Box textAlign="center" py={4}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              No responses yet
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Click the button above to create your first response
+              No proposals found
             </Typography>
           </Box>
         ) : (

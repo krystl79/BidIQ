@@ -82,7 +82,12 @@ const ProjectForm = ({ initialData }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 4, bgcolor: '#fff' }}>
+    <Box sx={{ 
+      p: 4,
+      pb: { xs: 10, sm: 4 }, // Add extra padding at the bottom on mobile
+      maxWidth: 800, 
+      mx: 'auto' 
+    }}>
       <Typography variant="h4" sx={{ mb: 4 }}>
         Create New Project
       </Typography>
@@ -97,18 +102,24 @@ const ProjectForm = ({ initialData }) => {
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           required
-          sx={{ mb: 3 }}
+          sx={{ mb: 4 }}
         />
 
         <Typography sx={{ mb: 1 }}>
           Project Type <span style={{ color: '#DC2626' }}>*</span>
         </Typography>
-        <FormControl fullWidth sx={{ mb: 3 }}>
+        <FormControl fullWidth sx={{ mb: 4 }}>
           <Select
             value={projectType}
             onChange={(e) => setProjectType(e.target.value)}
             displayEmpty
             required
+            sx={{ 
+              '& .MuiSelect-select': { 
+                py: 1.5,
+                fontSize: '1rem'
+              }
+            }}
           >
             <MenuItem value="" disabled>
               Select a project type

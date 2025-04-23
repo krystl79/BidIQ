@@ -11,6 +11,8 @@ import {
   CircularProgress,
   Chip
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AddIcon from '@mui/icons-material/Add';
 
 const ViewProject = () => {
   const navigate = useNavigate();
@@ -102,31 +104,54 @@ const ViewProject = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper sx={{ p: 4 }}>
         {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
-                {projectData.projectName}
-              </Typography>
-              <Typography color="text.secondary">
-                Created: {new Date(projectData.createdAt).toLocaleDateString()}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={handleBack}
-              >
-                Back to Projects
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleCreateBid}
-                color="primary"
-              >
-                Create New Bid
-              </Button>
-            </Box>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'stretch', sm: 'flex-start' }, 
+          mb: 4,
+          gap: { xs: 3, sm: 2 }
+        }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {projectData.projectName}
+            </Typography>
+            <Typography color="text.secondary">
+              Created: {new Date(projectData.createdAt).toLocaleDateString()}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' }
+          }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={handleBack}
+              fullWidth
+              sx={{ 
+                height: 48,
+                minWidth: { xs: '100%', sm: 140 }
+              }}
+            >
+              Back to Projects
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateBid}
+              fullWidth
+              sx={{ 
+                height: 48,
+                minWidth: { xs: '100%', sm: 140 },
+                bgcolor: '#3B82F6', 
+                '&:hover': { bgcolor: '#2563EB' }
+              }}
+            >
+              Create New Bid
+            </Button>
           </Box>
         </Box>
 

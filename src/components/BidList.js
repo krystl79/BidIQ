@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAllBids } from '../services/db';
 import { useAuth } from '../contexts/AuthContext';
 
 const BidList = () => {
@@ -13,16 +12,9 @@ const BidList = () => {
   useEffect(() => {
     const fetchBids = async () => {
       try {
-        const bidsQuery = query(
-          collection(db, 'bids'),
-          where('userId', '==', currentUser?.uid || 'anonymous')
-        );
-        const querySnapshot = await getDocs(bidsQuery);
-        const bidsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setBids(bidsData);
+        const allBids = await getAllBids();
+        const userBids = allBids.filter(bid => bid.userId === currentUser?.uid || bid.userId === 'anonymous');
+        setBids(userBids);
       } catch (error) {
         console.error('Error fetching bids:', error);
       } finally {

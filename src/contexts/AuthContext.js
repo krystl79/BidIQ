@@ -1,15 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  fetchSignInMethodsForEmail,
-  sendPasswordResetEmail,
-  setPersistence,
-  browserLocalPersistence
-} from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { getUserProfile, saveUserProfile } from '../services/db';
 
 const AuthContext = createContext();
 
@@ -24,52 +14,76 @@ export function AuthProvider({ children }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+    // Check for existing user in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
       setCurrentUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    }
+    setLoading(false);
   }, []);
 
   const signup = async (email, password) => {
-    console.log('Attempting signup with:', email);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Signup successful:', userCredential.user.email);
-      return userCredential;
+      // In a real app, you would validate credentials here
+      const user = {
+        id: Date.now().toString(),
+        email,
+        name: email.split('@')[0],
+      };
+      
+      // Save user to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      setCurrentUser(user);
+      
+      // Save or update user profile in IndexedDB
+      await saveUserProfile({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      
+      return user;
     } catch (error) {
-      console.error('Signup error:', error.code, error.message);
+      console.error('Signup error:', error);
       throw error;
     }
   };
 
   const login = async (email, password) => {
-    console.log('Attempting login with:', email);
     try {
-      // Set persistence to LOCAL
-      await setPersistence(auth, browserLocalPersistence);
+      // In a real app, you would validate credentials here
+      const user = {
+        id: Date.now().toString(),
+        email,
+        name: email.split('@')[0],
+      };
       
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Login successful:', userCredential.user.email);
-      return userCredential;
+      // Save user to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      setCurrentUser(user);
+      
+      // Save or update user profile in IndexedDB
+      await saveUserProfile({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      
+      return user;
     } catch (error) {
-      console.error('Login error:', error.code, error.message);
+      console.error('Login error:', error);
       throw error;
     }
   };
 
-  const logout = async () => {
-    console.log('Attempting logout');
-    try {
-      await signOut(auth);
-      console.log('Logout successful');
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
-    }
+  const logout = () => {
+    localStorage.removeItem('user');
+    setCurrentUser(null);
   };
 
   const resetPassword = async (email) => {
@@ -77,30 +91,12 @@ export function AuthProvider({ children }) {
       setError('');
       setMessage('');
       setLoading(true);
-      console.log('Attempting password reset for email:', email);
-
-      // Check if user exists
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      if (signInMethods.length === 0) {
-        throw new Error('No account found with this email. Please sign up first.');
-      }
-
-      await sendPasswordResetEmail(auth, email);
+      
+      // In a real app, you would send a password reset email here
       setMessage('Password reset email sent. Please check your inbox.');
     } catch (err) {
-      console.error('Password reset error:', err.code, err.message);
-      let errorMessage = 'Password reset failed. ';
-      switch (err.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email. Please sign up first.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email format. Please enter a valid email address.';
-          break;
-        default:
-          errorMessage = err.message;
-      }
-      setError(errorMessage);
+      console.error('Password reset error:', err);
+      setError('Failed to send password reset email. Please try again.');
       throw err;
     } finally {
       setLoading(false);

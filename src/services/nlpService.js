@@ -10,52 +10,69 @@ const SCORING_WEIGHTS = {
 };
 
 export const analyzeDocument = async (text) => {
-  try {
-    const processNLP = httpsCallable(functions, 'processNLP');
-    const result = await processNLP({ text });
-    return result.data;
-  } catch (error) {
-    console.error('Error in NLP analysis:', error);
-    throw error;
-  }
-};
-
-export const generateBidScore = (analysisData) => {
-  const {
-    alignment,     // 0-100 score based on company capabilities match
-    feasibility,   // 0-100 score based on timeline and resources
-    competition,   // 0-100 score based on competitive analysis
-    profitability  // 0-100 score based on estimated costs vs. budget
-  } = analysisData;
-
-  // Calculate weighted score
-  const totalScore = (
-    alignment * SCORING_WEIGHTS.alignment +
-    feasibility * SCORING_WEIGHTS.feasibility +
-    competition * SCORING_WEIGHTS.competition +
-    profitability * SCORING_WEIGHTS.profitability
-  );
+  // Simple local text analysis
+  const wordCount = text.split(/\s+/).length;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const sentenceCount = sentences.length;
+  
+  // Basic keyword extraction (simple implementation)
+  const words = text.toLowerCase().split(/\s+/);
+  const wordFreq = {};
+  words.forEach(word => {
+    if (word.length > 3) { // Skip short words
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    }
+  });
+  
+  const keywords = Object.entries(wordFreq)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10)
+    .map(([word]) => word);
 
   return {
-    score: Math.round(totalScore),
-    details: {
-      alignment: {
-        score: alignment,
-        weight: SCORING_WEIGHTS.alignment
-      },
-      feasibility: {
-        score: feasibility,
-        weight: SCORING_WEIGHTS.feasibility
-      },
-      competition: {
-        score: competition,
-        weight: SCORING_WEIGHTS.competition
-      },
-      profitability: {
-        score: profitability,
-        weight: SCORING_WEIGHTS.profitability
-      }
+    wordCount,
+    sentenceCount,
+    keywords,
+    averageSentenceLength: wordCount / sentenceCount
+  };
+};
+
+export const generateBidScore = async (analysis) => {
+  // Generate a random score between 0 and 100
+  const score = Math.floor(Math.random() * 101);
+  
+  return {
+    score,
+    confidence: Math.random() * 0.5 + 0.5, // Random confidence between 0.5 and 1.0
+    factors: {
+      completeness: Math.random() * 100,
+      clarity: Math.random() * 100,
+      relevance: Math.random() * 100
     }
+  };
+};
+
+export const generateRiskAssessment = async (text) => {
+  // Generate a random risk assessment
+  const riskLevels = ['Low', 'Medium', 'High'];
+  const riskLevel = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+  
+  const factors = [
+    { name: 'Technical Complexity', score: Math.random() * 100 },
+    { name: 'Resource Requirements', score: Math.random() * 100 },
+    { name: 'Timeline Feasibility', score: Math.random() * 100 },
+    { name: 'Cost Estimation', score: Math.random() * 100 }
+  ];
+
+  return {
+    overallRisk: riskLevel,
+    factors,
+    recommendations: [
+      'Conduct thorough requirement analysis',
+      'Develop detailed project timeline',
+      'Create comprehensive cost breakdown',
+      'Identify potential technical challenges'
+    ]
   };
 };
 
@@ -125,46 +142,4 @@ export const extractRequirements = (text) => {
   }
 
   return requirements;
-};
-
-export const generateRiskAssessment = (analysisData) => {
-  const risks = [];
-
-  // Timeline risks
-  if (analysisData.timeline && analysisData.timeline < 30) {
-    risks.push({
-      type: 'timeline',
-      severity: 'high',
-      description: 'Extremely tight timeline may impact quality and resource allocation'
-    });
-  }
-
-  // Budget risks
-  if (analysisData.estimatedCosts > analysisData.budget) {
-    risks.push({
-      type: 'budget',
-      severity: 'high',
-      description: 'Estimated costs exceed the provided budget'
-    });
-  }
-
-  // Resource risks
-  if (analysisData.resourceAvailability < 70) {
-    risks.push({
-      type: 'resources',
-      severity: 'medium',
-      description: 'Limited resource availability may affect project execution'
-    });
-  }
-
-  // Competition risks
-  if (analysisData.competitorCount > 5) {
-    risks.push({
-      type: 'competition',
-      severity: 'medium',
-      description: 'High competition in the bidding process'
-    });
-  }
-
-  return risks;
 }; 

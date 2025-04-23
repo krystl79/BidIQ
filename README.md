@@ -1,70 +1,96 @@
-# Getting Started with Create React App
+# BidIQ
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+BidIQ is a web application for managing and analyzing bid documents. It helps users process, analyze, and manage RFPs (Request for Proposals) and other bid-related documents.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Document processing and analysis
+- Bid management and tracking
+- Project organization
+- User authentication
+- Local data storage using IndexedDB
+- Document text extraction and analysis
+- Web scraping for online RFPs
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Frontend: React.js with Material-UI
+- Backend: Express.js
+- Database: IndexedDB (client-side)
+- Document Processing: PDF-lib, AWS Textract
+- AI Integration: Google's Gemini Pro
+- Storage: Google Cloud Storage
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Setup
 
-### `npm test`
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/bidiq.git
+cd bidiq
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Install dependencies:
+```bash
+npm install
+```
 
-### `npm run build`
+3. Create a `.env` file in the root directory with the following variables:
+```
+# Server Configuration
+PORT=5001
+NODE_ENV=development
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# AWS Configuration
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# API Keys
+DOCUPANDA_API_KEY=your_docupanda_api_key
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Storage Configuration
+STORAGE_BUCKET=bidiq-files
 
-### `npm run eject`
+# CORS Configuration
+ALLOWED_ORIGINS=https://67ee000573287e0008357415--bidiq.netlify.app,http://localhost:3000
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+4. Start the development server:
+```bash
+npm run dev
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+This will start both the frontend (port 3000) and backend (port 5001) servers.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Project Structure
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+bidiq/
+├── src/
+│   ├── components/     # React components
+│   ├── contexts/       # React contexts
+│   ├── services/       # Service modules
+│   ├── utils/          # Utility functions
+│   └── App.js          # Main application component
+├── server.js           # Express server
+├── package.json        # Project dependencies
+└── .env               # Environment variables
+```
 
-## Learn More
+## API Endpoints
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `POST /api/process-solicitation`: Process PDF documents
+- `POST /api/process-solicitation-link`: Process web pages
+- `POST /api/process-document`: Process general documents
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Contributing
 
-### Code Splitting
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## License
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License - see the LICENSE file for details.

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { createProposal } from '../services/solicitationService';
+import { saveProposal } from '../services/db';
 import {
   Box,
   Button,
   TextField,
   Typography,
-  Paper,
-  Grid,
   CircularProgress,
   Alert,
 } from '@mui/material';
@@ -21,9 +19,7 @@ const CreateProposalForm = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    clientName: '',
     dueDate: '',
-    estimatedValue: '',
     notes: '',
   });
 
@@ -37,148 +33,147 @@ const CreateProposalForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.title || !formData.description || !formData.dueDate) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Validate user is logged in
+    if (!currentUser) {
+      setError('You must be logged in to create a proposal');
+      return;
+    }
+    
     setError('');
     setLoading(true);
 
     try {
       const proposalData = {
+        id: Date.now().toString(),
         ...formData,
-        userId: currentUser.uid,
+        userId: currentUser.id,
         status: 'draft',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        createdBy: currentUser.email,
+        lastModifiedBy: currentUser.email,
       };
 
-      const newProposal = await createProposal(proposalData);
-      navigate(`/proposals/${newProposal.id}`);
+      console.log('Saving proposal:', proposalData);
+      await saveProposal(proposalData);
+      navigate('/proposals');
     } catch (err) {
-      setError('Failed to create proposal. Please try again.');
       console.error('Error creating proposal:', err);
+      setError('Failed to create proposal. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    navigate('/proposals');
+  };
+
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Create New Proposal
+    <Box sx={{ 
+      maxWidth: 800, 
+      mx: 'auto', 
+      p: 4,
+      pb: { xs: 10, sm: 4 },
+      bgcolor: '#fff' 
+    }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        Create New Proposal
+      </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Box component="form" onSubmit={handleSubmit}>
+        <Typography sx={{ mb: 1 }}>
+          Title <span style={{ color: '#DC2626' }}>*</span>
         </Typography>
+        <TextField
+          fullWidth
+          name="title"
+          placeholder="Enter proposal title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          sx={{ mb: 4 }}
+        />
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        <Typography sx={{ mb: 1 }}>
+          Description <span style={{ color: '#DC2626' }}>*</span>
+        </Typography>
+        <TextField
+          fullWidth
+          name="description"
+          placeholder="Enter proposal description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          multiline
+          rows={6}
+          sx={{ mb: 4 }}
+        />
 
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Proposal Title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                variant="outlined"
-              />
-            </Grid>
+        <Typography sx={{ mb: 1 }}>
+          Due Date <span style={{ color: '#DC2626' }}>*</span>
+        </Typography>
+        <TextField
+          fullWidth
+          type="date"
+          name="dueDate"
+          value={formData.dueDate}
+          onChange={handleChange}
+          required
+          InputProps={{
+            inputProps: { placeholder: 'mm/dd/yyyy' }
+          }}
+          sx={{ mb: 4 }}
+        />
 
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                multiline
-                rows={4}
-                label="Description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                variant="outlined"
-              />
-            </Grid>
+        <Typography sx={{ mb: 1 }}>
+          Additional Notes
+        </Typography>
+        <TextField
+          fullWidth
+          name="notes"
+          placeholder="Enter any additional notes"
+          value={formData.notes}
+          onChange={handleChange}
+          multiline
+          rows={4}
+          sx={{ mb: 4 }}
+        />
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Client Name"
-                name="clientName"
-                value={formData.clientName}
-                onChange={handleChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                type="date"
-                label="Due Date"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                variant="outlined"
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Estimated Value"
-                name="estimatedValue"
-                value={formData.estimatedValue}
-                onChange={handleChange}
-                variant="outlined"
-                placeholder="$0.00"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Additional Notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                variant="outlined"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/proposals')}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    'Create Proposal'
-                  )}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button
+            variant="outlined"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Save Proposal'
+            )}
+          </Button>
+        </Box>
+      </Box>
     </Box>
   );
 };

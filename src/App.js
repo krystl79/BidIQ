@@ -12,18 +12,15 @@ import ViewProject from './components/ViewProject';
 import EditProject from './components/EditProject';
 import LandingPage from './components/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
-import SolicitationUploadScreen from './components/SolicitationUploadScreen';
-import RFPProposalsList from './components/RFPResponsesList';
-import ViewRFPProposal from './components/ViewRFPResponse';
 import { getUserProfile, saveUserProfile } from './services/db';
 import { useAuth } from './contexts/AuthContext';
 import './styles/print.css';
 import TopNav from './components/TopNav';
 import MobileNav from './components/MobileNav';
-import ProposalDetails from './components/ProposalDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import SelectProject from './components/SelectProject';
 import CreateProposalForm from './components/CreateProposalForm';
+import ProposalsList from './components/ProposalsList';
 
 // Create a wrapper component to use hooks
 function AppContent() {
@@ -97,18 +94,10 @@ function AppContent() {
             }
           />
           <Route
-            path="/upload-solicitation"
-            element={
-              <ProtectedRoute>
-                <SolicitationUploadScreen />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/proposals"
             element={
               <ProtectedRoute>
-                <RFPProposalsList />
+                <ProposalsList />
               </ProtectedRoute>
             }
           />
@@ -117,22 +106,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <CreateProposalForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/proposals/:responseId"
-            element={
-              <ProtectedRoute>
-                <ViewRFPProposal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/proposals/:proposalId/details"
-            element={
-              <ProtectedRoute>
-                <ProposalDetails />
               </ProtectedRoute>
             }
           />

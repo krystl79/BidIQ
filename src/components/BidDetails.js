@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { getBid } from '../services/db';
 
 const BidDetails = () => {
   const { bidId } = useParams();
@@ -11,9 +10,9 @@ const BidDetails = () => {
   useEffect(() => {
     const fetchBid = async () => {
       try {
-        const bidDoc = await getDoc(doc(db, 'bids', bidId));
-        if (bidDoc.exists()) {
-          setBid(bidDoc.data());
+        const bidData = await getBid(bidId);
+        if (bidData) {
+          setBid(bidData);
         }
       } catch (error) {
         console.error('Error fetching bid:', error);
