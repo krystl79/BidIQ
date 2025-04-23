@@ -33,10 +33,19 @@ const ProjectForm = ({ initialData }) => {
     'Other'
   ];
 
+  const states = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const projectData = {
+        id: initialData?.id || Date.now().toString(),
         projectName,
         projectType,
         location: {
@@ -45,13 +54,16 @@ const ProjectForm = ({ initialData }) => {
           zipCode
         },
         timeline: {
-          startDate,
-          endDate
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString()
         },
         equipmentMarkup: parseFloat(equipmentMarkup) || 0,
-        notes
+        notes,
+        createdAt: initialData?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
-      await saveProject(projectData, initialData?.id);
+      
+      await saveProject(projectData);
       navigate('/projects');
     } catch (error) {
       console.error('Error saving project:', error);
@@ -126,9 +138,9 @@ const ProjectForm = ({ initialData }) => {
                 <MenuItem value="" disabled>
                   Select state
                 </MenuItem>
-                {Array.from(Array(50), (_, i) => String.fromCharCode(65 + i)).map((letter) => (
-                  <MenuItem key={letter} value={letter}>
-                    {letter}
+                {states.map((state) => (
+                  <MenuItem key={state} value={state}>
+                    {state}
                   </MenuItem>
                 ))}
               </Select>

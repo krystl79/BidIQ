@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllProjects, deleteProject, getBidsByProject } from '../services/db';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Alert,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  IconButton,
+  InputAdornment,
+  Chip
+} from '@mui/material';
+import {
+  Search,
+  Delete,
+  Edit,
+  Add,
+  Visibility
+} from '@mui/icons-material';
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -14,12 +36,29 @@ const ProjectList = () => {
     loadProjects();
   }, []);
 
+  useEffect(() => {
+    const handleFocus = () => {
+      loadProjects();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const loadProjects = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const allProjects = await getAllProjects();
-      // Get bid counts for each project
+      
+      const sortedProjects = allProjects.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
       const projectsWithBidCounts = await Promise.all(
-        allProjects.map(async (project) => {
+        sortedProjects.map(async (project) => {
           const bids = await getBidsByProject(project.id);
           return {
             ...project,
@@ -27,6 +66,7 @@ const ProjectList = () => {
           };
         })
       );
+      
       setProjects(projectsWithBidCounts);
       setProjectBidCounts(projectsWithBidCounts.reduce((acc, project) => ({
         ...acc,
@@ -49,7 +89,6 @@ const ProjectList = () => {
   };
 
   const handleCreateBid = (project) => {
-    // Store current project in session storage for bid creation
     sessionStorage.setItem('currentProject', JSON.stringify(project));
     navigate(`/projects/${project.id}/bids/new`);
   };
@@ -58,7 +97,6 @@ const ProjectList = () => {
     if (window.confirm('Are you sure you want to delete this project? This will also delete all associated bids.')) {
       try {
         await deleteProject(projectId);
-        // Refresh the projects list
         loadProjects();
       } catch (error) {
         console.error('Error deleting project:', error);
@@ -71,23 +109,13 @@ const ProjectList = () => {
     navigate(`/projects/${projectId}/edit`);
   };
 
-  const handleViewBids = (projectId) => {
-    navigate(`/bids?projectId=${projectId}`);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Box sx={{ p: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Box>
     );
   }
 
@@ -99,93 +127,208 @@ const ProjectList = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
-          </div>
-          <button
-            onClick={handleCreateProject}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 4
+      }}>
+        <Typography 
+          variant="h3" 
+          component="h1"
+          sx={{ 
+            fontWeight: 400,
+            color: '#111827'
+          }}
+        >
+          Projects
+        </Typography>
+        
+        <Button
+          variant="contained"
+          onClick={handleCreateProject}
+          sx={{ 
+            bgcolor: '#3B82F6',
+            borderRadius: '9999px',
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontSize: '1.125rem',
+            '&:hover': {
+              bgcolor: '#2563EB',
+            },
+          }}
+        >
+          Create Project
+        </Button>
+      </Box>
+        
+      {error && (
+        <Alert severity="error" sx={{ mb: 4 }}>
+          {error}
+        </Alert>
+      )}
+
+      <TextField
+        fullWidth
+        placeholder="Search projects by project or company..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        variant="outlined"
+        sx={{ 
+          mb: 4,
+          '& .MuiOutlinedInput-root': {
+            bgcolor: '#fff',
+            borderRadius: 2,
+            '& fieldset': {
+              borderColor: '#E5E7EB',
+            },
+            '&:hover fieldset': {
+              borderColor: '#D1D5DB',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#3B82F6',
+            },
+          },
+          '& .MuiOutlinedInput-input': {
+            padding: '16px',
+            fontSize: '1rem',
+            '&::placeholder': {
+              color: '#9CA3AF',
+              opacity: 1,
+            },
+          },
+        }}
+      />
+
+      {filteredProjects.length === 0 && (
+        <Box sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 8
+        }}>
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#6B7280',
+              fontWeight: 400
+            }}
           >
-            Create Project
-          </button>
-        </div>
+            No projects found.
+          </Typography>
+        </Box>
+      )}
 
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search projects by project or company..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
-        {filteredProjects.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-2xl text-gray-500">No projects found.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
-              <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-                <div className="p-4 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{project.projectName}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{project.projectType}</p>
-                  <div className="text-sm text-gray-600 space-y-2">
-                    <p>Location: {project.location.city}, {project.location.state}</p>
-                    <p>Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}</p>
-                    <p>Equipment Markup: {project.equipmentMarkup}%</p>
-                    <p>
-                      <button
-                        onClick={() => handleViewBids(project.id)}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {projectBidCounts[project.id] || 0} {projectBidCounts[project.id] === 1 ? 'Bid' : 'Bids'}
-                      </button>
-                    </p>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2 justify-end">
-                    <button
-                      onClick={() => handleViewProject(project)}
-                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleEditProject(project.id)}
-                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleCreateBid(project)}
-                      className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                    >
-                      Bid
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      {filteredProjects.length > 0 && (
+        <Grid container spacing={3}>
+          {filteredProjects.map((project) => (
+            <Grid item xs={12} sm={6} md={4} key={project.id}>
+              <Card sx={{ 
+                boxShadow: 2,
+                transition: '0.3s',
+                '&:hover': { 
+                  boxShadow: 4,
+                  transform: 'translateY(-2px)'
+                }
+              }}>
+                <CardContent>
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                      color: '#111827',
+                      fontWeight: 600
+                    }}
+                  >
+                    {project.projectName}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    <Chip 
+                      label={project.projectType} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                    />
+                    <Chip 
+                      label={`${projectBidCounts[project.id] || 0} Bids`} 
+                      size="small" 
+                      color="secondary" 
+                      variant="outlined" 
+                    />
+                  </Box>
+                  <Typography color="text.secondary" gutterBottom>
+                    Location: {project.location.city}, {project.location.state}
+                  </Typography>
+                  <Typography color="text.secondary" gutterBottom>
+                    Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
+                  </Typography>
+                  <Typography color="text.secondary" gutterBottom>
+                    Equipment Markup: {project.equipmentMarkup}%
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', gap: 1, p: 2 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleViewProject(project)}
+                    title="View Project"
+                    sx={{ 
+                      color: '#4F46E5',
+                      '&:hover': {
+                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                      },
+                    }}
+                  >
+                    <Visibility />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEditProject(project.id)}
+                    title="Edit Project"
+                    sx={{ 
+                      color: '#4F46E5',
+                      '&:hover': {
+                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                      },
+                    }}
+                  >
+                    <Edit />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCreateBid(project)}
+                    title="Create Bid"
+                    sx={{ 
+                      color: '#4F46E5',
+                      '&:hover': {
+                        backgroundColor: 'rgba(79, 70, 229, 0.04)',
+                      },
+                    }}
+                  >
+                    <Add />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteProject(project.id)}
+                    title="Delete Project"
+                    sx={{ 
+                      color: '#EF4444',
+                      '&:hover': {
+                        backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                      },
+                    }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Box>
   );
 };
 
