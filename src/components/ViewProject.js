@@ -120,37 +120,20 @@ const ViewProject = () => {
               Created: {new Date(projectData.createdAt).toLocaleDateString()}
             </Typography>
           </Box>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2,
-            flexDirection: { xs: 'column', sm: 'row' },
-            width: { xs: '100%', sm: 'auto' }
-          }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
             <Button
               variant="outlined"
+              color="primary"
+              onClick={() => navigate('/projects')}
               startIcon={<ArrowBackIcon />}
-              onClick={handleBack}
-              fullWidth
-              sx={{ 
-                height: 48,
-                minWidth: { xs: '100%', sm: 140 }
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 500,
+                px: 3
               }}
             >
               Back to Projects
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreateBid}
-              fullWidth
-              sx={{ 
-                height: 48,
-                minWidth: { xs: '100%', sm: 140 },
-                bgcolor: '#3B82F6', 
-                '&:hover': { bgcolor: '#2563EB' }
-              }}
-            >
-              Create New Bid
             </Button>
           </Box>
         </Box>

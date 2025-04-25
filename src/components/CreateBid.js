@@ -204,6 +204,14 @@ const CreateBid = () => {
         location: projectData.location,
         timeline: projectData.timeline,
         createdAt: new Date().toISOString(),
+        equipment: formData.selectedEquipment.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          quantity: 1,
+          cost: item.selectedRate.rate,
+          rateType: item.selectedRate.type
+        })),
         totalCost: totalCost
       };
 

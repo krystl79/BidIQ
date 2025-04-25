@@ -32,6 +32,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // US States array
   const states = [
@@ -119,10 +120,11 @@ const Profile = () => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
+    setSuccessMessage('');
 
     try {
       await saveUserProfile(formData);
-      alert('Profile updated successfully!');
+      setSuccessMessage('Your profile has been updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
       setError('Failed to update profile. Please try again.');
@@ -170,6 +172,12 @@ const Profile = () => {
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {successMessage}
           </Alert>
         )}
         
@@ -356,6 +364,21 @@ const Profile = () => {
           </CardContent>
         </Card>
       </Box>
+      
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSuccessMessage('')} 
+          severity="success" 
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

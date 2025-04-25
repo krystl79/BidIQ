@@ -57,6 +57,9 @@ module.exports = {
           'inspector/': false,
           'crypto-browserify/': false,
           'stream-browserify/': false
+        },
+        extensionAlias: {
+          '.js': ['.js', '.jsx', '.ts', '.tsx']
         }
       }
     }

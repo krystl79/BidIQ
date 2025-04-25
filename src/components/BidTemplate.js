@@ -209,14 +209,14 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                     <td className="py-2 px-4">{item.name}</td>
                     <td className="py-2 px-4">{item.description}</td>
                     <td className="py-2 px-4 text-right">
-                      ${item.selectedRate.rate}/{item.selectedRate.type}
+                      ${item.selectedRate?.rate}/{item.selectedRate?.type}
                     </td>
                   </tr>
                 ))}
                 <tr className="font-semibold">
                   <td className="py-2 px-4" colSpan={2}>Total Cost</td>
                   <td className="py-2 px-4 text-right">
-                    ${calculateTotalCost()}/{formData.selectedEquipment[0]?.selectedRate.type}
+                    ${calculateTotalCost()}/{formData.selectedEquipment[0]?.selectedRate?.type}
                   </td>
                 </tr>
               </tbody>
@@ -491,6 +491,15 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
             <PDFPreview />
           </div>
         )}
+
+        <div className="mt-8 flex justify-end space-x-4">
+          <button
+            onClick={handleSharePDF}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap text-sm sm:text-base"
+          >
+            Print / Download PDF
+          </button>
+        </div>
       </div>
     </div>
   );

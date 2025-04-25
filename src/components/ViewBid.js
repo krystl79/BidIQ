@@ -32,6 +32,20 @@ const ViewBid = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [showMarkup, setShowMarkup] = useState(false);
 
+  // Calculate equipment cost with markup
+  const calculateEquipmentCost = (equipment, markup = 0) => {
+    if (!equipment) return 0;
+    const baseCost = equipment.reduce((total, item) => total + (item.quantity * item.cost), 0);
+    return baseCost + (baseCost * (markup / 100));
+  };
+
+  // Calculate total cost with markup
+  const calculateTotalCost = (equipment, additionalItems, markup = 0) => {
+    const equipmentCost = calculateEquipmentCost(equipment, markup);
+    const addOnsCost = additionalItems?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0;
+    return equipmentCost + addOnsCost;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!bidId) {
@@ -186,7 +200,7 @@ const ViewBid = () => {
             }
             label={
               <Typography>
-                Apply Equipment Markup ({bidData.equipmentMarkup}%)
+                Apply Equipment Markup ({bidData.equipmentMarkup || 0}%)
               </Typography>
             }
           />
@@ -350,7 +364,7 @@ const ViewBid = () => {
                       Equipment Total:
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                      ${bidData.equipment.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2)}
+                      ${calculateEquipmentCost(bidData.equipment, showMarkup ? bidData.equipmentMarkup : 0).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -407,7 +421,7 @@ const ViewBid = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography>Equipment Total:</Typography>
                 <Typography>
-                  ${bidData.equipment?.reduce((total, item) => total + (item.quantity * item.cost), 0).toFixed(2) || '0.00'}
+                  ${calculateEquipmentCost(bidData.equipment, showMarkup ? bidData.equipmentMarkup : 0).toFixed(2)}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -419,10 +433,7 @@ const ViewBid = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="h6">Total Cost:</Typography>
                 <Typography variant="h6">
-                  ${(
-                    (bidData.equipment?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0) +
-                    (bidData.additionalItems?.reduce((total, item) => total + (item.quantity * item.cost), 0) || 0)
-                  ).toFixed(2)}
+                  ${calculateTotalCost(bidData.equipment, bidData.additionalItems, showMarkup ? bidData.equipmentMarkup : 0).toFixed(2)}
                 </Typography>
               </Box>
             </Grid>

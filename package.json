@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.15.10",
-    "@mui/material": "^5.15.10",
+    "@aws-sdk/client-textract": "^3.796.0",
+    "@date-io/date-fns": "^3.2.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@google-cloud/storage": "^7.16.0",
+    "@mui/icons-material": "5.14.19",
+    "@mui/material": "^5.15.11",
+    "@mui/system": "^5.15.11",
+    "@mui/x-date-pickers": "^6.19.3",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -15,7 +20,7 @@
     "axios": "^1.6.7",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
-    "date-fns": "^4.1.0",
+    "date-fns": "^2.30.0",
     "express": "^4.18.2",
     "idb": "^8.0.0",
     "multer": "^1.4.5-lts.1",
@@ -35,7 +40,7 @@
     "build": "CI=false craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "server": "node server.js",
+    "server": "nodemon server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\""
   },
   "eslintConfig": {
@@ -58,6 +63,7 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.10"
   }
 }

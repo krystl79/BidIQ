@@ -278,10 +278,10 @@ const ProjectList = () => {
                       />
                     </Box>
                     <Typography color="text.secondary" gutterBottom>
-                      Location: {project.location.city}, {project.location.state}
+                      Location: {project.location?.city}, {project.location?.state}
                     </Typography>
                     <Typography color="text.secondary" gutterBottom>
-                      Timeline: {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
+                      Timeline: {project.timeline?.startDate && new Date(project.timeline.startDate).toLocaleDateString()} - {project.timeline?.endDate && new Date(project.timeline.endDate).toLocaleDateString()}
                     </Typography>
                     <Typography color="text.secondary" gutterBottom>
                       Equipment Markup: {project.equipmentMarkup}%

@@ -21,6 +21,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import SelectProject from './components/SelectProject';
 import CreateProposalForm from './components/CreateProposalForm';
 import ProposalsList from './components/ProposalsList';
+import ViewAnonymousBid from './components/ViewAnonymousBid';
 
 // Create a wrapper component to use hooks
 function AppContent() {
@@ -189,6 +190,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route path="/view-bid" element={<ViewAnonymousBid />} />
         </Routes>
       </div>
       {currentUser && <MobileNav />}
