@@ -5,24 +5,52 @@ import { saveProject, saveBid } from '../services/db';
 
 // Move steps array outside the component to prevent recreation on each render
 const steps = [
-  { type: 'text', question: "What is the name of your project?" },
-  { type: 'date', question: "What is the start date of your project?" },
-  { type: 'date', question: "When do you need your project completed by?" },
-  { type: 'location', question: "Where will your project be taking place? (Please enter City, State, Zip Code)" },
   {
-    type: 'choice',
+    question: "What's your name?",
+    type: 'text',
+    key: 'name'
+  },
+  {
     question: "What type of project are you working on?",
-    options: ["Install Holiday Decorations"]
+    type: 'choice',
+    options: ['Install outdoor holiday lights'],
+    key: 'projectType'
   },
   {
-    type: 'choice',
     question: "Is your home a single story or 2-story?",
-    options: ["Single Story", "2-Story"]
+    type: 'choice',
+    options: ['Single Story', '2-Story'],
+    key: 'homeType'
   },
   {
-    type: 'choice',
-    question: "Are you comfortable climbing a ladder?",
-    options: ["Yes", "No"]
+    question: "What's your email address?",
+    type: 'email',
+    key: 'email'
+  },
+  {
+    question: "What's your phone number?",
+    type: 'tel',
+    key: 'phone'
+  },
+  {
+    question: "What's your address?",
+    type: 'text',
+    key: 'address'
+  },
+  {
+    question: "When do you need this project completed by?",
+    type: 'date',
+    key: 'dueDate'
+  },
+  {
+    question: "What's your budget for this project?",
+    type: 'number',
+    key: 'budget'
+  },
+  {
+    question: "Any additional details about your project?",
+    type: 'textarea',
+    key: 'description'
   }
 ];
 
@@ -190,8 +218,16 @@ const ChatBot = ({ onClose }) => {
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
       <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
         <div className="flex flex-col h-[600px]">
-          <div className="p-4 border-b">
+          <div className="p-4 border-b flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900">Project Assistant</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             {messages.map((message, index) => (
