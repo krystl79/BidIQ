@@ -1,56 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { saveProject, saveBid } from '../services/db';
+import { db } from '../firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Move steps array outside the component to prevent recreation on each render
 const steps = [
+  { type: 'text', question: "What is the name of your project?" },
+  { type: 'date', question: "What is the start date of your project?" },
+  { type: 'date', question: "When do you need your project completed by?" },
+  { type: 'location', question: "Where will your project be taking place? (Please enter City, State, Zip Code)" },
   {
-    question: "What's your name?",
-    type: 'text',
-    key: 'name'
-  },
-  {
+    type: 'choice',
     question: "What type of project are you working on?",
-    type: 'choice',
-    options: ['Install outdoor holiday lights'],
-    key: 'projectType'
+    options: ["Install Holiday Decorations"]
   },
   {
+    type: 'choice',
     question: "Is your home a single story or 2-story?",
+    options: ["Single Story", "2-Story"]
+  },
+  {
     type: 'choice',
-    options: ['Single Story', '2-Story'],
-    key: 'homeType'
-  },
-  {
-    question: "What's your email address?",
-    type: 'email',
-    key: 'email'
-  },
-  {
-    question: "What's your phone number?",
-    type: 'tel',
-    key: 'phone'
-  },
-  {
-    question: "What's your address?",
-    type: 'text',
-    key: 'address'
-  },
-  {
-    question: "When do you need this project completed by?",
-    type: 'date',
-    key: 'dueDate'
-  },
-  {
-    question: "What's your budget for this project?",
-    type: 'number',
-    key: 'budget'
-  },
-  {
-    question: "Any additional details about your project?",
-    type: 'textarea',
-    key: 'description'
+    question: "Are you comfortable climbing a ladder?",
+    options: ["Yes", "No"]
   }
 ];
 
@@ -75,206 +48,260 @@ const ChatBot = ({ onClose }) => {
     equipmentNeeded: []
   });
   const [createdProjectId, setCreatedProjectId] = useState(null);
-  const messagesEndRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const hasShownInitialMessages = useRef(false);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Only show initial messages once
+    if (!hasShownInitialMessages.current) {
+      addBotMessage("👋 Hi! I'm here to help you get started with your project.");
+      addBotMessage(steps[0].question);
+      hasShownInitialMessages.current = true;
+    }
+  }, []); // Empty dependency array since we only want this to run once
+
   const addBotMessage = (text) => {
-    setMessages(prev => [...prev, { type: 'bot', content: text }]);
+    setMessages(prev => [...prev, { type: 'bot', text }]);
   };
 
-  const addUserMessage = (text) => {
-    setMessages(prev => [...prev, { type: 'user', content: text }]);
-  };
-
-  const handleLocationInput = (input) => {
-    const [city, state, zipCode] = input.split(',').map(item => item.trim());
-    setProjectData(prev => ({
-      ...prev,
-      location: {
-        city: city || '',
-        state: state || '',
-        zipCode: zipCode || ''
-      }
-    }));
-  };
-
-  const handleProjectCreation = async () => {
+  const handleCreateProject = useCallback(async () => {
     try {
+      // Create project in Firestore
+      const projectRef = await addDoc(collection(db, 'projects'), {
+        ...projectData,
+        userId: currentUser?.uid || 'anonymous',
+        createdAt: serverTimestamp(),
+        status: 'active'
+      });
+
+      // Create bid in Firestore
+      await addDoc(collection(db, 'bids'), {
+        projectId: projectRef.id,
+        userId: currentUser?.uid || 'anonymous',
+        status: 'draft',
+        createdAt: serverTimestamp(),
+        projectDetails: projectData
+      });
+
+      // Update createdProjectId with actual project ID
+      setCreatedProjectId(projectRef.id);
+
+      // Add success message
+      addBotMessage('Great! I\'ve created your project and bid.');
+      
       if (!currentUser) {
-        throw new Error('User must be signed in to create a project');
+        addBotMessage('To save your project and bid, or to download the bid details, please create an account or log in.');
+        addBotMessage('Would you like to create an account or log in now? (Yes/No)');
+      } else {
+        // Navigate to project details after a short delay
+        setTimeout(() => {
+          navigate(`/projects/${projectRef.id}`);
+        }, 2000);
       }
 
-      // Create project in IndexedDB
-      const project = {
-        id: Date.now().toString(),
-        userId: currentUser.uid,
-        projectName: projectData.projectName,
-        projectType: projectData.projectType,
-        location: projectData.location,
-        timeline: {
-          startDate: projectData.startDate,
-          endDate: projectData.endDate
-        },
-        homeType: projectData.homeType,
-        climbingLadder: projectData.climbingLadder,
-        equipmentNeeded: projectData.equipmentNeeded,
-        createdAt: new Date().toISOString(),
-        status: 'draft'
-      };
-
-      const savedProject = await saveProject(project);
-      setCreatedProjectId(savedProject.id);
-
-      // Create bid in IndexedDB
-      const bid = {
-        id: Date.now().toString(),
-        projectId: savedProject.id,
-        userId: currentUser.uid,
-        status: 'draft',
-        createdAt: new Date().toISOString(),
-        projectDetails: savedProject
-      };
-
-      await saveBid(bid);
-
-      addBotMessage("Great! I've created your project and bid. You can now view it or manage it in your dashboard.");
-      setMessages(prev => [...prev, {
-        type: 'action',
-        content: (
-          <div className="flex space-x-2 mt-2">
-            <button
-              onClick={() => navigate(`/bids/${bid.id}`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              View Bid
-            </button>
-            <button
-              onClick={() => navigate('/signup')}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            >
-              Create an Account or Login
-            </button>
-          </div>
-        )
-      }]);
     } catch (error) {
       console.error('Error creating project:', error);
-      addBotMessage("I'm sorry, there was an error creating your project. Please try again later.");
+      addBotMessage(`I'm sorry, there was an error creating your project: ${error.message}. Please try again or contact support if the issue persists.`);
     }
-  };
+  }, [projectData, currentUser, navigate]);
+
+  const handleUserInput = useCallback(async (input) => {
+    if (!input.trim()) return;
+
+    const userMessage = { text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      switch (currentStep) {
+        case 0:
+          setProjectData(prev => ({ ...prev, projectName: input }));
+          setCurrentStep(1);
+          addBotMessage(steps[1].question);
+          break;
+        case 1:
+          setProjectData(prev => ({ ...prev, startDate: input }));
+          setCurrentStep(2);
+          addBotMessage(steps[2].question);
+          break;
+        case 2:
+          setProjectData(prev => ({ ...prev, endDate: input }));
+          setCurrentStep(3);
+          addBotMessage(steps[3].question);
+          break;
+        case 3:
+          setProjectData(prev => ({ ...prev, location: input }));
+          setCurrentStep(4);
+          addBotMessage(steps[4].question);
+          break;
+        case 4:
+          setProjectData(prev => ({ ...prev, projectType: input }));
+          setCurrentStep(5);
+          addBotMessage(steps[5].question);
+          break;
+        case 5:
+          setProjectData(prev => ({ ...prev, homeType: input }));
+          setCurrentStep(6);
+          addBotMessage(steps[6].question);
+          break;
+        case 6:
+          setProjectData(prev => ({ ...prev, climbingLadder: input }));
+          setCreatedProjectId('temp-id'); // Set temporary ID to trigger View Bid button
+          handleCreateProject();
+          break;
+        default:
+          console.warn('Unknown step:', currentStep);
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling user input:', error);
+      setMessages(prev => [...prev, {
+        text: "I apologize, but I encountered an error. Please try again.",
+        sender: 'bot'
+      }]);
+    }
+  }, [currentStep, handleCreateProject]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleSubmit();
+      handleUserInput(userInput);
     }
   };
 
-  const handleSubmit = () => {
-    if (!userInput.trim()) return;
-
-    addUserMessage(userInput);
-    const currentQuestion = steps[currentStep];
-
-    switch (currentQuestion.type) {
-      case 'text':
-        setProjectData(prev => ({ ...prev, projectName: userInput }));
-        break;
-      case 'date':
-        if (currentStep === 1) {
-          setProjectData(prev => ({ ...prev, startDate: userInput }));
-        } else {
-          setProjectData(prev => ({ ...prev, endDate: userInput }));
+  const handleViewBid = () => {
+    if (createdProjectId) {
+      navigate(`/projects/${createdProjectId}/bid`, {
+        state: {
+          projectData: {
+            projectName: projectData.projectName,
+            projectType: projectData.projectType,
+            startDate: projectData.startDate,
+            endDate: projectData.endDate,
+            location: projectData.location,
+            homeType: projectData.homeType,
+            climbingLadder: projectData.climbingLadder,
+            equipmentNeeded: projectData.equipmentNeeded
+          }
         }
-        break;
-      case 'location':
-        handleLocationInput(userInput);
-        break;
-      case 'choice':
-        if (currentStep === 4) {
-          setProjectData(prev => ({ ...prev, projectType: userInput }));
-        } else if (currentStep === 5) {
-          setProjectData(prev => ({ ...prev, homeType: userInput }));
-        } else if (currentStep === 6) {
-          setProjectData(prev => ({ ...prev, climbingLadder: userInput === 'Yes' }));
-          handleProjectCreation();
-        }
-        break;
-      default:
-        break;
+      });
     }
-
-    setUserInput('');
-    setCurrentStep(prev => prev + 1);
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-        <div className="flex flex-col h-[600px]">
-          <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Project Assistant</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md h-[600px] flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">Project Assistant</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            {messages.map((message, index) => (
               <div
-                key={index}
-                className={`mb-4 ${
-                  message.type === 'user' ? 'text-right' : 'text-left'
+                className={`max-w-[80%] p-3 rounded-lg ${
+                  message.type === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-900'
                 }`}
               >
-                <div
-                  className={`inline-block p-3 rounded-lg ${
-                    message.type === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  {message.content}
-                </div>
+                {message.text}
               </div>
-            ))}
-            {currentStep < steps.length && (
-              <div className="text-left">
-                <div className="inline-block p-3 rounded-lg bg-gray-100 text-gray-900">
-                  {steps[currentStep].question}
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          <div className="p-4 border-t">
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="p-4 border-t">
+          {currentStep === 4 && !createdProjectId && (
+            <div className="mb-4">
+              <button
+                onClick={() => setUserInput("Install Holiday Decorations")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                Install Holiday Decorations
+              </button>
+            </div>
+          )}
+          
+          {currentStep === 5 && !createdProjectId && (
+            <div className="mb-4 space-y-2">
+              <button
+                onClick={() => setUserInput("Single Story")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                Single Story
+              </button>
+              <button
+                onClick={() => setUserInput("2-Story")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                2-Story
+              </button>
+            </div>
+          )}
+          
+          {currentStep === 6 && !createdProjectId && (
+            <div className="mb-4 space-y-2">
+              <button
+                onClick={() => setUserInput("Yes")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setUserInput("No")}
+                className="w-full p-2 text-left hover:bg-gray-100 rounded"
+              >
+                No
+              </button>
+            </div>
+          )}
+          
+          {!createdProjectId ? (
             <div className="flex space-x-2">
               <input
-                type="text"
+                type={steps[currentStep]?.type === 'date' ? 'date' : 'text'}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your answer..."
-                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Type your response..."
+                className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
-                onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={() => handleUserInput(userInput)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Send
               </button>
             </div>
-          </div>
+          ) : (
+            <div className="flex justify-center">
+              <button
+                onClick={handleViewBid}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-lg font-medium"
+              >
+                View Bid
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
