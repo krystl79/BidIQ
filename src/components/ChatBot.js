@@ -116,10 +116,26 @@ const ChatBot = ({ onClose }) => {
 
       await saveBid(bid);
 
-      addBotMessage("Great! I've created your project and bid. You can now view and manage them in your dashboard.");
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+      addBotMessage("Great! I've created your project and bid. You can now view it or manage it in your dashboard.");
+      setMessages(prev => [...prev, {
+        type: 'action',
+        content: (
+          <div className="flex space-x-2 mt-2">
+            <button
+              onClick={() => navigate(`/bids/${bid.id}`)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              View Bid
+            </button>
+            <button
+              onClick={() => navigate('/signup')}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Create an Account or Login
+            </button>
+          </div>
+        )
+      }]);
     } catch (error) {
       console.error('Error creating project:', error);
       addBotMessage("I'm sorry, there was an error creating your project. Please try again later.");
