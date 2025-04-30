@@ -22,6 +22,7 @@ import SelectProject from './components/SelectProject';
 import CreateProposalForm from './components/CreateProposalForm';
 import ProposalsList from './components/ProposalsList';
 import ViewAnonymousBid from './components/ViewAnonymousBid';
+import ViewBidProposal from './components/ViewBidProposal';
 
 // Create a wrapper component to use hooks
 function AppContent() {
@@ -191,6 +192,7 @@ function AppContent() {
             }
           />
           <Route path="/view-bid" element={<ViewAnonymousBid />} />
+          <Route path="/view-bid/:bidId" element={<ViewBidProposal />} />
         </Routes>
       </div>
       {currentUser && <MobileNav />}

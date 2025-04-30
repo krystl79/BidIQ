@@ -6,101 +6,60 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TextField } from '@mui/material';
+import { Print as PrintIcon, Download as DownloadIcon } from '@mui/icons-material';
+import BidTemplate from './BidTemplate';
+import html2pdf from 'html2pdf.js';
 
-// Move steps array outside the component to prevent recreation on each render
+// Define the chat steps
 const steps = [
-  { type: 'text', question: "What is the name of your project?" },
-  { type: 'date', question: "What is the start date of your project?" },
-  { type: 'date', question: "When do you need your project completed by?" },
-  { type: 'location', question: "Where will your project be taking place? (Please enter City, State, Zip Code)" },
   {
-    type: 'choice',
-    question: "What type of project are you working on?",
+    message: "Let's start with your project name. What would you like to call it?",
+    options: []
+  },
+  {
+    message: "What type of project is this?",
     options: ["Install Holiday Decorations"]
   },
   {
-    type: 'choice',
-    question: "Is your home a single story or 2-story?",
+    message: "What's the location of your project?",
+    options: []
+  },
+  {
+    message: "When would you like to start the project?",
+    type: 'date',
+    options: []
+  },
+  {
+    message: "When would you like to end the project?",
+    type: 'date',
+    options: []
+  },
+  {
+    message: "What type of home is it?",
     options: ["Single Story", "2-Story"]
   },
   {
-    type: 'choice',
-    question: "Are you comfortable climbing a ladder?",
+    message: "Are you comfortable climbing a ladder?",
     options: ["Yes", "No"]
   }
 ];
 
+// Add equipment costs
 const equipmentCosts = {
-  'Basic Tools': {
-    daily: 50,
-    weekly: 300,
-    monthly: 1000
-  },
-  'Storage Bins': {
-    daily: 30,
-    weekly: 180,
-    monthly: 600
-  },
-  'Safety Harness': {
-    daily: 40,
-    weekly: 240,
-    monthly: 800
-  },
-  'Safety Rope': {
-    daily: 35,
-    weekly: 210,
-    monthly: 700
-  },
-  'Boom Lift': {
-    daily: 200,
-    weekly: 1200,
-    monthly: 4000
-  },
-  'Extension Ladder': {
-    daily: 45,
-    weekly: 270,
-    monthly: 900
-  },
-  'Step Ladder': {
-    daily: 25,
-    weekly: 150,
-    monthly: 500
-  },
-  'LED Christmas Lights': {
-    daily: 100,
-    weekly: 600,
-    monthly: 2000
-  },
-  'Extension Cords': {
-    daily: 20,
-    weekly: 120,
-    monthly: 400
-  },
-  'Zip Ties': {
-    daily: 15,
-    weekly: 90,
-    monthly: 300
-  },
-  'Light Clips': {
-    daily: 25,
-    weekly: 150,
-    monthly: 500
-  },
-  'Timer': {
-    daily: 30,
-    weekly: 180,
-    monthly: 600
-  },
-  'Work Gloves': {
-    daily: 10,
-    weekly: 60,
-    monthly: 200
-  },
-  'Safety Glasses': {
-    daily: 15,
-    weekly: 90,
-    monthly: 300
-  }
+  'Basic Tools': { daily: 50, weekly: 200, monthly: 600 },
+  'Storage Bins': { daily: 30, weekly: 120, monthly: 360 },
+  'Safety Harness': { daily: 40, weekly: 160, monthly: 480 },
+  'Safety Rope': { daily: 35, weekly: 140, monthly: 420 },
+  'Boom Lift': { daily: 300, weekly: 1200, monthly: 3600 },
+  'Extension Ladder': { daily: 45, weekly: 180, monthly: 540 },
+  'Step Ladder': { daily: 35, weekly: 140, monthly: 420 },
+  'LED Christmas Lights': { daily: 75, weekly: 300, monthly: 900 },
+  'Extension Cords': { daily: 25, weekly: 100, monthly: 300 },
+  'Zip Ties': { daily: 15, weekly: 60, monthly: 180 },
+  'Light Clips': { daily: 20, weekly: 80, monthly: 240 },
+  'Timer': { daily: 25, weekly: 100, monthly: 300 },
+  'Work Gloves': { daily: 15, weekly: 60, monthly: 180 },
+  'Safety Glasses': { daily: 20, weekly: 80, monthly: 240 }
 };
 
 const ChatBot = ({ onClose }) => {
@@ -128,6 +87,7 @@ const ChatBot = ({ onClose }) => {
   const [bidData, setBidData] = useState(null);
   const chatEndRef = useRef(null);
   const hasShownInitialMessages = useRef(false);
+  const [showViewBid, setShowViewBid] = useState(false);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -141,31 +101,43 @@ const ChatBot = ({ onClose }) => {
     // Only show initial messages once
     if (!hasShownInitialMessages.current) {
       addBotMessage("👋 Hi! I'm here to help you get started with your project.");
-      addBotMessage(steps[0].question);
+      addBotMessage(steps[0].message);
       hasShownInitialMessages.current = true;
     }
   }, []); // Empty dependency array since we only want this to run once
 
   const addBotMessage = (text) => {
-    setMessages(prev => [...prev, { type: 'bot', text }]);
+    setMessages(prev => [...prev, {
+      type: 'bot',
+      content: text,
+      timestamp: new Date().toISOString()
+    }]);
   };
 
-  const handleCreateProject = useCallback(async () => {
+  const addUserMessage = (text) => {
+    setMessages(prev => [...prev, {
+      type: 'user',
+      content: text,
+      timestamp: new Date().toISOString()
+    }]);
+  };
+
+  const handleCreateProject = async () => {
     try {
       // Determine equipment needed based on project details
       const equipmentNeeded = [];
       
-      // Add basic equipment for all projects
+      // Basic tools for all projects
       equipmentNeeded.push('Basic Tools');
       equipmentNeeded.push('Storage Bins');
       
-      // Add safety equipment based on home type and ladder comfort
+      // Safety equipment based on home type and ladder comfort
       if (projectData.homeType === '2-Story' || projectData.climbingLadder === 'No') {
         equipmentNeeded.push('Safety Harness');
         equipmentNeeded.push('Safety Rope');
       }
       
-      // Add ladders based on home type and ladder comfort
+      // Ladder or lift based on home type and comfort level
       if (projectData.homeType === '2-Story') {
         if (projectData.climbingLadder === 'No') {
           equipmentNeeded.push('Boom Lift');
@@ -176,7 +148,7 @@ const ChatBot = ({ onClose }) => {
         equipmentNeeded.push('Step Ladder');
       }
       
-      // Add project-specific equipment
+      // Project specific equipment
       if (projectData.projectType === 'Install Holiday Decorations') {
         equipmentNeeded.push('LED Christmas Lights');
         equipmentNeeded.push('Extension Cords');
@@ -185,299 +157,163 @@ const ChatBot = ({ onClose }) => {
         equipmentNeeded.push('Timer');
       }
       
-      // Add safety gear
+      // Personal protective equipment
       equipmentNeeded.push('Work Gloves');
       equipmentNeeded.push('Safety Glasses');
-      
-      // Update project data with equipment
-      setProjectData(prev => ({ ...prev, equipmentNeeded }));
-      
-      // Create project
-      const project = {
-        id: Date.now().toString(),
-        projectName: projectData.projectName,
-        projectType: projectData.projectType,
-        location: {
-          city: projectData.location.split(',')[0].trim(),
-          state: projectData.location.split(',')[1].trim(),
-          zipCode: projectData.location.split(',')[2].trim()
-        },
-        timeline: {
-          startDate: projectData.startDate,
-          endDate: projectData.endDate
-        },
-        homeType: projectData.homeType,
-        climbingLadder: projectData.climbingLadder,
-        equipmentNeeded: equipmentNeeded,
-        userId: 'anonymous',
-        createdAt: new Date().toISOString(),
-        status: 'active'
-      };
-      
-      const projectId = await saveProject(project);
-      
-      // Calculate project duration and determine rate type
-      const startDate = new Date(projectData.startDate);
-      const endDate = new Date(projectData.endDate);
-      const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-      const rateType = duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily';
-      
-      // Calculate total cost
-      const totalCost = equipmentNeeded.reduce((total, equipment) => {
-        return total + equipmentCosts[equipment][rateType];
-      }, 0);
-      
-      // Update UI to show project details and recommendations
-      addBotMessage("Great! I've created your project and recommended equipment based on your needs.");
-      addBotMessage("Project Details:");
-      addBotMessage(`- Project Name: ${projectData.projectName}`);
-      addBotMessage(`- Project Type: ${projectData.projectType}`);
-      addBotMessage(`- Location: ${projectData.location}`);
-      addBotMessage(`- Duration: ${duration} days`);
-      addBotMessage(`- Home Type: ${projectData.homeType}`);
-      addBotMessage(`- Ladder Comfort: ${projectData.climbingLadder}`);
-      
-      addBotMessage("\nRecommended Equipment:");
-      equipmentNeeded.forEach(equipment => {
-        const rate = equipmentCosts[equipment][rateType];
-        addBotMessage(`- ${equipment}: $${rate} ${rateType}`);
-      });
 
-      addBotMessage(`\nTotal Cost: $${totalCost}`);
-      
-      // Add action button to view project
-      setMessages(prev => [...prev, {
-        type: 'action',
-        content: (
-          <div className="flex space-x-2 mt-2">
-            <button
-              onClick={() => navigate(`/projects/${projectId}`)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              View Project
-            </button>
-          </div>
-        )
-      }]);
-      
-      setCreatedProjectId(projectId);
+      // Update project data with equipment
+      const updatedProjectData = {
+        ...projectData,
+        equipmentNeeded
+      };
+      setProjectData(updatedProjectData);
 
     } catch (error) {
       console.error('Error creating project:', error);
-      addBotMessage(`I'm sorry, there was an error creating your project: ${error.message}. Please try again or contact support if the issue persists.`);
+      addBotMessage("I'm sorry, there was an error creating your project. Please try again.");
     }
-  }, [projectData, currentUser, navigate]);
+  };
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-    if (date) {
-      const formattedDate = date.toISOString().split('T')[0];
-      handleUserInput(formattedDate);
+  const handleDateSelect = (date) => {
+    if (!date) return;
+
+    const formattedDate = date.toISOString().split('T')[0];
+    if (currentStep === 3) { // Start date
+      if (projectData.endDate && new Date(formattedDate) >= new Date(projectData.endDate)) {
+        addBotMessage("Start date must be before end date. Please select a valid date.");
+        return;
+      }
+      setProjectData(prev => ({ ...prev, startDate: formattedDate }));
+      addUserMessage(formattedDate);
+      setCurrentStep(prev => prev + 1);
+      addBotMessage(steps[4].message);
+    } else if (currentStep === 4) { // End date
+      if (new Date(formattedDate) <= new Date(projectData.startDate)) {
+        addBotMessage("End date must be after start date. Please select a valid date.");
+        return;
+      }
+      setProjectData(prev => ({ ...prev, endDate: formattedDate }));
+      addUserMessage(formattedDate);
+      setCurrentStep(prev => prev + 1);
+      addBotMessage(steps[5].message);
     }
   };
 
   const handleUserInput = useCallback(async (input) => {
-    // For text inputs, validate that input exists and is a string
-    if (typeof input !== 'string' || !input.trim()) {
-      return;
-    }
+    if (!input) return;
 
-    const userMessage = { text: input, sender: 'user' };
-    setMessages(prev => [...prev, userMessage]);
-    setUserInput(''); // Clear the input after sending
-    setSelectedDate(null); // Clear the selected date
+    addUserMessage(input);
+    setUserInput('');
 
     try {
+      const updatedData = { ...projectData };
       switch (currentStep) {
         case 0:
-          setProjectData(prev => ({ ...prev, projectName: input }));
-          setCurrentStep(1);
-          addBotMessage(steps[1].question);
+          updatedData.projectName = input;
           break;
         case 1:
-          if (!input) {
-            addBotMessage("Please select a start date.");
-            return;
-          }
-          setProjectData(prev => ({ ...prev, startDate: input }));
-          setCurrentStep(2);
-          addBotMessage(steps[2].question);
+          updatedData.projectType = input;
           break;
         case 2:
-          if (!input) {
-            addBotMessage("Please select an end date.");
-            return;
-          }
-          
-          // Validate that end date is after start date
-          const projectStartDate = new Date(projectData.startDate);
-          const projectEndDate = new Date(input);
-          if (projectEndDate <= projectStartDate) {
-            addBotMessage("End date must be after start date. Please select a valid end date.");
-            return;
-          }
-          
-          setProjectData(prev => ({ ...prev, endDate: input }));
-          setCurrentStep(3);
-          addBotMessage(steps[3].question);
-          break;
-        case 3:
-          setProjectData(prev => ({ ...prev, location: input }));
-          setCurrentStep(4);
-          addBotMessage(steps[4].question);
-          break;
-        case 4:
-          setProjectData(prev => ({ ...prev, projectType: input }));
-          setCurrentStep(5);
-          addBotMessage(steps[5].question);
+          updatedData.location = input;
           break;
         case 5:
-          setProjectData(prev => ({ ...prev, homeType: input }));
-          setCurrentStep(6);
-          addBotMessage(steps[6].question);
+          updatedData.homeType = input;
           break;
         case 6:
-          setProjectData(prev => ({ ...prev, climbingLadder: input }));
-          
-          // Calculate project duration
+          // Store the actual "Yes" or "No" value for ladder comfort
+          updatedData.climbingLadder = input;
+          // Calculate duration
           const startDate = new Date(projectData.startDate);
           const endDate = new Date(projectData.endDate);
-          const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-          
-          // Determine equipment needed based on project details
-          const equipmentNeeded = [];
-          
-          // Add basic equipment for all projects
-          equipmentNeeded.push('Basic Tools');
-          equipmentNeeded.push('Storage Bins');
-          
-          // Add safety equipment based on home type and ladder comfort
-          if (projectData.homeType === '2-Story' || input === 'No') {
-            equipmentNeeded.push('Safety Harness');
-            equipmentNeeded.push('Safety Rope');
-          }
-          
-          // Add ladders based on home type and ladder comfort
-          if (projectData.homeType === '2-Story') {
-            if (input === 'No') {
-              equipmentNeeded.push('Boom Lift');
-            } else {
-              equipmentNeeded.push('Extension Ladder');
-            }
-          } else {
-            equipmentNeeded.push('Step Ladder');
-          }
-          
-          // Add project-specific equipment
-          if (projectData.projectType === 'Install Holiday Decorations') {
-            equipmentNeeded.push('LED Christmas Lights');
-            equipmentNeeded.push('Extension Cords');
-            equipmentNeeded.push('Zip Ties');
-            equipmentNeeded.push('Light Clips');
-            equipmentNeeded.push('Timer');
-          }
-          
-          // Add safety gear
-          equipmentNeeded.push('Work Gloves');
-          equipmentNeeded.push('Safety Glasses');
-          
-          // Update project data with equipment
-          setProjectData(prev => ({ ...prev, equipmentNeeded }));
-          
-          // Calculate total cost
-          const totalCost = equipmentNeeded.reduce((total, equipment) => {
-            const rate = equipmentCosts[equipment][duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily'];
-            return total + rate;
-          }, 0);
-
-          // Create bid object
-          const bid = {
-            id: Date.now().toString(),
-            projectId: Date.now().toString(),
-            userId: 'anonymous',
-            selectedEquipment: equipmentNeeded.map(equipment => ({
-              id: equipment,
-              name: equipment,
-              description: `${equipment} for holiday decoration installation`,
-              selectedRate: {
-                type: duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily',
-                rate: equipmentCosts[equipment][duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily']
-              }
-            })),
-            totalCost: totalCost,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          };
-          
-          // Store the bid data for display
-          setBidData(bid);
-          
-          // Update UI to show project details and recommendations
-          addBotMessage("Great! I've prepared a bid proposal based on your needs.");
-          addBotMessage("Project Details:");
-          addBotMessage(`- Project Name: ${projectData.projectName}`);
-          addBotMessage(`- Project Type: ${projectData.projectType}`);
-          addBotMessage(`- Location: ${projectData.location}`);
-          addBotMessage(`- Duration: ${duration} days`);
-          addBotMessage(`- Home Type: ${projectData.homeType}`);
-          addBotMessage(`- Ladder Comfort: ${projectData.climbingLadder}`);
-          
-          addBotMessage("\nRecommended Equipment:");
-          equipmentNeeded.forEach(equipment => {
-            const rate = equipmentCosts[equipment][duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily'];
-            addBotMessage(`- ${equipment}: $${rate} ${duration >= 30 ? 'monthly' : duration >= 7 ? 'weekly' : 'daily'}`);
-          });
-
-          addBotMessage(`\nTotal Cost: $${totalCost}`);
-          
-          // Add action buttons
-          setMessages(prev => [...prev, {
-            type: 'action',
-            content: (
-              <div className="flex flex-col space-y-2 mt-2">
-                <button
-                  onClick={() => handleViewBid(projectData, bid)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  View Bid Proposal
-                </button>
-                <button
-                  onClick={() => navigate('/login?mode=signup')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  Create Account to Save Project
-                </button>
-              </div>
-            )
-          }]);
-          
-          break;
+          updatedData.duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+          // This is the last step
+          setProjectData(updatedData);
+          addBotMessage("Great! I've prepared your bid.");
+          await handleCreateProject();
+          setShowViewBid(true);
+          return;
         default:
-          console.warn('Unknown step:', currentStep);
           break;
       }
+      setProjectData(updatedData);
+
+      // Move to next step
+      setCurrentStep(prev => prev + 1);
+      addBotMessage(steps[currentStep + 1].message);
     } catch (error) {
       console.error('Error handling user input:', error);
-      setMessages(prev => [...prev, {
-        text: "I apologize, but I encountered an error. Please try again.",
-        sender: 'bot'
-      }]);
+      addBotMessage("I'm sorry, there was an error processing your input. Please try again.");
     }
-  }, [currentStep, projectData, navigate]);
+  }, [projectData, currentStep]);
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleUserInput(userInput);
+  const handleViewBid = async () => {
+    try {
+      // Determine rate type based on duration
+      const rateType = projectData.duration >= 30 ? 'monthly' : projectData.duration >= 7 ? 'weekly' : 'daily';
+
+      // Calculate total cost and create equipment array
+      const selectedEquipment = projectData.equipmentNeeded?.map(equipment => ({
+        id: equipment,
+        name: equipment,
+        description: `${equipment} for ${projectData.projectType}`,
+        selectedRate: {
+          type: rateType,
+          rate: equipmentCosts[equipment][rateType]
+        }
+      })) || [];
+
+      // Calculate total cost
+      const totalCost = selectedEquipment.reduce((total, equipment) => {
+        return total + equipment.selectedRate.rate;
+      }, 0);
+
+      const bid = {
+        id: Date.now().toString(),
+        projectId: Date.now().toString(),
+        userId: 'anonymous',
+        projectDetails: {
+          projectName: projectData.projectName,
+          projectType: projectData.projectType,
+          location: projectData.location,
+          duration: projectData.duration,
+          homeType: projectData.homeType,
+          climbingLadder: projectData.climbingLadder, // Pass the actual "Yes" or "No" value
+          startDate: projectData.startDate,
+          endDate: projectData.endDate
+        },
+        selectedEquipment,
+        totalCost,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+
+      // Save bid and get the ID
+      const savedBid = await saveBid(bid);
+      
+      // Navigate using only the ID
+      if (savedBid && savedBid.id) {
+        navigate(`/view-bid/${savedBid.id}`);
+      } else {
+        throw new Error('Failed to save bid');
+      }
+    } catch (error) {
+      console.error('Error handling view bid:', error);
+      addBotMessage("I'm sorry, there was an error viewing your bid. Please try again.");
     }
   };
 
-  const handleViewBid = (project, bid) => {
-    const bidData = {
-      project,
-      bid,
-      isAnonymous: true
+  const handleDownloadBid = () => {
+    const element = document.getElementById('bid-content');
+    const opt = {
+      margin: 1,
+      filename: `${projectData.projectName}-bid.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    navigate('/view-bid', { state: { bidData } });
+
+    html2pdf().set(opt).from(element).save();
   };
 
   return (
@@ -496,19 +332,23 @@ const ChatBot = ({ onClose }) => {
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message, index) => (
+          {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.type === 'user'
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  msg.type === 'user'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
+                    : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                {message.text}
+                {msg.type === 'user' ? (
+                  <div className="font-medium">You: {msg.content}</div>
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
               </div>
             </div>
           ))}
@@ -516,129 +356,60 @@ const ChatBot = ({ onClose }) => {
         </div>
 
         <div className="p-4 border-t">
-          {currentStep === 4 && !createdProjectId && (
-            <div className="mb-4">
-              <button
-                onClick={() => handleUserInput("Install Holiday Decorations")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                Install Holiday Decorations
-              </button>
-            </div>
-          )}
-          
-          {currentStep === 5 && !createdProjectId && (
-            <div className="mb-4 space-y-2">
-              <button
-                onClick={() => handleUserInput("Single Story")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                Single Story
-              </button>
-              <button
-                onClick={() => handleUserInput("2-Story")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                2-Story
-              </button>
-            </div>
-          )}
-          
-          {currentStep === 6 && !createdProjectId && (
-            <div className="mb-4 space-y-2">
-              <button
-                onClick={() => handleUserInput("Yes")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => handleUserInput("No")}
-                className="w-full p-2 text-left hover:bg-gray-100 rounded"
-              >
-                No
-              </button>
-            </div>
-          )}
-          
-          {!createdProjectId && (
-            <div className="flex flex-col gap-2">
-              {currentStep === 1 && (
+          {!showViewBid ? (
+            <div className="space-y-4">
+              {currentStep === 3 || currentStep === 4 ? (
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
-                    label="Start Date"
-                    value={projectData.startDate ? new Date(projectData.startDate) : null}
-                    onChange={(newValue) => {
-                      if (newValue) {
-                        const formattedDate = newValue.toISOString();
-                        setProjectData(prev => ({ ...prev, startDate: formattedDate }));
-                        setCurrentStep(prev => prev + 1);
-                        addBotMessage(steps[2].question);
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        required: true,
-                        error: !projectData.startDate,
-                        helperText: !projectData.startDate ? 'Start date is required' : ''
-                      }
-                    }}
+                    label={currentStep === 3 ? "Start Date" : "End Date"}
+                    minDate={currentStep === 4 && projectData.startDate ? new Date(projectData.startDate) : new Date()}
+                    onChange={handleDateSelect}
+                    renderInput={(params) => <TextField {...params} fullWidth />}
+                    className="w-full"
                   />
                 </LocalizationProvider>
+              ) : (
+                <>
+                  {steps[currentStep]?.options.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {steps[currentStep].options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleUserInput(option)}
+                          className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex">
+                    <input
+                      type="text"
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleUserInput(userInput)}
+                      placeholder="Type your answer..."
+                      className="flex-1 px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleUserInput(userInput)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </>
               )}
-              
-              {currentStep === 2 && (
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="End Date"
-                    value={projectData.endDate ? new Date(projectData.endDate) : null}
-                    onChange={(newValue) => {
-                      if (newValue) {
-                        const formattedDate = newValue.toISOString();
-                        const startDate = new Date(projectData.startDate);
-                        const endDate = new Date(formattedDate);
-                        
-                        if (endDate <= startDate) {
-                          addBotMessage("End date must be after start date. Please select a valid end date.");
-                          return;
-                        }
-                        
-                        setProjectData(prev => ({ ...prev, endDate: formattedDate }));
-                        setCurrentStep(prev => prev + 1);
-                        addBotMessage(steps[3].question);
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        required: true,
-                        error: !projectData.endDate,
-                        helperText: !projectData.endDate ? 'End date is required' : ''
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-
-              {(currentStep === 0 || currentStep >= 3) && (
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="flex-1 p-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Type your answer..."
-                  />
-                  <button
-                    onClick={() => handleUserInput(userInput)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-r hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Send
-                  </button>
-                </div>
-              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <button
+                onClick={handleViewBid}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                View Bid
+              </button>
             </div>
           )}
         </div>

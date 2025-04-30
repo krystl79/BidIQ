@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Container, Paper, Typography, Box, Divider } from '@mui/material';
 import { Print as PrintIcon, Download as DownloadIcon } from '@mui/icons-material';
 import BidTemplate from './BidTemplate';
+import html2pdf from 'html2pdf.js';
 
 const ViewAnonymousBid = () => {
   const location = useLocation();
@@ -32,18 +33,16 @@ const ViewAnonymousBid = () => {
   };
 
   const handleDownload = () => {
-    // Create a PDF of the bid
     const element = document.getElementById('bid-content');
-    const html = element.innerHTML;
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${project.projectName}-bid.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const opt = {
+      margin: 1,
+      filename: `${project.projectName}-bid.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
   };
 
   return (
@@ -88,7 +87,7 @@ const ViewAnonymousBid = () => {
             color="primary"
             onClick={() => navigate('/login?mode=signup')}
           >
-            Create an Account
+            Create Account
           </Button>
         </Box>
       </Paper>
