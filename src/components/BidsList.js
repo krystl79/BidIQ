@@ -315,7 +315,7 @@ const BidsList = () => {
                     <IconButton
                       size="small"
                       onClick={() => handleAddItems(bid)}
-                      title="Add Items"
+                      title="Add Ons"
                       sx={{ 
                         color: '#4F46E5',
                         '&:hover': {
@@ -323,7 +323,7 @@ const BidsList = () => {
                         },
                       }}
                     >
-                      <Description />
+                      <Add />
                     </IconButton>
                     <IconButton
                       size="small"
