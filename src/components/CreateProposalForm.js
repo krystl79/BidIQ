@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { saveProposal } from '../services/db';
+import { saveProposal, getProposal } from '../services/db';
 import {
   Box,
   Button,
@@ -33,40 +33,52 @@ const CreateProposalForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[CreateProposalForm] Starting form submission');
     
-    // Validate required fields
-    if (!formData.title || !formData.description || !formData.dueDate) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    // Validate user is logged in
     if (!currentUser) {
+      console.error('[CreateProposalForm] No current user found');
       setError('You must be logged in to create a proposal');
       return;
     }
+
+    console.log('[CreateProposalForm] Current user:', currentUser);
+
+    const proposalData = {
+      title: formData.title,
+      description: formData.description,
+      dueDate: formData.dueDate,
+      notes: formData.notes,
+      userId: currentUser.id,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      attachments: []
+    };
+
+    console.log('[CreateProposalForm] Proposal data to save:', proposalData);
     
-    setError('');
-    setLoading(true);
-
     try {
-      const proposalData = {
-        id: Date.now().toString(),
-        ...formData,
-        userId: currentUser.id,
-        status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: currentUser.email,
-        lastModifiedBy: currentUser.email,
-      };
-
-      console.log('Saving proposal:', proposalData);
-      await saveProposal(proposalData);
+      setLoading(true);
+      console.log('[CreateProposalForm] Calling saveProposal');
+      const savedProposal = await saveProposal(proposalData);
+      console.log('[CreateProposalForm] Proposal saved successfully:', savedProposal);
+      
+      // Verify the save by retrieving the proposal
+      console.log('[CreateProposalForm] Verifying save by retrieving proposal');
+      const retrievedProposal = await getProposal(savedProposal.id);
+      console.log('[CreateProposalForm] Retrieved proposal:', retrievedProposal);
+      
+      if (!retrievedProposal) {
+        console.error('[CreateProposalForm] Failed to verify saved proposal - proposal not found');
+        setError('Failed to save proposal - please try again');
+        return;
+      }
+      
+      console.log('[CreateProposalForm] Navigation to proposals list');
       navigate('/proposals');
-    } catch (err) {
-      console.error('Error creating proposal:', err);
-      setError('Failed to create proposal. Please try again.');
+    } catch (error) {
+      console.error('[CreateProposalForm] Error saving proposal:', error);
+      setError('Failed to save proposal - please try again');
     } finally {
       setLoading(false);
     }

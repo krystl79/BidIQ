@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import EquipmentList from './EquipmentList';
+import { Autocomplete, TextField } from '@mui/material';
 
 const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, onClose, profileData }) => {
   const [formData, setFormData] = useState({
@@ -399,19 +400,27 @@ const BidTemplate = ({ selectedEquipment, projectDetails, initialBid, onSave, on
                 <label className="block text-sm font-medium text-gray-700">
                   State
                 </label>
-                <select
-                  name="state"
+                <Autocomplete
                   value={formData.companyInfo.state}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select State</option>
-                  {states.map(state => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(event, newValue) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      companyInfo: {
+                        ...prev.companyInfo,
+                        state: newValue
+                      }
+                    }));
+                  }}
+                  options={states}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Type to search state"
+                      className="mt-1 w-full"
+                    />
+                  )}
+                  fullWidth
+                />
               </div>
 
               <div>

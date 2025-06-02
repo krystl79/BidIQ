@@ -18,7 +18,8 @@ import {
   Alert,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  Autocomplete
 } from '@mui/material';
 
 const EditProject = () => {
@@ -295,24 +296,26 @@ const EditProject = () => {
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ mb: 1 }}>State</Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      displayEmpty
-                      name="location.state"
-                      value={formData.location.state}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <MenuItem value="" disabled>
-                        Select state
-                      </MenuItem>
-                      {states.map((state) => (
-                        <MenuItem key={state} value={state}>
-                          {state}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    value={formData.location.state}
+                    onChange={(event, newValue) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: {
+                          ...prev.location,
+                          state: newValue
+                        }
+                      }));
+                    }}
+                    options={states}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Type to search state"
+                      />
+                    )}
+                    fullWidth
+                  />
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ mb: 1 }}>ZIP Code</Typography>

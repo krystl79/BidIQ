@@ -40,6 +40,8 @@ import {
 import { format } from 'date-fns';
 import { deleteProposal, addAttachmentToProposal, removeAttachmentFromProposal, saveProposal, generateProposalResponse } from '../services/db';
 import { useNavigate } from 'react-router-dom';
+import { analyzeRFP, generateClarificationQuestions, generateResponseOutline } from '../services/aiService';
+import { convertPdfToText } from '../utils/pdfUtils';
 
 const ProposalCard = ({ proposal: initialProposal, onDelete }) => {
   const [proposal, setProposal] = useState(initialProposal);
@@ -279,26 +281,33 @@ const ProposalCard = ({ proposal: initialProposal, onDelete }) => {
 
     setProcessing(true);
     try {
-      // Example prompts - in a real implementation, these would be generated based on the document content
-      const prompts = [
-        'What is the project scope?',
-        'What are the key deliverables?',
-        'What is the timeline for completion?',
-        'What are the technical requirements?',
-        'What is the budget range?',
-        'What are the evaluation criteria?'
-      ];
+      // Get the PDF attachment
+      const pdfAttachment = proposal.attachments.find(att => !att.name.startsWith('response_'));
+      if (!pdfAttachment) {
+        throw new Error('No PDF attachment found');
+      }
 
-      // Initialize prompt responses with empty values
-      const initialResponses = {};
-      prompts.forEach(prompt => {
-        initialResponses[prompt] = '';
-      });
+      // Create a File object from the attachment data
+      const pdfFile = new File(
+        [pdfAttachment.data],
+        pdfAttachment.name,
+        { type: pdfAttachment.type }
+      );
 
+      // Convert the PDF to text
+      const pdfText = await convertPdfToText(pdfFile);
+      
+      // Analyze the RFP using AI
+      const rfpAnalysis = await analyzeRFP(pdfText);
+      
+      // Generate clarification questions
+      const questions = await generateClarificationQuestions(rfpAnalysis);
+      
       // Store all prompts and initialize responses
       setPromptResponses({
-        ...initialResponses,
-        _allPrompts: prompts
+        ...questions.reduce((acc, q) => ({ ...acc, [q.question]: '' }), {}),
+        _allPrompts: questions.map(q => q.question),
+        _rfpAnalysis: rfpAnalysis
       });
       
       // Reset to first step
@@ -307,7 +316,7 @@ const ProposalCard = ({ proposal: initialProposal, onDelete }) => {
       console.error('Error processing document:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to process document. Please try again.',
+        message: error.message || 'Failed to process document. Please try again.',
         severity: 'error'
       });
     } finally {
@@ -315,31 +324,38 @@ const ProposalCard = ({ proposal: initialProposal, onDelete }) => {
     }
   };
 
-  const generateDocument = (responses) => {
-    // Create a structured document based on all prompt responses
-    const title = proposal.title || 'Untitled Proposal';
-    const description = proposal.description || 'No description provided';
-    const dueDate = proposal.dueDate ? formatDate(proposal.dueDate) : 'Not specified';
-    
-    // Start with a header section
-    let document = `# Response to ${title}\n\n`;
-    document += `## Project Overview\n${description}\n\n`;
-    document += `## Due Date\n${dueDate}\n\n`;
-    document += `## Response Details\n\n`;
-    
-    // Add each prompt and response
-    const allPrompts = responses._allPrompts || [];
-    allPrompts.forEach(prompt => {
-      const response = responses[prompt] || 'No response provided';
-      document += `### ${prompt}\n${response}\n\n`;
-    });
-    
-    // Add a conclusion section
-    document += `## Conclusion\n`;
-    document += `This response document was generated based on the analysis of the proposal and the provided responses to the prompts.\n\n`;
-    document += `Generated on: ${new Date().toLocaleDateString()}\n`;
-    
-    return document;
+  const generateDocument = async (responses) => {
+    try {
+      // Get the RFP analysis from the stored responses
+      const rfpAnalysis = responses._rfpAnalysis;
+      
+      // Remove the special fields from responses
+      const { _allPrompts, _rfpAnalysis, ...answers } = responses;
+      
+      // Generate the response outline using AI
+      const outline = await generateResponseOutline(rfpAnalysis, answers);
+      
+      // Create a structured document based on the outline
+      let document = `# Response to ${proposal.title || 'RFP'}\n\n`;
+      
+      // Add each section from the outline
+      Object.entries(outline).forEach(([section, details]) => {
+        document += `## ${section}\n\n`;
+        document += `${details.keyPoints.join('\n')}\n\n`;
+        document += `### Required Information\n${details.requiredInformation}\n\n`;
+        document += `### Content Structure\n${details.contentStructure}\n\n`;
+      });
+      
+      // Add a conclusion section
+      document += `## Conclusion\n`;
+      document += `This response has been prepared based on the RFP requirements and our team's capabilities. We look forward to the opportunity to work with you on this project.\n\n`;
+      document += `Generated on: ${new Date().toLocaleDateString()}\n`;
+      
+      return document;
+    } catch (error) {
+      console.error('Error generating document:', error);
+      throw new Error('Failed to generate response document');
+    }
   };
 
   const handleGenerateDocument = async () => {

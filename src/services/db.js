@@ -1,7 +1,7 @@
 import { openDB, deleteDB } from 'idb';
 
 const DB_NAME = 'buildiqDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Mock implementation for testing
 const mockDB = {
@@ -26,45 +26,76 @@ export async function resetDatabase() {
   }
 }
 
+// Function to check database structure
+async function checkDatabaseStructure() {
+  try {
+    const db = await dbPromise;
+    console.log('Database stores:', db.objectStoreNames);
+    for (const storeName of db.objectStoreNames) {
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      console.log(`Store ${storeName} indexes:`, store.indexNames);
+    }
+  } catch (error) {
+    console.error('Error checking database structure:', error);
+  }
+}
+
 const dbPromise = isTestEnvironment
   ? Promise.resolve(mockDB)
   : openDB(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, newVersion, transaction) {
-        console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
+        console.log(`[DB] Upgrading database from version ${oldVersion} to ${newVersion}`);
         
         // Create object stores if they don't exist
         if (!db.objectStoreNames.contains('projects')) {
+          console.log('[DB] Creating projects store');
           const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
           projectStore.createIndex('createdAt', 'createdAt');
         }
         
         if (!db.objectStoreNames.contains('bids')) {
+          console.log('[DB] Creating bids store');
           const bidStore = db.createObjectStore('bids', { keyPath: 'id' });
           bidStore.createIndex('projectId', 'projectId');
           bidStore.createIndex('createdAt', 'createdAt');
         }
 
         if (!db.objectStoreNames.contains('equipment')) {
+          console.log('[DB] Creating equipment store');
           const equipmentStore = db.createObjectStore('equipment', { keyPath: 'id' });
           equipmentStore.createIndex('type', 'type');
         }
 
         if (!db.objectStoreNames.contains('userProfile')) {
+          console.log('[DB] Creating userProfile store');
           db.createObjectStore('userProfile', { keyPath: 'id' });
         }
 
-        // Always create proposals store in version 2
-        if (oldVersion < 2) {
-          console.log('Creating proposals store...');
+        // Always create proposals store
+        if (!db.objectStoreNames.contains('proposals')) {
+          console.log('[DB] Creating proposals store...');
           const proposalStore = db.createObjectStore('proposals', { keyPath: 'id' });
           proposalStore.createIndex('userId', 'userId');
           proposalStore.createIndex('createdAt', 'createdAt');
           proposalStore.createIndex('attachments', 'attachments', { multiEntry: true });
           proposalStore.createIndex('responseDocument', 'responseDocument');
-          console.log('Proposals store created successfully');
+          console.log('[DB] Proposals store created successfully');
         }
       },
+      blocked() {
+        console.log('[DB] Database upgrade blocked');
+      },
+      blocking() {
+        console.log('[DB] Database upgrade blocking');
+      },
+      terminated() {
+        console.log('[DB] Database connection terminated');
+      }
     });
+
+// Check database structure when the module loads
+checkDatabaseStructure();
 
 // Projects
 export async function saveProject(project) {
@@ -273,25 +304,59 @@ export async function initializeDB(sampleData) {
 
 // Proposals
 export async function saveProposal(proposal) {
+  console.log('[DB] Starting saveProposal with data:', proposal);
+  
   if (!proposal.id) {
     proposal.id = Date.now().toString();
+    console.log('[DB] Generated new proposal ID:', proposal.id);
   }
   
   // Initialize attachments array if it doesn't exist
   if (!proposal.attachments) {
     proposal.attachments = [];
+    console.log('[DB] Initialized empty attachments array');
   }
+
+  // Ensure all required fields are present
+  const proposalData = {
+    ...proposal,
+    id: proposal.id,
+    userId: proposal.userId,
+    status: proposal.status || 'draft',
+    createdAt: proposal.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    attachments: proposal.attachments || []
+  };
   
-  const db = await dbPromise;
-  if (isTestEnvironment) {
-    mockDB.proposals.set(proposal.id, proposal);
-    return proposal;
+  try {
+    console.log('[DB] Getting database connection');
+    const db = await dbPromise;
+    console.log('[DB] Database connection established');
+    
+    if (isTestEnvironment) {
+      console.log('[DB] Using test environment, saving to mockDB');
+      mockDB.proposals.set(proposalData.id, proposalData);
+      return proposalData;
+    }
+    
+    console.log('[DB] Starting database transaction');
+    const tx = db.transaction('proposals', 'readwrite');
+    const store = tx.objectStore('proposals');
+    
+    console.log('[DB] Saving proposal to store:', proposalData);
+    await store.put(proposalData);
+    await tx.done;
+    console.log('[DB] Proposal saved successfully');
+    
+    // Verify the save
+    const savedProposal = await store.get(proposalData.id);
+    console.log('[DB] Verified saved proposal:', savedProposal);
+    
+    return proposalData;
+  } catch (error) {
+    console.error('[DB] Error in saveProposal:', error);
+    throw error;
   }
-  const tx = db.transaction('proposals', 'readwrite');
-  const store = tx.objectStore('proposals');
-  await store.put(proposal);
-  await tx.done;
-  return proposal;
 }
 
 // Generate a response document for a proposal
@@ -343,13 +408,29 @@ export async function getAllProposals() {
 }
 
 export async function getProposalsByUser(userId) {
-  const db = await dbPromise;
-  if (isTestEnvironment) {
-    return Array.from(mockDB.proposals.values())
-      .filter(proposal => proposal.userId === userId)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  console.log('[DB] Getting proposals for user:', userId);
+  try {
+    console.log('[DB] Getting database connection');
+    const db = await dbPromise;
+    console.log('[DB] Database connection established for getProposalsByUser');
+    
+    if (isTestEnvironment) {
+      console.log('[DB] Using test environment for getProposalsByUser');
+      const proposals = Array.from(mockDB.proposals.values())
+        .filter(proposal => proposal.userId === userId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      console.log('[DB] Found proposals in test environment:', proposals);
+      return proposals;
+    }
+    
+    console.log('[DB] Querying proposals from IndexedDB');
+    const proposals = await db.getAllFromIndex('proposals', 'userId', userId);
+    console.log('[DB] Found proposals in IndexedDB:', proposals);
+    return proposals;
+  } catch (error) {
+    console.error('[DB] Error in getProposalsByUser:', error);
+    throw error;
   }
-  return db.getAllFromIndex('proposals', 'userId', userId);
 }
 
 export async function deleteProposal(id) {

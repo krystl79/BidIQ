@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getProposalsByUser } from '../services/db';
+import { getProposalsByUser, getAllProposals } from '../services/db';
 import {
   Container,
   Box,
@@ -22,25 +22,45 @@ const ProposalsList = () => {
   const [error, setError] = useState(null);
 
   const loadProposals = useCallback(async () => {
-    if (!currentUser) return;
+    console.log('ProposalsList - loadProposals called');
+    if (!currentUser) {
+      console.log('ProposalsList - No current user found');
+      return;
+    }
+    
+    console.log('ProposalsList - Current user:', currentUser);
+    setLoading(true);
     
     try {
+      // First try to get all proposals to check if the store is working
+      console.log('ProposalsList - Getting all proposals first');
+      const allProposals = await getAllProposals();
+      console.log('ProposalsList - All proposals:', allProposals);
+
+      // Then get user-specific proposals
+      console.log('ProposalsList - Getting user proposals');
       const userProposals = await getProposalsByUser(currentUser.id);
+      console.log('ProposalsList - User proposals:', userProposals);
+      
       setProposals(userProposals);
     } catch (error) {
-      console.error('Error loading proposals:', error);
+      console.error('ProposalsList - Error loading proposals:', error);
       setError('Failed to load proposals');
     } finally {
       setLoading(false);
     }
   }, [currentUser]);
 
+  // Load proposals on mount
   useEffect(() => {
+    console.log('ProposalsList - Component mounted');
     loadProposals();
   }, [loadProposals]);
 
+  // Reload proposals when window gains focus
   useEffect(() => {
     const handleFocus = () => {
+      console.log('ProposalsList - Window focused');
       loadProposals();
     };
 
@@ -50,20 +70,29 @@ const ProposalsList = () => {
     };
   }, [loadProposals]);
 
+  // Force reload proposals every 5 seconds while component is mounted
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('ProposalsList - Forced reload');
+      loadProposals();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [loadProposals]);
+
   const handleCreateNew = () => {
     navigate('/create-proposal');
   };
 
   const handleDelete = (proposalId, isUpdate = false, updatedProposal = null) => {
+    console.log('ProposalsList - handleDelete called:', { proposalId, isUpdate, updatedProposal });
     if (isUpdate && updatedProposal) {
-      // Update the proposal in place
       setProposals(prevProposals => 
         prevProposals.map(proposal => 
           proposal.id === proposalId ? updatedProposal : proposal
         )
       );
     } else {
-      // Remove the proposal
       setProposals(prevProposals => 
         prevProposals.filter(proposal => proposal.id !== proposalId)
       );

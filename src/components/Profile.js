@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserProfile, saveUserProfile } from '../services/db';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -19,6 +20,7 @@ import {
 
 const Profile = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -125,6 +127,9 @@ const Profile = () => {
     try {
       await saveUserProfile(formData);
       setSuccessMessage('Your profile has been updated successfully!');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Error saving profile:', error);
       setError('Failed to update profile. Please try again.');

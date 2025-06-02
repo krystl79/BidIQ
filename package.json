@@ -2,6 +2,7 @@
   "name": "bidiq",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:5002",
   "dependencies": {
     "@aws-sdk/client-textract": "^3.796.0",
     "@date-io/date-fns": "^3.2.1",
@@ -21,12 +22,15 @@
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "date-fns": "^2.30.0",
-    "express": "^4.18.2",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
     "html2pdf.js": "^0.10.3",
     "idb": "^8.0.0",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.7.0",
+    "openai": "^4.98.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.0.379",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.1",
@@ -37,7 +41,7 @@
     "workbox-precaching": "^7.3.0"
   },
   "scripts": {
-    "start": "craco start",
+    "start": "PORT=3001 craco start",
     "build": "CI=false craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
